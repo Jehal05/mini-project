@@ -128,7 +128,7 @@ describe('feature 26: scenarios', () => {
     const b = computeBaseline(RAHUL)
     expect(scenarioTargets('fever', b).temp).toBeGreaterThanOrEqual(39)
     expect(scenarioTargets('hypoxia', b).spo2).toBeLessThan(90)
-    expect(scenarioTargets('exercise', b).hr).toBeGreaterThan(b.hr + 40)
+    expect(scenarioTargets('exercise', b).hr).toBeGreaterThan(b.hr + 15)
   })
 
   it('cardiac event glides smoothly and meets HR > 120 and SpO2 < 90 within a minute', async () => {

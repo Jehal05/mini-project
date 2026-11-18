@@ -46,7 +46,7 @@ export function computeBaseline(patient) {
   let hr = 67 + ageOver25 * 0.15
   if (f.cardiac) hr += 8
   if (f.diabetes) hr += 3
-  if (f.fit) hr -= 2
+  if (f.fit) hr -= 1
 
   let sys = 112 + ageOver25 * 0.4
   if (f.hypertension) sys += 4 // treated hypertension: high-normal, not Warning
@@ -60,7 +60,7 @@ export function computeBaseline(patient) {
   if (f.cardiac) spo2 -= 0.3
 
   const temp = 36.8
-  let rr = 14 + ageOver25 * 0.03
+  let rr = 15 + ageOver25 * 0.03
   if (f.asthma) rr += 1.5
 
   return {

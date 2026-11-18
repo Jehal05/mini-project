@@ -18,12 +18,12 @@ export const patientRoom = (id) => `patient:${id}`
 
 // theta = share of the gap to the target closed per tick; sigma = noise per tick.
 const DYNAMICS = {
-  hr: { theta: 0.12, sigma: 0.8, min: 30, max: 220, decimals: 0 },
-  sys: { theta: 0.1, sigma: 1.0, min: 60, max: 240, decimals: 0 },
-  dia: { theta: 0.1, sigma: 0.7, min: 35, max: 150, decimals: 0 },
+  hr: { theta: 0.12, sigma: 0.6, min: 30, max: 220, decimals: 0 },
+  sys: { theta: 0.1, sigma: 0.8, min: 60, max: 240, decimals: 0 },
+  dia: { theta: 0.1, sigma: 0.6, min: 35, max: 150, decimals: 0 },
   spo2: { theta: 0.1, sigma: 0.22, min: 70, max: 100, decimals: 0 },
   temp: { theta: 0.04, sigma: 0.015, min: 34, max: 42, decimals: 1 },
-  rr: { theta: 0.1, sigma: 0.35, min: 6, max: 45, decimals: 0 },
+  rr: { theta: 0.1, sigma: 0.3, min: 6, max: 45, decimals: 0 },
 }
 
 // A new worst status must hold for this many ticks before it is logged on the
@@ -133,6 +133,8 @@ export class SimulationEngine {
       id,
       patientCode: patient.patientCode,
       name: patient.name,
+      profile: patient, // medical profile, read by the detection engine's risk score
+      thresholds: null, // per-patient override (feature 36); null = use the engine-wide thresholds
       baseline,
       scenario,
       target: scenarioTargets(scenario, baseline),
@@ -192,16 +194,33 @@ export class SimulationEngine {
     return this.snapshot(state.id)
   }
 
+  /** Feature 36: thresholds in force for one patient (their own overrides, else the engine-wide ones). */
+  thresholdsFor(state) {
+    return state.thresholds ?? this.thresholds
+  }
+
+  /** Feature 36: apply new engine-wide thresholds at once, without a restart. */
+  setThresholds(thresholds) {
+    this.thresholds = thresholds
+  }
+
+  /** Feature 36: per-patient override from a doctor; pass null to go back to the engine-wide ones. */
+  setPatientThresholds(id, thresholds) {
+    const state = this.patients.get(String(id))
+    if (state) state.thresholds = thresholds ?? null
+  }
+
   buildUpdate(state, nowMs) {
     const vitals = displayVitals(state.current)
-    const statuses = readingStatuses(vitals, this.thresholds)
+    const thresholds = this.thresholdsFor(state)
+    const statuses = readingStatuses(vitals, thresholds)
     return {
       patientId: state.id,
       patientCode: state.patientCode,
       at: new Date(nowMs).toISOString(),
       vitals,
       statuses,
-      status: worstStatus(vitals, this.thresholds),
+      status: worstStatus(vitals, thresholds),
       scenario: state.scenario,
       simulated: true,
       label: 'Simulated',
@@ -215,7 +234,7 @@ export class SimulationEngine {
     for (const fn of this.listeners) fn(payload)
   }
 
-  /** Subscribe to every update in-process (Phase 6 detection will use this). Returns an unsubscribe fn. */
+  /** Subscribe to every update in-process (the detection engine uses this). Returns an unsubscribe fn. */
   onUpdate(fn) {
     this.listeners.add(fn)
     return () => this.listeners.delete(fn)

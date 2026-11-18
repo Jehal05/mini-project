@@ -8,7 +8,7 @@ export { SCENARIOS }
 
 export const SCENARIO_INFO = Object.freeze({
   stable: { label: 'Stable', description: "Resting around the patient's own baseline" },
-  exercise: { label: 'Exercise', description: 'Heart rate, BP and breathing rise; recovers on Stable' },
+  exercise: { label: 'Exercise', description: 'Light exercise: pulse, BP and breathing rise; recovers on Stable' },
   fever: { label: 'Fever', description: 'Temperature climbs towards 39 °C with a faster pulse' },
   hypoxia: { label: 'Hypoxia', description: 'Oxygen saturation falls; breathing and pulse rise' },
   cardiac_event: {
@@ -21,9 +21,11 @@ export const SCENARIO_INFO = Object.freeze({
 export function scenarioTargets(scenario, b) {
   switch (scenario) {
     case 'exercise':
-      return { hr: b.hr + 52, sys: b.sys + 28, dia: b.dia + 4, spo2: b.spo2 - 1.2, temp: b.temp + 0.5, rr: b.rr + 10 }
+      // Light exercise. Pulse stays under the Critical bound and well inside the baseline limit,
+      // so detection shows at most a Watch (Phase 6).
+      return { hr: b.hr + 22, sys: b.sys + 20, dia: b.dia + 4, spo2: b.spo2 - 1.2, temp: b.temp + 0.4, rr: b.rr + 5 }
     case 'fever':
-      return { hr: b.hr + 22, sys: b.sys - 4, dia: b.dia - 3, spo2: b.spo2 - 1, temp: 39.3, rr: b.rr + 6 }
+      return { hr: b.hr + 22, sys: b.sys - 4, dia: b.dia - 3, spo2: b.spo2 - 1, temp: 39.3, rr: b.rr + 5 }
     case 'hypoxia':
       return { hr: b.hr + 24, sys: b.sys + 6, dia: b.dia + 2, spo2: 86.5, temp: b.temp, rr: 27 }
     case 'cardiac_event':

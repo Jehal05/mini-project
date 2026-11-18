@@ -155,7 +155,7 @@ describe.skipIf(!mongo)('monitoring API (MongoDB)', () => {
     const { vi } = await import('vitest')
     const spy = vi
       .spyOn(VitalReading, 'aggregate')
-      .mockReturnValue(Promise.reject(Object.assign(new Error("Invalid $group :: caused by :: Unrecognized expression '$dateTrunc'"), { code: 168 })))
+      .mockImplementation(() => Promise.reject(Object.assign(new Error("Invalid $group :: caused by :: Unrecognized expression '$dateTrunc'"), { code: 168 })))
     try {
       const res = await request(app).get('/api/sim/patients/HT-2026-0001/vitals/history?range=24h').expect(501)
       expect(res.body.error).toMatch(/MongoDB 5\.0 or newer/)

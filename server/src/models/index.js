@@ -5,3 +5,4 @@ export { Counter, nextSequence } from './Counter.js';
 export { AuditLog } from './AuditLog.js';
 export { RefreshToken } from './RefreshToken.js';
 export { PasswordReset } from './PasswordReset.js';
+export { LoginAttempt } from './LoginAttempt.js';

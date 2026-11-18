@@ -16,8 +16,6 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
     passwordChangedAt: Date,
-    failedLoginCount: { type: Number, default: 0 },
-    lockedUntil: Date,
   },
   { timestamps: true },
 );
@@ -35,8 +33,6 @@ userSchema.pre('validate', function checkInvariants() {
 userSchema.set('toJSON', {
   transform(_doc, ret) {
     delete ret.passwordHash;
-    delete ret.failedLoginCount;
-    delete ret.lockedUntil;
     delete ret.__v;
     return ret;
   },

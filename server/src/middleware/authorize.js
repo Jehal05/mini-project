@@ -21,27 +21,41 @@ export function authorize(...allowed) {
   };
 }
 
+const asList = (v) => (v == null ? [] : (Array.isArray(v) ? v : [v]).map(String));
+const OBJECT_ID = /^[a-f\d]{24}$/i;
+
+/** Every hospital id the request names: route params, body and query string (or just the custom getter's). */
+function requestedIds(req, getter) {
+  if (getter) return asList(getter(req));
+  return [...asList(req.params?.hospitalId), ...asList(req.body?.hospitalId), ...asList(req.query?.hospitalId)];
+}
+
 /**
  * Feature 5/6: keeps hospital staff inside their own hospital.
  * - central_admin: allowed everywhere; req.hospitalId is the requested one (or null).
- * - doctor / hospital_staff / hospital_admin: the requested hospital id (default: params.hospitalId)
- *   must equal the hospitalId in their token; req.hospitalId is always forced to their own, so
- *   handlers should filter queries with it.
+ * - doctor / hospital_staff / hospital_admin: EVERY hospital id in the request (params, body, query) must
+ *   equal the hospitalId in their token, otherwise 403. req.hospitalId is always their own, so handlers
+ *   should filter queries and writes with it rather than with anything from the request.
  * - patient: never allowed on hospital-scoped routes.
+ * Pass a getter to check one specific place instead: hospitalScope((req) => req.params.id).
  */
-export function hospitalScope(getRequestedId = (req) => req.params.hospitalId ?? req.body?.hospitalId ?? req.query?.hospitalId) {
+export function hospitalScope(getRequestedId) {
   return async (req, _res, next) => {
     if (!req.user) return next(ApiError.unauthorized());
     const { role, hospitalId: own } = req.user;
-    const requested = getRequestedId(req);
+    const ids = requestedIds(req, getRequestedId);
+
     if (role === 'central_admin') {
-      req.hospitalId = requested ? String(requested) : null;
+      const distinct = [...new Set(ids)];
+      if (distinct.length > 1) return next(ApiError.badRequest('The request names more than one hospital'));
+      if (distinct[0] && !OBJECT_ID.test(distinct[0])) return next(ApiError.badRequest('Invalid hospital id'));
+      req.hospitalId = distinct[0] ?? null;
       return next();
     }
     if (!HOSPITAL_ROLES.includes(role) || !own) {
       return next(await deny(req, 'This resource is only available to hospital accounts', 'HOSPITAL_ROLE_REQUIRED', 'no-hospital'));
     }
-    if (requested && String(requested) !== String(own)) {
+    if (ids.some((id) => id !== String(own))) {
       return next(await deny(req, 'You can only access your own hospital', 'HOSPITAL_MISMATCH', 'hospital-mismatch'));
     }
     req.hospitalId = String(own);

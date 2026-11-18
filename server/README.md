@@ -10,7 +10,8 @@ cp .env.example .env        # set JWT_ACCESS_SECRET for production
 npm install
 npm run seed                # fictional demo accounts + Rahul Sharma (HT-2026-0001)
 npm run dev                 # http://localhost:5000
-npm test                    # needs MongoDB: set MONGO_URI_TEST, or it starts an in-memory one
+npm test                    # needs MongoDB: set MONGO_URI_TEST (database name must contain "test"; the suite wipes it),
+                            # or it starts an in-memory one
 ```
 
 Seeded accounts (development only, password `Demo@12345`, override with `SEED_PASSWORD`):
@@ -68,6 +69,23 @@ router.get('/patients/:id', protect({ roles: ['doctor'] }),
 | `POST /api/auth/forgot-password`, `/reset-password` | Single-use link, valid 15 minutes |
 | `GET /api/audit-logs` | Central admin only; filters: actor, role, action, outcome, resourceType, resourceId, hospitalId, from, to, page, limit |
 
-Sessions: access token 15 min, refresh token 7 days (httpOnly cookie, rotated on every use, reuse revokes the whole
-login), idle sessions end after 30 minutes. Five wrong passwords lock an account for 15 minutes.
-Password reset prints the link to the server console unless `MAIL_PROVIDER=resend`.
+Sessions: access token 15 min, refresh token 7 days (httpOnly cookie, rotated on every use, replaying an old one
+revokes the whole login), idle sessions end after 30 minutes.
+
+- **Ending a session ends its access tokens.** `authenticate` checks that the login still has a live refresh token and
+  that the account is active, so logout, logout-all, password reset and deactivation take effect at once. When you
+  deactivate an account, call `revokeUserSessions(userId)` from `src/utils/session.js`.
+  A revoked token answers `401 SESSION_REVOKED`; an expired one `401 TOKEN_EXPIRED`. The client refreshes once on either.
+- **Lockout:** 5 wrong passwords lock the account for 15 minutes. Attempts are counted atomically before the password is
+  checked, per account (email and phone share one counter), and made-up identifiers are counted the same way, so the
+  lock does not reveal which accounts exist.
+- **Audit labels:** failed logins record the email or phone typed, or `[unrecognised identifier]` for anything else
+  (people paste passwords into the email box and the log cannot be edited).
+- **Passwords:** 8+ characters with a letter and a number from any language; at most 72 bytes (bcrypt's limit).
+- **Two tabs refreshing at once:** the loser gets `401 REFRESH_RACE` and keeps its cookie; the client retries once.
+- **`hospitalScope`** rejects a request if ANY hospital id (route, body or query) differs from the token's hospital.
+  Still prefer `req.hospitalId` over anything from the request.
+- **Reset email:** the reply goes out first and the email is sent afterwards, so timing does not reveal whether the
+  address has an account. `MAIL_PROVIDER=console` (default) prints the link to the server log; `resend` uses the Email API.
+- **Rate limits** (per IP, 15 minutes): login 30, register 20, forgot/reset 10. Set `RATE_LIMIT=off` to disable locally,
+  and `TRUST_PROXY=true` behind a proxy so every user does not share one address.

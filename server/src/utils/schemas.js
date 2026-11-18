@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { normalizePhone } from './phone.js';
 
+// bcrypt only uses the first 72 BYTES, so longer passwords are refused instead of silently cut.
 export const passwordSchema = z
   .string()
   .min(8, 'Use at least 8 characters')
-  .max(72, 'Use at most 72 characters')
-  .regex(/[A-Za-z]/, 'Include at least one letter')
-  .regex(/\d/, 'Include at least one number');
-
+  .refine((p) => Buffer.byteLength(p, 'utf8') <= 72, 'Use at most 72 bytes (accented and non-English letters count as 2 to 4)')
+  .regex(/\p{L}/u, 'Include at least one letter')
+  .regex(/\p{N}/u, 'Include at least one number');
 
 export const registerSchema = z
   .object({

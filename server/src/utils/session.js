@@ -1,6 +1,6 @@
 import { config } from '../config/env.js';
-import { RefreshToken } from '../models/RefreshToken.js';
 import { Patient } from '../models/Patient.js';
+import { RefreshToken } from '../models/RefreshToken.js';
 import { randomToken, sha256, signAccessToken } from './crypto.js';
 
 export function cookieOptions() {
@@ -34,14 +34,31 @@ export async function issueRefreshToken(req, user, family = randomToken(16)) {
   return { raw, doc };
 }
 
+export const loadPatient = (user) => (user.role === 'patient' ? Patient.findOne({ user: user._id }) : null);
+
+/** Sets the cookie and signs the access token for an already-issued refresh token. */
+export function finishSession(res, { user, patient, raw, doc }) {
+  res.cookie(config.session.cookieName, raw, cookieOptions());
+  return { accessToken: signAccessToken({ user, patientId: patient?._id, session: doc }), refreshDoc: doc, user: publicUser(user, patient) };
+}
+
 /** Issues access + refresh tokens, sets the cookie and returns the access token + public user. */
 export async function startSession(req, res, user, { family, patient } = {}) {
-  const linkedPatient = patient ?? (user.role === 'patient' ? await Patient.findOne({ user: user._id }) : null);
+  const linkedPatient = patient ?? (await loadPatient(user));
   const { raw, doc } = await issueRefreshToken(req, user, family);
-  res.cookie(config.session.cookieName, raw, cookieOptions());
-  const accessToken = signAccessToken({ user, patientId: linkedPatient?._id, sid: doc._id });
-  return { accessToken, refreshDoc: doc, user: publicUser(user, linkedPatient) };
+  return finishSession(res, { user, patient: linkedPatient, raw, doc });
 }
+
+/**
+ * Ending a session: every access token minted for the login stops working at once, because
+ * `authenticate` checks that the login's family still has a live refresh token.
+ */
+export const revokeFamily = (family) =>
+  RefreshToken.updateMany({ family, revokedAt: { $exists: false } }, { $set: { revokedAt: new Date() } });
+
+/** Signs a user out everywhere. Call this when deactivating an account or changing its password. */
+export const revokeUserSessions = (userId) =>
+  RefreshToken.updateMany({ user: userId, revokedAt: { $exists: false } }, { $set: { revokedAt: new Date() } });
 
 export function publicUser(user, patient) {
   return {

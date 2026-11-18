@@ -1,4 +1,5 @@
 import { writeAudit } from '../utils/audit.js';
+import { runInBackground } from '../utils/background.js';
 
 /**
  * Feature 98 helper for any teammate's route: logs who did what to which record once the response
@@ -10,13 +11,13 @@ export function audit(action, { resourceType, resourceId, meta } = {}) {
   return (req, res, next) => {
     res.on('finish', () => {
       if (res.statusCode >= 400) return;
-      writeAudit({
+      runInBackground('audit', () => writeAudit({
         req,
         action,
         resourceType,
         resourceId: typeof resourceId === 'function' ? resourceId(req) : resourceId,
         meta: typeof meta === 'function' ? meta(req) : meta,
-      });
+      }));
     });
     next();
   };

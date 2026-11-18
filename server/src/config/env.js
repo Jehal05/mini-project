@@ -54,5 +54,5 @@ export const config = Object.freeze({
     resendApiKey: process.env.RESEND_API_KEY || '',
   },
 
-  rateLimitEnabled: !isTest,
+  rateLimitEnabled: process.env.RATE_LIMIT ? process.env.RATE_LIMIT === 'on' : !isTest,
 });

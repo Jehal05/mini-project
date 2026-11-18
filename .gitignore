@@ -6,3 +6,7 @@ dist/
 *.log
 coverage/
 .DS_Store
+
+# Uploaded photos and documents (never commit these)
+server/uploads/
+server/.test-uploads/

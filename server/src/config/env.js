@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,6 +15,8 @@ function secret(name) {
   // Dev/test fallback only. Never used in production (the line above throws).
   return `dev-only-${name.toLowerCase()}-not-for-production-0123456789abcdef`;
 }
+
+const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 export const config = Object.freeze({
   env,
@@ -47,6 +51,23 @@ export const config = Object.freeze({
   },
 
   bcryptRounds: isTest ? 4 : 12,
+
+  // Uploaded photos and documents live outside any public folder and are served only through authenticated routes.
+  uploads: {
+    dir: path.resolve(process.env.UPLOAD_DIR || path.join(serverRoot, 'uploads')),
+    photoMaxBytes: 2 * 1024 * 1024,
+    documentMaxBytes: 5 * 1024 * 1024,
+    maxDocumentsPerPatient: 50,
+  },
+
+  // Feature 16: drugs that are flagged as blood thinners automatically (lower-case, matched as whole words).
+  bloodThinnerDrugs: (process.env.BLOOD_THINNER_DRUGS || 'warfarin,apixaban,rivaroxaban,dabigatran,clopidogrel,ticagrelor,prasugrel')
+    .split(',').map((d) => d.trim().toLowerCase()).filter(Boolean),
+
+  // Feature 106: abuse limits for bystander reports (per hour).
+  bystander: { perIpPerHour: 5, perPatientPerHour: 3 },
+  // Feature 9: test alerts per contact per hour.
+  testAlertsPerContactPerHour: 3,
 
   mail: {
     provider: process.env.MAIL_PROVIDER || 'console', // 'console' | 'resend'

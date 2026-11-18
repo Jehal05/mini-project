@@ -3,6 +3,10 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 export const BLOOD_GROUPS = Object.freeze(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
+export const CARDIAC_CONDITION_TYPES = Object.freeze(['heart_attack', 'stent', 'bypass', 'arrhythmia', 'heart_failure', 'other']);
+
+// Explicit sub-schema: a literal object with a `type` key inside an array would be read as a type declaration.
+const cardiacConditionSchema = new Schema({ type: { type: String, trim: true }, year: Number, notes: String });
 
 const emergencyContactSchema = new Schema(
   {
@@ -53,7 +57,7 @@ const patientSchema = new Schema(
     },
 
     // Module 2 - medical profile (Phase 2)
-    cardiacConditions: [{ type: { type: String, trim: true }, year: Number, notes: String }],
+    cardiacConditions: [cardiacConditionSchema],
     medicalConditions: [{ name: { type: String, trim: true }, notes: String }],
     allergies: [{ allergen: { type: String, trim: true }, reaction: String, severity: { type: String, enum: ['mild', 'moderate', 'severe'] } }],
     medications: [{ drug: { type: String, trim: true }, dose: String, frequency: String, isBloodThinner: { type: Boolean, default: false } }],

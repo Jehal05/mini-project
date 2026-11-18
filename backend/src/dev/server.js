@@ -17,6 +17,7 @@ import cors from 'cors'
 import mongoose from 'mongoose'
 import { Server } from 'socket.io'
 import { attachSimulation } from '../simulation/index.js'
+import { attachDetection } from '../detection/index.js'
 import { seedPatients, backfillHistory } from './seed.js'
 
 const PORT = Number(process.env.PORT ?? 4000)
@@ -58,10 +59,12 @@ async function main() {
   const server = http.createServer(app)
   const io = new Server(server, { cors: { origin: CLIENT_ORIGIN, credentials: true } })
   const engine = await attachSimulation({ app, io })
+  const detection = await attachDetection({ app, io, engine })
+  detection.onCaseCreated((c) => console.log(`[dev] emergency case ${c.caseId} opened for ${c.patientCode} (awaiting confirmation)`))
 
   server.listen(PORT, () => {
     console.log(`[dev] HealthTwin monitoring on http://localhost:${PORT}  (db: ${db.where})`)
-    console.log(`[dev] monitoring ${engine.list().length} fictional patients; REST under /api/sim`)
+    console.log(`[dev] monitoring ${engine.list().length} fictional patients; REST under /api/sim and /api/detection`)
     console.log(
       process.env.PRESENTER_KEY
         ? '[dev] presenter controls need the PRESENTER_KEY (x-presenter-key header)'
@@ -70,6 +73,7 @@ async function main() {
   })
 
   const shutdown = async () => {
+    detection.stop()
     engine.stop()
     io.close()
     server.close()

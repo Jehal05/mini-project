@@ -56,7 +56,8 @@ const detectionSchema = new Schema(
     rulesFired: [
       {
         _id: false,
-        rule: { type: String, required: true }, // e.g. 'multi:hr>120&spo2<90', 'baseline:hr+40%'
+        rule: { type: String, required: true }, // rule id from the detection rule table, e.g. 'multi:tachycardia-hypoxia'
+        level: Number, // severity level the rule produces (1-3)
         vital: String,
         value: Number,
         threshold: Number,
@@ -224,6 +225,17 @@ emergencyCaseSchema.index({ status: 1, severity: -1, createdAt: 1 }) // feature 
 emergencyCaseSchema.index({ 'hospitalResponses.hospital': 1, createdAt: -1 }) // feature 90
 emergencyCaseSchema.index({ 'location.point': '2dsphere' }) // command-centre map
 
+// One live case per patient (feature 39, and the SOS button in feature 41 must join it
+// rather than open a second). The database enforces it, so two server processes or two
+// simultaneous detections cannot both open a case. Needs MongoDB 6.0+ (a partial index
+// with $in); on 5.x the index is skipped with a warning and detection still prevents
+// duplicates inside one process.
+export const ONE_ACTIVE_CASE_INDEX = 'one_active_case_per_patient'
+emergencyCaseSchema.index(
+  { patient: 1 },
+  { unique: true, name: ONE_ACTIVE_CASE_INDEX, partialFilterExpression: { status: { $in: [...ACTIVE_STATUSES] } } },
+)
+
 // Feature 49: a cancelled case must carry a reason. A path validator (not a hook)
 // so it also runs in validateSync().
 emergencyCaseSchema.path('status').validate(function requireCancelReason(status) {
@@ -296,4 +308,8 @@ emergencyCaseSchema.statics.acceptIfPending = function acceptIfPending(caseId, h
 emergencyCaseSchema.set('toJSON', { virtuals: true })
 
 export const EmergencyCase = mongoose.models.EmergencyCase || mongoose.model('EmergencyCase', emergencyCaseSchema)
+const CANNOT_CREATE_INDEX = 67
+EmergencyCase.on('index', (err) => {
+  if (err?.code === CANNOT_CREATE_INDEX) console.warn(`[EmergencyCase] could not build an index (${err.message}). The one-active-case-per-patient guard needs MongoDB 6.0+.`)
+})
 export default EmergencyCase

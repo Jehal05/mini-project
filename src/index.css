@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Map markers (Leaflet divIcons) */
+.map-emoji {
+  font-size: 24px;
+  line-height: 28px;
+  text-align: center;
+}
+
+.map-ambulance {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.map-ambulance span {
+  font-size: 20px;
+}
+
+.map-ambulance b {
+  font-size: 10px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0 3px;
+  color: #334155;
+}
+
+.map-ambulance .busy {
+  filter: drop-shadow(0 0 4px #dc2626);
+}
+
+.leaflet-container {
+  z-index: 0;
+}

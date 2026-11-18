@@ -88,8 +88,9 @@ export class SimulationEngine {
    * @param {() => number} [opts.rng]
    * @param {() => number} [opts.now]  clock in ms
    * @param {object} [opts.thresholds] admin thresholds (feature 36); defaults to shared/vitals.js
+   * @param {object} [opts.logger]     anything with .warn() (defaults to console)
    */
-  constructor({ io = null, store, tickMs = 2000, saveEveryMs = 30_000, rng = Math.random, now = Date.now, thresholds } = {}) {
+  constructor({ io = null, store, tickMs = 2000, saveEveryMs = 30_000, rng = Math.random, now = Date.now, thresholds, logger = console } = {}) {
     if (!store) throw new Error('SimulationEngine needs a store')
     this.io = io
     this.store = store
@@ -98,16 +99,30 @@ export class SimulationEngine {
     this.rng = rng
     this.now = now
     this.thresholds = thresholds
+    this.logger = logger
     this.patients = new Map()
+    this.adding = new Map() // patientId -> in-flight addPatient promise
     this.timer = null
     this.listeners = new Set()
+    this.ticking = false
+    this.skippedTicks = 0
   }
 
-  /** Start monitoring a patient. Continues from their last saved reading and scenario if any. */
-  async addPatient(patient) {
+  /**
+   * Start monitoring a patient. Continues from their last saved reading and scenario if any.
+   * Safe to call concurrently: callers for the same patient share one in-flight start,
+   * so monitoring never starts twice (review item 5).
+   */
+  addPatient(patient) {
     const id = String(patient._id)
-    if (this.patients.has(id)) return this.snapshot(id)
+    if (this.patients.has(id)) return Promise.resolve(this.snapshot(id))
+    if (this.adding.has(id)) return this.adding.get(id)
+    const pending = this.startMonitoring(id, patient).finally(() => this.adding.delete(id))
+    this.adding.set(id, pending)
+    return pending
+  }
 
+  async startMonitoring(id, patient) {
     const baseline = computeBaseline(patient)
     const [last, lastScenario] = await Promise.all([this.store.loadLastReading(id), this.store.loadLastScenario(id)])
     const scenario = isScenario(lastScenario) ? lastScenario : 'stable'
@@ -275,10 +290,33 @@ export class SimulationEngine {
     return [...this.patients.keys()].map((id) => this.snapshot(id))
   }
 
+  /**
+   * Run one tick unless the previous one is still running (e.g. MongoDB is slow).
+   * Overlapping ticks would interleave state updates and saves (review item 4).
+   * Returns true if the tick ran, false if it was skipped.
+   */
+  async runTick() {
+    if (this.ticking) {
+      this.skippedTicks += 1
+      this.logger.warn(`[simulation] previous tick still running; skipped a tick (${this.skippedTicks} skipped so far)`)
+      return false
+    }
+    this.ticking = true
+    try {
+      await this.tick()
+      return true
+    } catch (err) {
+      this.logger.error?.('[simulation] tick failed:', err)
+      return false
+    } finally {
+      this.ticking = false
+    }
+  }
+
   start() {
     if (this.timer) return
     this.timer = setInterval(() => {
-      this.tick().catch((err) => console.error('[simulation] tick failed:', err))
+      this.runTick()
     }, this.tickMs)
     this.timer.unref?.()
   }

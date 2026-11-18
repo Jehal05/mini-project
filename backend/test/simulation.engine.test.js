@@ -236,9 +236,9 @@ describe('ticking, emitting and saving', () => {
       const { engine } = makeEngine()
       const spy = vi.spyOn(engine, 'tick').mockResolvedValue()
       engine.start()
-      vi.advanceTimersByTime(6000)
+      await vi.advanceTimersByTimeAsync(6000)
       engine.stop()
-      vi.advanceTimersByTime(6000)
+      await vi.advanceTimersByTimeAsync(6000)
       expect(spy).toHaveBeenCalledTimes(3)
     } finally {
       vi.useRealTimers()
@@ -253,5 +253,39 @@ describe('history generator', () => {
     expect(h).toHaveLength(13)
     expect(h[1].recordedAt - h[0].recordedAt).toBe(300_000)
     expect(Math.abs(mean(h.map((x) => x.vitals.hr)) - b.hr)).toBeLessThan(5)
+  })
+})
+
+describe('review fixes: robustness', () => {
+  it('item 4: skips a tick while the previous one is still running, and logs it', async () => {
+    let release
+    const slow = memoryStore()
+    slow.saveReading = () => new Promise((r) => (release = r)) // MongoDB "hangs"
+    const logger = { warn: vi.fn(), error: vi.fn() }
+    let t = Date.parse('2026-11-18T08:00:00Z')
+    const engine = new SimulationEngine({ store: slow, rng: seededRng(1), now: () => (t += 2000), logger })
+    await engine.addPatient(RAHUL)
+
+    const first = engine.runTick() // starts, blocks on the save
+    expect(await engine.runTick()).toBe(false) // overlapping tick is skipped
+    expect(engine.skippedTicks).toBe(1)
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringMatching(/skipped a tick/))
+
+    release()
+    expect(await first).toBe(true)
+    expect(await engine.runTick()).toBe(true) // runs normally again
+  })
+
+  it('item 5: concurrent addPatient calls start monitoring only once', async () => {
+    const store = memoryStore()
+    const load = vi.spyOn(store, 'loadLastReading')
+    const engine = new SimulationEngine({ store, rng: seededRng(1) })
+    const [a, b, c] = await Promise.all([engine.addPatient(RAHUL), engine.addPatient(RAHUL), engine.addPatient(RAHUL)])
+    expect(load).toHaveBeenCalledTimes(1)
+    expect(store.events.filter((e) => e.type === 'monitoring_started')).toHaveLength(1)
+    expect(a).toEqual(b)
+    expect(b).toEqual(c)
+    expect(engine.list()).toHaveLength(1)
+    expect(engine.adding.size).toBe(0) // nothing left in flight
   })
 })

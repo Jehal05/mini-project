@@ -1,14 +1,8 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
-import { config } from '../config/env.js';
 import * as auth from '../controllers/auth.controller.js';
 import { authenticate, requireCsrfHeader, validate } from '../middleware/index.js';
+import { limiter } from '../middleware/rateLimit.js';
 import { forgotSchema, loginSchema, registerSchema, resetSchema } from '../utils/schemas.js';
-
-const limiter = (max, windowMs = 15 * 60 * 1000) =>
-  config.rateLimitEnabled
-    ? rateLimit({ windowMs, limit: max, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: { code: 'TOO_MANY_REQUESTS', message: 'Too many requests. Try again later.' } } })
-    : (_req, _res, next) => next();
 
 const router = Router();
 

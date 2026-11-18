@@ -1,4 +1,6 @@
+import fs from 'node:fs/promises';
 import mongoose from 'mongoose';
+import { config } from '../src/config/env.js';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { connectDb } from '../src/config/db.js';
 import { drainBackground } from '../src/utils/background.js';
@@ -14,6 +16,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  await fs.rm(config.uploads.dir, { recursive: true, force: true }); // fresh upload folder per test
   await drainBackground(); // late work from the previous test must not leak into this one
   const collections = await mongoose.connection.db.collections();
   await Promise.all(collections.map((c) => c.deleteMany({})));

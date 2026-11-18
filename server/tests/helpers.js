@@ -54,3 +54,23 @@ export async function lastMailToken() {
   await drainBackground();
   return new URL(outbox.at(-1).text.match(/https?:\/\/\S+/)[0]).searchParams.get('token');
 }
+
+// ---- Phase 2 helpers ----
+import { Patient } from '../src/models/index.js';
+
+/** A registered, logged-in patient with a token. */
+export async function patientSession(over = {}) {
+  const ag = agent();
+  const email = over.email ?? `p${Math.random().toString(36).slice(2, 9)}@test.example`;
+  const reg = await ag.post('/api/auth/register').send(validRegistration({ email, ...over }));
+  const login = await ag.post('/api/auth/login/patient').send({ identifier: email, password: PASSWORD });
+  const token = login.body.accessToken;
+  const patient = await Patient.findOne({ user: (await User.findOne({ email: email.toLowerCase() }))._id });
+  return { agent: ag, token, auth: bearer(token), patient, email };
+}
+
+export const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]), Buffer.from('JFIF\0\x01\x01\0\0\x01\0\x01\0\0'), Buffer.from([0xff, 0xd9])]);
+export const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+export const PDF = Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
+
+export const contact = (over = {}) => ({ name: 'Anita Sharma', relation: 'Spouse', phone: '+91 98765 43210', email: 'anita@example.com', ...over });

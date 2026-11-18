@@ -89,3 +89,31 @@ revokes the whole login), idle sessions end after 30 minutes.
   address has an account. `MAIL_PROVIDER=console` (default) prints the link to the server log; `resend` uses the Email API.
 - **Rate limits** (per IP, 15 minutes): login 30, register 20, forgot/reset 10. Set `RATE_LIMIT=off` to disable locally,
   and `TRUST_PROXY=true` behind a proxy so every user does not share one address.
+
+## Phase 2: medical profile and QR passport (Jehal)
+
+### Routes
+Patient (token decides whose record; nothing in the URL or body can pick another patient), all under `/api/patients/me`:
+`GET /`, `PATCH /personal`, `PUT /preferences`, `PUT|GET|DELETE /photo`, `POST|PATCH /:id|DELETE /:id` for each of
+`cardiacConditions medicalConditions allergies medications hospitalizations familyHistory`, `POST|PATCH|DELETE /contacts`,
+`PUT /contacts/order`, `POST /contacts/:id/test-alert`, `GET|POST /documents`, `GET|DELETE /documents/:id[/file]`,
+`GET /qr`, `POST /qr/regenerate`.
+
+Public passport, under `/api/passport/:token` (rate-limited per IP; malformed, unknown and revoked tokens give the same 404 `PASSPORT_NOT_FOUND`):
+`GET /` emergency tier only, `GET /photo`, `POST /report` (bystander), and for `doctor`, `hospital_staff`, `hospital_admin` only:
+`GET /full` and `GET /full/documents/:docId/file` (each view is written to the audit log before anything is returned).
+
+### For teammates
+- `import { getEmergencySummary } from './services/patientSummary.js'` takes a Patient document, `_id` or `HT-YYYY-NNNN` and returns
+  `{ patientId, bloodGroup, hasPhoto, severeAllergies[{allergen,reaction}], cardiacHistory[{type,year}], emergencyContact{name,relation,phone} }` (or `null`).
+- **Daksh (SOS):** a bystander tap emits `emergency:bystander_report` on `appEvents` (`src/events.js`) with
+  `{ reportId, patient, patientId, location{latitude,longitude,accuracyMeters?}, reportedAt }`. The report is saved as a `BystanderReport` with status `pending`;
+  turning it into an EmergencyCase (and setting status `handed_off`) is the SOS flow's job. Nothing here creates a case.
+- **Phase 3 / hospital flow:** a hospitalization with `dischargeSummaryId` is read-only for the patient. Hospital logins read a patient through `/api/passport/:token/full`.
+- Client: `import { SevereAllergyBanner } from 'features/profile'` shows the red banner anywhere a patient record is displayed.
+
+### Rules enforced (and tested)
+Contact limit (3), unique priorities, section size (50), document count (50), test alerts (3 per contact per hour), bystander reports (per IP and per patient)
+are all enforced in a single database operation, so parallel requests cannot go past them. Audit entries hold the patient ID, section and operation only, never health text or the QR token.
+Uploaded files get a random name, live in `UPLOAD_DIR` (default `server/uploads/`, git-ignored, not served statically), and are returned only through authenticated routes.
+Photos have metadata (EXIF) removed before storing.

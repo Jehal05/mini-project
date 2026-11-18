@@ -2,8 +2,9 @@ import bcrypt from 'bcryptjs';
 import { pathToFileURL } from 'node:url';
 import { connectDb, disconnectDb } from '../config/db.js';
 import { config } from '../config/env.js';
-import { Counter, Hospital, Patient, User } from '../models/index.js';
+import { Counter, Document, Hospital, Patient, User } from '../models/index.js';
 import { randomToken } from '../utils/crypto.js';
+import { deleteFile, saveFile } from '../utils/storage.js';
 
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD || 'Demo@12345';
 
@@ -53,13 +54,13 @@ export async function seed({ log = console.log } = {}) {
       bloodGroup: 'B+',
       consent: { dataUse: true, location: true },
       emergencyContacts: [{ name: 'Priya Sharma (fictional)', relation: 'Spouse', phone: '+919876500002', email: 'priya.sharma@example.com', priority: 1 }],
-      cardiacConditions: [{ type: 'Previous cardiac condition', year: 2022 }],
-      qrToken: randomToken(32),
+            qrToken: randomToken(32),
     });
     log('+ patient         rahul.sharma@example.com  (HT-2026-0001)');
   } else {
     log('= patient         rahul.sharma@example.com (already there)');
   }
+  await seedRahulProfile(log);
   log(`\nDemo password for every seeded account: ${DEMO_PASSWORD}  (fictional data, development only)`);
 }
 
@@ -68,4 +69,35 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   await connectDb();
   await seed();
   await disconnectDb();
+}
+
+const DEMO_PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 100]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n');
+
+/** Phase 2: Rahul's full medical profile. Each part is added only if it is still empty, so re-running never duplicates or overwrites edits. */
+export async function seedRahulProfile(log = console.log) {
+  const patient = await Patient.findOne({ patientId: 'HT-2026-0001' });
+  if (!patient) return;
+  const fill = async (field, value, label) => {
+    const done = await Patient.updateOne({ _id: patient._id, [`${field}.0`]: { $exists: false } }, { $set: { [field]: value } });
+    if (done.modifiedCount) log(`+ profile         ${label}`);
+  };
+  await fill('cardiacConditions', [{ type: 'stent', year: 2022, notes: 'Drug-eluting stent in the LAD artery' }], 'cardiac: stent (2022)');
+  await fill('medicalConditions', [{ name: 'Hypertension' }, { name: 'Type 2 diabetes' }], 'conditions');
+  await fill('allergies', [{ allergen: 'Penicillin', reaction: 'Anaphylaxis', severity: 'severe' }, { allergen: 'Pollen', reaction: 'Sneezing', severity: 'mild' }], 'allergies (severe: penicillin)');
+  await fill('medications', [{ drug: 'Clopidogrel', dose: '75 mg', frequency: 'Once daily' }, { drug: 'Atorvastatin', dose: '20 mg', frequency: 'Night' }], 'medications (blood thinner: clopidogrel)');
+  await fill('hospitalizations', [{ hospital: 'City Care Hospital, Pune (fictional)', admittedOn: new Date('2022-06-10'), dischargedOn: new Date('2022-06-16'), reason: 'Chest pain, stent placement' }], 'hospitalization (2022)');
+  await fill('familyHistory', [{ relative: 'Father', condition: 'Heart attack', ageAtDiagnosis: 50 }], 'family history');
+
+  const hasDoc = await Document.exists({ patient: patient._id });
+  if (!hasDoc) {
+    const storedName = await saveFile('documents', DEMO_PDF, 'pdf');
+    try {
+      await Document.create({ patient: patient._id, type: 'ecg', originalName: 'ecg-june-2022 (demo).pdf', storedName, mimeType: 'application/pdf', size: DEMO_PDF.length });
+      await Counter.updateOne({ _id: `documents:${patient._id}` }, { $max: { seq: 1 } }, { upsert: true });
+      log('+ profile         document: ECG (demo PDF)');
+    } catch (err) {
+      await deleteFile('documents', storedName);
+      throw err;
+    }
+  }
 }

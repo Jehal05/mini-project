@@ -52,3 +52,30 @@ describe('demo seed', () => {
     expect(res.body.user.patient.patientId).toBe(year === 2026 ? 'HT-2026-0002' : `HT-${year}-0001`);
   });
 });
+
+describe('demo seed: Rahul\'s full profile', () => {
+  it('has the stent, severe allergy, blood thinner, family history, hospitalization and a document', async () => {
+    const { Document } = await import('../src/models/index.js');
+    const { getEmergencySummary, presentPatient } = await import('../src/services/patientSummary.js');
+    await seed(quiet);
+    const rahul = await Patient.findOne({ patientId: 'HT-2026-0001' });
+    expect(rahul.cardiacConditions.map((c) => [c.type, c.year])).toEqual([['stent', 2022]]);
+    expect(rahul.familyHistory[0]).toMatchObject({ relative: 'Father', condition: 'Heart attack', ageAtDiagnosis: 50 });
+    expect(rahul.hospitalizations).toHaveLength(1);
+    expect(presentPatient(rahul).medications.some((m) => m.isBloodThinner)).toBe(true);
+    expect((await getEmergencySummary(rahul)).severeAllergies[0].allergen).toBe('Penicillin');
+    expect(await Document.countDocuments({ patient: rahul._id })).toBe(1);
+  });
+
+  it('can be re-run without duplicating, and keeps the patient\'s own edits', async () => {
+    const { Document } = await import('../src/models/index.js');
+    await seed(quiet);
+    await Patient.updateOne({ patientId: 'HT-2026-0001' }, { $push: { allergies: { allergen: 'Latex', severity: 'moderate' } } });
+    await seed(quiet);
+    await seed(quiet);
+    const rahul = await Patient.findOne({ patientId: 'HT-2026-0001' });
+    expect(rahul.allergies.map((a) => a.allergen)).toEqual(['Penicillin', 'Pollen', 'Latex']);
+    expect(rahul.medications).toHaveLength(2);
+    expect(await Document.countDocuments()).toBe(1);
+  });
+});

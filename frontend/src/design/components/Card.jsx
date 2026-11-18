@@ -17,7 +17,7 @@ export function Card({ title, subtitle, action, status, as: Tag = 'section', cla
     <Tag
       className={cx(
         'rounded-2xl border border-line bg-surface backdrop-blur-xl',
-        'shadow-[0_8px_32px_-12px_rgb(0_0_0/0.5)]',
+        'shadow-[0_8px_32px_-12px_var(--ht-shadow)]',
         status && cx('border-l-4', EDGE[status]),
         className,
       )}

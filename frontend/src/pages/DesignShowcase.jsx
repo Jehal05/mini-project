@@ -15,13 +15,14 @@ import {
   useTheme,
 } from '../design/index.js'
 import { PortalNav } from '../components/PortalNav.jsx'
+import { useTokens } from '../features/monitoring/useTokens.js'
 
 const TOKENS = [
-  ['Primary', 'bg-primary', '#00C2FF', 'Buttons, links, charts'],
-  ['Accent', 'bg-accent', '#7C5CFF', '3D lighting, highlights'],
-  ['Normal', 'bg-normal', '#22C55E', 'Normal status'],
-  ['Warning', 'bg-warning', '#F59E0B', 'Warning status'],
-  ['Critical', 'bg-critical', '#EF4444', 'Critical, SOS and takeover only'],
+  ['Primary', 'bg-primary', 'primary', 'Buttons, links, charts'],
+  ['Accent', 'bg-accent', 'accent', '3D lighting, highlights'],
+  ['Normal', 'bg-normal', 'normal', 'Normal status'],
+  ['Warning', 'bg-warning', 'warning', 'Warning status'],
+  ['Critical', 'bg-critical', 'critical', 'Critical, SOS and takeover only'],
 ]
 
 const STABLE = { hr: 78, sys: 124, spo2: 98, temp: 36.8, rr: 16 }
@@ -35,6 +36,7 @@ const PATIENTS = [
 
 export default function DesignShowcase() {
   const { theme, toggleTheme, motionPaused, toggleMotion } = useTheme()
+  const tokens = useTokens()
   const [portal, setPortal] = useState('patient')
   const [alert, setAlert] = useState(false)
   const [cardiac, setCardiac] = useState(false)
@@ -80,13 +82,13 @@ export default function DesignShowcase() {
         </Card>
 
         <section className="mt-6" aria-labelledby="tokens">
-          <h2 id="tokens" className="text-sm font-semibold uppercase tracking-wide text-fg-muted">Colour tokens (dark-theme values)</h2>
+          <h2 id="tokens" className="text-sm font-semibold uppercase tracking-wide text-fg-muted">Colour tokens (current theme)</h2>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            {TOKENS.map(([name, cls, hex, use]) => (
+            {TOKENS.map(([name, cls, token, use]) => (
               <div key={name} className="rounded-2xl border border-line bg-surface p-3 backdrop-blur-xl">
                 <div className={`h-10 rounded-lg ${cls}`} />
                 <p className="mt-2 text-sm font-semibold">{name}</p>
-                <p className="font-mono text-xs text-fg-muted">{hex}</p>
+                <p className="font-mono text-xs uppercase text-fg-muted">{tokens[token]}</p>
                 <p className="mt-1 text-xs text-fg-muted">{use}</p>
               </div>
             ))}

@@ -87,7 +87,7 @@ export function EcgStrip({ bpm, status = 'normal', height = 120 }) {
   }, [color, moving, height])
 
   return (
-    <div className="ht-ecg-grid relative overflow-hidden rounded-xl border border-line bg-black/20">
+    <div className="ht-ecg-grid relative overflow-hidden rounded-xl border border-line bg-monitor">
       <canvas
         ref={canvasRef}
         role="img"

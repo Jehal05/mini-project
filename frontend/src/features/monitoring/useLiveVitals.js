@@ -1,14 +1,21 @@
 // Live vitals for one patient over Socket.IO (event vitals:update, room patient:<id>).
 import { useEffect, useState } from 'react'
-import { io } from 'socket.io-client'
 import { API_URL } from './api.js'
 
-let socket = null
+let socketPromise = null
 
-/** One shared connection for the whole app. */
+/**
+ * One shared connection for the whole app. The Socket.IO client is loaded on first
+ * use rather than in the first-screen bundle (review 10): the page paints from the
+ * REST snapshot first and switches to live updates a moment later.
+ */
 export function getSocket() {
-  if (!socket) socket = io(API_URL, { transports: ['websocket', 'polling'], withCredentials: true })
-  return socket
+  if (!socketPromise) {
+    socketPromise = import('socket.io-client').then(({ io }) =>
+      io(API_URL, { transports: ['websocket', 'polling'], withCredentials: true }),
+    )
+  }
+  return socketPromise
 }
 
 export function useLiveVitals(patientId) {
@@ -17,33 +24,42 @@ export function useLiveVitals(patientId) {
 
   useEffect(() => {
     if (!patientId) return undefined
-    const s = getSocket()
     setLive(null)
+    let active = true
+    let detach = () => {}
 
-    const subscribe = () => {
-      s.emit('vitals:subscribe', { patientId }, (ack) => {
-        if (ack?.snapshot) setLive(ack.snapshot)
-      })
-    }
-    const onUpdate = (payload) => {
-      if (payload.patientId === patientId) setLive(payload)
-    }
-    const onConnect = () => {
-      setConnected(true)
-      subscribe() // also re-subscribes after a reconnect
-    }
-    const onDisconnect = () => setConnected(false)
+    getSocket().then((s) => {
+      if (!active) return
+      const subscribe = () => {
+        s.emit('vitals:subscribe', { patientId }, (ack) => {
+          if (active && ack?.snapshot) setLive(ack.snapshot)
+        })
+      }
+      const onUpdate = (payload) => {
+        if (payload.patientId === patientId) setLive(payload)
+      }
+      const onConnect = () => {
+        setConnected(true)
+        subscribe() // also re-subscribes after a reconnect
+      }
+      const onDisconnect = () => setConnected(false)
 
-    s.on('connect', onConnect)
-    s.on('disconnect', onDisconnect)
-    s.on('vitals:update', onUpdate)
-    if (s.connected) onConnect()
+      s.on('connect', onConnect)
+      s.on('disconnect', onDisconnect)
+      s.on('vitals:update', onUpdate)
+      if (s.connected) onConnect()
+
+      detach = () => {
+        s.emit('vitals:unsubscribe', { patientId })
+        s.off('connect', onConnect)
+        s.off('disconnect', onDisconnect)
+        s.off('vitals:update', onUpdate)
+      }
+    })
 
     return () => {
-      s.emit('vitals:unsubscribe', { patientId })
-      s.off('connect', onConnect)
-      s.off('disconnect', onDisconnect)
-      s.off('vitals:update', onUpdate)
+      active = false
+      detach()
     }
   }, [patientId])
 

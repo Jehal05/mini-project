@@ -8,7 +8,7 @@ const NAMES = ['primary', 'accent', 'normal', 'warning', 'critical', 'fg', 'fg-m
 function read() {
   const css = typeof window !== 'undefined' ? getComputedStyle(document.documentElement) : null
   const out = {}
-  for (const n of NAMES) out[n] = css?.getPropertyValue(`--ht-${n}`).trim() || '#888888'
+  for (const n of NAMES) out[n] = css?.getPropertyValue(`--ht-${n}`).trim() || 'currentColor'
   return out
 }
 

@@ -35,6 +35,8 @@ export function HistoryChart({ patientId, live }) {
   useEffect(() => {
     if (!patientId) return undefined
     let cancelled = false
+    // Start clean: never show the previous patient's (or range's) points while loading (review 6).
+    setPoints([])
     const load = () =>
       monitoringApi
         .history(patientId, range)
@@ -53,10 +55,10 @@ export function HistoryChart({ patientId, live }) {
     }
   }, [patientId, range])
 
-  // Last hour is live: append every 2-second update.
+  // Last hour is live: append every 2-second update, but only this patient's (review 6).
   useEffect(() => {
-    if (range === '1h' && live && state === 'ready') setPoints((prev) => mergeLive(prev, live))
-  }, [live, range, state])
+    if (range === '1h' && live && state === 'ready' && live.patientId === patientId) setPoints((prev) => mergeLive(prev, live))
+  }, [live, range, state, patientId])
 
   const tab = CHART_VITALS.find((v) => v.key === vital)
   const guides = thresholdGuides(tab.lines[0])
@@ -88,7 +90,7 @@ export function HistoryChart({ patientId, live }) {
         </div>
       </div>
 
-      <div className="mt-4 h-64" data-testid="history-chart">
+      <div className="mt-4 h-64" data-testid="history-chart" data-points={points.length}>
         {state === 'error' ? (
           <p className="pt-24 text-center text-sm text-fg-muted">Could not load history. Is the backend running?</p>
         ) : points.length === 0 ? (

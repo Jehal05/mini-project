@@ -165,3 +165,28 @@ describe('Presenter key (review 3)', () => {
     expect(screen.queryByLabelText('Presenter key')).not.toBeInTheDocument()
   })
 })
+
+describe('App routes (review 10: lazy-loaded pages)', () => {
+  it('loads the presenter page on demand and redirects / to Rahul', async () => {
+    const { default: App } = await import('../App.jsx')
+    const { unmount } = render(
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/presenter']}>
+          <App />
+        </MemoryRouter>
+      </ThemeProvider>,
+    )
+    expect(await screen.findByRole('heading', { name: 'Presenter control panel' })).toBeInTheDocument()
+    unmount()
+
+    render(
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <App />
+        </MemoryRouter>
+      </ThemeProvider>,
+    )
+    expect(await screen.findByRole('heading', { name: 'Rahul Sharma' })).toBeInTheDocument()
+    expect(api.getPatient).toHaveBeenCalledWith('HT-2026-0001')
+  })
+})

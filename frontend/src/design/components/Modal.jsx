@@ -62,7 +62,7 @@ export function Modal({ open, onClose, title, description, tone, dismissible = t
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
       <div
         data-testid="modal-backdrop"
-        className={cx('absolute inset-0 backdrop-blur-sm', tone === 'critical' ? 'bg-critical/25' : 'bg-black/60')}
+        className={cx('absolute inset-0 backdrop-blur-sm', tone === 'critical' ? 'bg-critical/25' : 'bg-scrim')}
         onClick={dismissible ? onClose : undefined}
       />
       <div

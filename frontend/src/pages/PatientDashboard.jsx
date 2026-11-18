@@ -1,6 +1,6 @@
 // Patient Portal dashboard (Phase 5): live simulated vitals, ECG strip, history,
 // timeline and the SOS button placeholder (the real SOS flow is Phase 7).
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { VITAL_KEYS } from '@shared/vitals.js'
 import { Badge, Button, Card, MedicalBackground, Modal, SimulatedBadge, SimulatedNotice, SosButton, VitalTile } from '../design/index.js'
@@ -8,8 +8,21 @@ import { PortalNav } from '../components/PortalNav.jsx'
 import { monitoringApi } from '../features/monitoring/api.js'
 import { useLiveVitals } from '../features/monitoring/useLiveVitals.js'
 import { EcgStrip } from '../features/monitoring/EcgStrip.jsx'
-import { HistoryChart } from '../features/monitoring/HistoryChart.jsx'
 import { HealthTimeline } from '../features/monitoring/HealthTimeline.jsx'
+
+// The charting library is the heaviest dependency, so the history card loads after
+// the live vitals and ECG are already on screen (review 10).
+const HistoryChart = lazy(() => import('../features/monitoring/HistoryChart.jsx').then((m) => ({ default: m.HistoryChart })))
+
+function ChartLoading() {
+  return (
+    <Card title="Health history">
+      <p className="h-64 pt-24 text-center text-sm text-fg-muted" role="status">
+        Loading charts…
+      </p>
+    </Card>
+  )
+}
 
 const SCENARIO_LABEL = { stable: 'Stable', exercise: 'Exercise', fever: 'Fever', hypoxia: 'Hypoxia', cardiac_event: 'Cardiac event' }
 const STATUS_TEXT = {
@@ -23,7 +36,7 @@ function CallLink({ number, label = `Call ${number}` }) {
   return (
     <a
       href={`tel:${number}`}
-      className="inline-flex h-10 items-center justify-center rounded-xl bg-critical px-4 text-sm font-semibold text-white transition hover:brightness-110"
+      className="inline-flex h-10 items-center justify-center rounded-xl bg-critical-solid px-4 text-sm font-semibold text-critical-fg transition hover:brightness-110"
     >
       {label}
     </a>
@@ -153,7 +166,9 @@ export default function PatientDashboard() {
                   <EcgStrip bpm={live?.vitals?.hr ?? 70} status={live?.statuses?.hr ?? 'normal'} />
                 </Card>
 
-                <HistoryChart patientId={patient.id} live={socketLive} />
+                <Suspense fallback={<ChartLoading />}>
+                  <HistoryChart patientId={patient.id} live={socketLive} />
+                </Suspense>
               </div>
 
               <div className="space-y-6">

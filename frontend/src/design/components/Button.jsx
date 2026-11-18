@@ -6,7 +6,7 @@ const VARIANTS = {
   secondary: 'bg-surface-strong text-fg border border-line backdrop-blur-md hover:bg-surface',
   ghost: 'bg-transparent text-fg hover:bg-surface',
   // Red is reserved for emergencies: use only for SOS, Reject on the takeover screen, and Call 112/108.
-  danger: 'bg-critical text-white hover:brightness-110',
+  danger: 'bg-critical-solid text-critical-fg hover:brightness-110',
 }
 
 const SIZES = {
@@ -56,7 +56,7 @@ export function SosButton({ className, children = 'SOS', label = 'Send emergency
       aria-label={label}
       className={cx(
         'ht-pulse-ring relative inline-flex h-28 w-28 items-center justify-center rounded-full',
-        'bg-critical text-2xl font-extrabold tracking-wider text-white',
+        'bg-critical-solid text-2xl font-extrabold tracking-wider text-critical-fg',
         'shadow-[0_0_40px_-4px_var(--ht-critical)] transition hover:brightness-110 active:scale-95',
         className,
       )}

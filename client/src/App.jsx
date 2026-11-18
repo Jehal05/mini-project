@@ -1,4 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { ProfileLayout } from './features/profile/index.js';
+import DocumentsPage from './features/profile/pages/DocumentsPage.jsx';
+import ContactsPage from './features/profile/pages/ContactsPage.jsx';
+import MedicalPage from './features/profile/pages/MedicalPage.jsx';
+import PersonalPage from './features/profile/pages/PersonalPage.jsx';
+import QrPage from './features/profile/pages/QrPage.jsx';
+import SettingsPage from './features/profile/pages/SettingsPage.jsx';
+import FullRecordPage from './features/profile/public/FullRecordPage.jsx';
+import PassportPage from './features/profile/public/PassportPage.jsx';
+import ScanPage from './features/profile/public/ScanPage.jsx';
 import { PublicOnly, RequireAuth } from './auth/guards.jsx';
 import { portalPath } from './auth/roles.js';
 import { useAuth } from './auth/AuthContext.jsx';
@@ -31,10 +41,25 @@ export default function App() {
       {/* Outside PublicOnly: someone who is signed in can still follow a reset link from their email. */}
       <Route path="/reset-password" element={<ResetPassword />} />
 
+      {/* Public emergency passport: no login, for whoever scans the QR (feature 20, 106). */}
+      <Route path="/p/:token" element={<PassportPage />} />
+      <Route path="/scan" element={<ScanPage />} />
+
       <Route element={<RequireAuth roles={['patient']} />}>
+        <Route path="/patient" element={<PatientHome />} />
+        <Route path="/patient/profile" element={<ProfileLayout />}>
+          <Route index element={<Navigate to="personal" replace />} />
+          <Route path="personal" element={<PersonalPage />} />
+          <Route path="medical" element={<MedicalPage />} />
+          <Route path="contacts" element={<ContactsPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="passport" element={<QrPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
         <Route path="/patient/*" element={<PatientHome />} />
       </Route>
       <Route element={<RequireAuth roles={['doctor', 'hospital_staff', 'hospital_admin']} />}>
+        <Route path="/p/:token/full" element={<FullRecordPage />} />
         <Route path="/hospital/*" element={<HospitalHome />} />
       </Route>
       <Route element={<RequireAuth roles={['central_admin']} />}>

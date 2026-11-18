@@ -234,3 +234,16 @@ describe('emergency contacts', () => {
     expect(res.body.whatsappUrl).toContain('wa.me');
   });
 });
+
+describe('clearing optional fields', () => {
+  it('removes a note when it is sent empty, and refuses to blank a required field', async () => {
+    const s = await patientSession();
+    const added = await api(s).post('/medicalConditions', { name: 'Asthma', notes: 'Mild' });
+    const id = added.body.patient.medicalConditions[0]._id;
+    const res = await api(s).patch(`/medicalConditions/${id}`, { name: 'Asthma', notes: '' });
+    expect(res.status).toBe(200);
+    expect(res.body.patient.medicalConditions[0].notes).toBeUndefined();
+    expect(res.body.patient.medicalConditions[0].name).toBe('Asthma');
+    expect((await api(s).patch(`/medicalConditions/${id}`, { name: '' })).status).toBe(400);
+  });
+});

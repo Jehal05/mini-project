@@ -19,22 +19,23 @@ export const getAccessToken = () => accessToken;
 export const setAccessToken = (token) => { accessToken = token; };
 export const setAuthLostHandler = (fn) => { onAuthLost = fn; };
 
-async function send(path, { method = 'GET', body, auth = true } = {}) {
+async function send(path, { method = 'GET', body, form, as = 'json', auth = true } = {}) {
   let res;
   try {
     res = await fetch(`${BASE}${path}`, {
       method,
       credentials: 'include',
       headers: {
-        ...(body !== undefined && { 'Content-Type': 'application/json' }),
+        ...(body !== undefined && !form && { 'Content-Type': 'application/json' }),
         'X-Requested-With': 'healthtwin',
         ...(auth && accessToken && { Authorization: `Bearer ${accessToken}` }),
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: form ?? (body !== undefined ? JSON.stringify(body) : undefined), // FormData sets its own content type
     });
   } catch {
     throw new ApiRequestError(0, 'NETWORK_ERROR', 'Cannot reach the server. Check your connection and try again.');
   }
+  if (res.ok && as === 'blob') return res.blob();
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const e = data?.error || {};
@@ -88,3 +89,10 @@ export async function api(path, options = {}) {
 }
 
 export const post = (path, body, options) => api(path, { method: 'POST', body: body ?? {}, ...options });
+export const patch = (path, body, options) => api(path, { method: 'PATCH', body, ...options });
+export const put = (path, body, options) => api(path, { method: 'PUT', body: body ?? {}, ...options });
+export const del = (path, options) => api(path, { method: 'DELETE', ...options });
+/** Multipart upload (photo, documents). The browser sets the boundary, so no JSON content type. */
+export const upload = (path, form, method = 'POST') => api(path, { method, form });
+/** Downloads a protected file with the bearer token, for preview (a plain <img src> cannot send it). */
+export const getBlob = (path, options) => api(path, { as: 'blob', ...options });

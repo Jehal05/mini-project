@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 
@@ -13,6 +14,11 @@ export default function PatientHome() {
           {user.email && <div><dt>Email</dt><dd>{user.email}</dd></div>}
           {user.phone && <div><dt>Phone</dt><dd>{user.phone}</dd></div>}
         </dl>
+      </section>
+      <section className="glass-card" aria-labelledby="health">
+        <h2 id="health">Your health profile</h2>
+        <p className="subtitle">Medical history, emergency contacts, documents and your QR passport.</p>
+        <Link className="btn btn-primary" to="/patient/profile">Open my health profile</Link>
       </section>
     </PortalLayout>
   );

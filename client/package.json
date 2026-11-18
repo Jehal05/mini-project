@@ -10,6 +10,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.1",
+    "qrcode.react": "^4.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5"

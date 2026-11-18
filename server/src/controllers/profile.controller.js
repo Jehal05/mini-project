@@ -82,10 +82,13 @@ async function explainMissingItem(req, section, itemId) {
 
 export const updateItem = (section) => async (req, res) => {
   const itemId = oid(req.params.itemId);
-  const set = Object.fromEntries(Object.entries(req.valid).map(([k, v]) => [`${section}.$[el].${k}`, v]));
+  // A field sent as an empty string means "clear it" (validation turns '' into undefined).
+  const cleared = Object.keys(req.valid).filter((k) => req.valid[k] === undefined && typeof req.body[k] === 'string' && req.body[k].trim() === '');
+  const set = Object.fromEntries(Object.entries(req.valid).filter(([, v]) => v !== undefined).map(([k, v]) => [`${section}.$[el].${k}`, v]));
+  const unset = Object.fromEntries(cleared.map((k) => [`${section}.$[el].${k}`, '']));
   const { matchedCount } = await Patient.updateOne(
     { _id: req.patient._id, [section]: { $elemMatch: { _id: itemId, ...hospitalOwned(section) } } },
-    { $set: set },
+    { ...(Object.keys(set).length && { $set: set }), ...(cleared.length && { $unset: unset }) },
     { arrayFilters: [{ 'el._id': itemId }], runValidators: true },
   );
   if (!matchedCount) await explainMissingItem(req, section, itemId);

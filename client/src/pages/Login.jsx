@@ -42,7 +42,7 @@ export default function Login() {
       const user = await login(portal.endpoint, identifier.trim(), password);
       const from = location.state?.from;
       const home = portalPath(user.role);
-      navigate(from && from.startsWith(home) ? from : home, { replace: true });
+      navigate(from && (from.startsWith(home) || (home === '/hospital' && /^\/p\/[a-f0-9]{64}\/full$/.test(from))) ? from : home, { replace: true });
     } catch (err) {
       if (err instanceof ApiRequestError) {
         setFormError(err.status === 400 ? 'Check your details and try again.' : err.message);

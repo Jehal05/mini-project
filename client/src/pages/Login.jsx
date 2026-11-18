@@ -24,7 +24,7 @@ export default function Login() {
     setPortal(p);
     setErrors({});
     setFormError('');
-    setParams(p.key === 'patient' ? {} : { portal: p.key }, { replace: true });
+    setParams(p.key === 'patient' ? {} : { portal: p.key }, { replace: true, state: location.state });
   };
 
   async function onSubmit(e) {

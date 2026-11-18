@@ -1,0 +1,214 @@
+/* HealthTwin AI design tokens (feature 102, owner: Daksh).
+ * Values come from the feature plan's "Colour and type" table.
+ * Use the Tailwind names (bg-primary, text-fg-muted, border-line, text-critical ...)
+ * rather than raw hex values, so dark and light themes both work.
+ *
+ * Rule: red (critical) is ONLY for critical status, SOS and the emergency takeover.
+ */
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ---- Dark theme (default) ---- */
+:root,
+[data-theme='dark'] {
+  --ht-bg-from: #050b18;
+  --ht-bg-to: #0b1a33;
+  --ht-surface: rgb(255 255 255 / 0.06);
+  --ht-surface-strong: rgb(255 255 255 / 0.1);
+  --ht-line: rgb(255 255 255 / 0.1);
+  --ht-fg: #e6edf7;
+  --ht-fg-muted: #94a3b8;
+  --ht-primary: #00c2ff;
+  --ht-primary-fg: #050b18; /* text on primary buttons */
+  --ht-link: #00c2ff;
+  --ht-accent: #7c5cff;
+  --ht-normal: #22c55e;
+  --ht-warning: #f59e0b;
+  --ht-critical: #ef4444;
+  --ht-grid: rgb(0 194 255 / 0.06);
+  --ht-particle: rgb(0 194 255 / 0.12);
+  color-scheme: dark;
+}
+
+/* ---- Light theme ---- */
+/* Cyan text on white fails WCAG AA, so links and text-tinted elements use a deeper cyan. */
+[data-theme='light'] {
+  --ht-bg-from: #f5f8fc;
+  --ht-bg-to: #e6eef8;
+  --ht-surface: rgb(255 255 255 / 0.72);
+  --ht-surface-strong: rgb(255 255 255 / 0.9);
+  --ht-line: rgb(11 26 51 / 0.12);
+  --ht-fg: #0b1a33;
+  --ht-fg-muted: #475569;
+  --ht-primary: #00c2ff;
+  --ht-primary-fg: #050b18;
+  --ht-link: #0369a1;
+  --ht-accent: #6d4aff;
+  --ht-normal: #15803d;
+  --ht-warning: #b45309;
+  --ht-critical: #dc2626;
+  --ht-grid: rgb(3 105 161 / 0.07);
+  --ht-particle: rgb(3 105 161 / 0.1);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg-from: var(--ht-bg-from);
+  --color-bg-to: var(--ht-bg-to);
+  --color-surface: var(--ht-surface);
+  --color-surface-strong: var(--ht-surface-strong);
+  --color-line: var(--ht-line);
+  --color-fg: var(--ht-fg);
+  --color-fg-muted: var(--ht-fg-muted);
+  --color-primary: var(--ht-primary);
+  --color-primary-fg: var(--ht-primary-fg);
+  --color-link: var(--ht-link);
+  --color-accent: var(--ht-accent);
+  --color-normal: var(--ht-normal);
+  --color-warning: var(--ht-warning);
+  --color-critical: var(--ht-critical);
+
+  --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    @apply bg-bg-from font-sans text-fg antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ht-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* ---- Medical backgrounds (MedicalBackground component) ---- */
+.ht-bg {
+  background: linear-gradient(160deg, var(--ht-bg-from) 0%, var(--ht-bg-to) 100%);
+}
+
+/* Faint ECG paper grid: small 8px squares, bold 40px squares */
+.ht-ecg-grid {
+  background-image:
+    linear-gradient(var(--ht-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ht-grid) 1px, transparent 1px),
+    linear-gradient(var(--ht-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ht-grid) 1px, transparent 1px);
+  background-size:
+    40px 40px,
+    40px 40px,
+    8px 8px,
+    8px 8px;
+  background-position: -1px -1px;
+}
+
+/* Central Admin: hospital-blueprint grid */
+.ht-blueprint-grid {
+  background-image:
+    linear-gradient(rgb(124 92 255 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(124 92 255 / 0.08) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.ht-particle {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--ht-particle) 0%, transparent 70%);
+  animation: ht-float 18s ease-in-out infinite;
+}
+
+@keyframes ht-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(12px, -24px, 0);
+  }
+}
+
+/* Patient: soft heartbeat glow */
+.ht-heartbeat-glow {
+  background: radial-gradient(circle at 50% 35%, rgb(0 194 255 / 0.14), transparent 60%);
+  animation: ht-heartbeat 1.6s ease-in-out infinite;
+}
+@keyframes ht-heartbeat {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  15% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  45% {
+    opacity: 0.95;
+  }
+}
+
+/* Hospital: dark red vignette during alerts */
+.ht-alert-vignette {
+  background: radial-gradient(ellipse at center, transparent 45%, rgb(239 68 68 / 0.28) 100%);
+}
+
+/* SOS pulse ring: slow, never flashes more than 3x a second */
+.ht-pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid var(--ht-critical);
+  animation: ht-pulse 2s ease-out infinite;
+}
+@keyframes ht-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* ECG line tracing across headers */
+.ht-ecg-trace {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: ht-trace 3.2s linear infinite;
+}
+@keyframes ht-trace {
+  to {
+    stroke-dashoffset: -600;
+  }
+}
+
+/* Accessibility: respect reduced motion (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  .ht-particle,
+  .ht-heartbeat-glow,
+  .ht-pulse-ring::before,
+  .ht-ecg-trace {
+    animation: none !important;
+  }
+  .ht-ecg-trace {
+    stroke-dashoffset: 0;
+  }
+}
+/* Manual pause control for long loops */
+[data-motion='paused'] .ht-particle,
+[data-motion='paused'] .ht-heartbeat-glow,
+[data-motion='paused'] .ht-pulse-ring::before,
+[data-motion='paused'] .ht-ecg-trace {
+  animation-play-state: paused;
+}

@@ -1,0 +1,17 @@
+{
+  "name": "healthtwin-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "HealthTwin AI backend. This branch holds Daksh's Phase 1 contracts (VitalReading, EmergencyCase); Puneet adds the Express/Socket.IO server.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "mongoose": "^8.16.0"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0",
+    "vitest": "^3.2.0"
+  }
+}

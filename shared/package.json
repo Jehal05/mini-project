@@ -1,0 +1,14 @@
+{
+  "name": "@healthtwin/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared contracts used by the HealthTwin AI backend and all three portals",
+  "main": "vitals.js",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.0"
+  }
+}

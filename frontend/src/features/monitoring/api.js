@@ -26,8 +26,9 @@ export const presenterKey = {
   },
 }
 
-async function request(path, { headers, ...options } = {}) {
-  const res = await fetch(`${BASE}${path}`, {
+/** A fetch helper for one API area, e.g. makeRequest(`${API_URL}/api/detection`). */
+export const makeRequest = (base) => async function request(path, { headers, ...options } = {}) {
+  const res = await fetch(`${base}${path}`, {
     headers: { 'Content-Type': 'application/json', ...headers },
     credentials: 'include',
     ...options,
@@ -38,6 +39,8 @@ async function request(path, { headers, ...options } = {}) {
   }
   return body
 }
+
+const request = makeRequest(BASE)
 
 export const monitoringApi = {
   listPatients: () => request('/patients'),

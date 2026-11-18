@@ -6,7 +6,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ThemeProvider } from '../design/index.js'
 
 const liveState = { live: null, connected: true }
-vi.mock('../features/monitoring/useLiveVitals.js', () => ({ useLiveVitals: () => liveState }))
+const fakeSocket = vi.hoisted(() => ({ on: vi.fn(), off: vi.fn(), emit: vi.fn(), connected: false }))
+vi.mock('../features/monitoring/useLiveVitals.js', () => ({ useLiveVitals: () => liveState, getSocket: () => Promise.resolve(fakeSocket) }))
 
 const api = vi.hoisted(() => ({
   listPatients: vi.fn(),
@@ -19,7 +20,10 @@ const api = vi.hoisted(() => ({
 const keyStore = vi.hoisted(() => ({ value: '', get: vi.fn(), set: vi.fn() }))
 keyStore.get.mockImplementation(() => keyStore.value)
 keyStore.set.mockImplementation((v) => (keyStore.value = v))
-vi.mock('../features/monitoring/api.js', () => ({ monitoringApi: api, presenterKey: keyStore, API_URL: 'http://test' }))
+vi.mock('../features/monitoring/api.js', () => ({ monitoringApi: api, presenterKey: keyStore, API_URL: 'http://test', makeRequest: () => vi.fn() }))
+
+const detApi = vi.hoisted(() => ({ statuses: vi.fn(), status: vi.fn(), detections: vi.fn() }))
+vi.mock('../features/detection/api.js', () => ({ detectionApi: detApi }))
 
 const { default: PatientDashboard } = await import('./PatientDashboard.jsx')
 const { default: PresenterPanel } = await import('./PresenterPanel.jsx')
@@ -32,6 +36,18 @@ const snapshot = (vitals, status, scenario = 'stable') => ({
   status,
   scenario,
   simulated: true,
+})
+const detectionStatus = (level, extra = {}) => ({
+  patientId: 'id1',
+  patientCode: 'HT-2026-0001',
+  level,
+  severity: level ? { level, label: `Level ${level}` } : null,
+  primary: level ? { rule: 'multi:tachycardia-hypoxia', level, message: 'Very fast heart rate with low oxygen: Heart rate 136 BPM is above 120' } : null,
+  rules: level ? [{ rule: 'multi:tachycardia-hypoxia', level, message: 'Very fast heart rate with low oxygen: Heart rate 136 BPM is above 120' }] : [],
+  risk: level === 3 ? { score: 82, level: 'high', label: 'High', breakdown: [{ factor: 'Age 45', points: 5.3 }] } : { score: 25, level: 'low', label: 'Low', breakdown: [{ factor: 'Previous cardiac condition', points: 20 }] },
+  case: null,
+  simulated: true,
+  ...extra,
 })
 const STABLE = snapshot({ hr: 78, sys: 124, dia: 76, spo2: 98, temp: 36.8, rr: 15 }, 'normal')
 const CARDIAC = snapshot({ hr: 136, sys: 170, dia: 103, spo2: 86, temp: 37, rr: 27 }, 'critical', 'cardiac_event')
@@ -76,6 +92,9 @@ beforeEach(() => {
     { key: 'cardiac_event', label: 'Cardiac event', description: '' },
   ])
   api.setScenario.mockResolvedValue({ ...CARDIAC })
+  detApi.status.mockResolvedValue(detectionStatus(0))
+  detApi.statuses.mockResolvedValue([detectionStatus(0)])
+  detApi.detections.mockResolvedValue({ items: [], page: 1, pages: 1, total: 0, limit: 6 })
 })
 
 describe('Patient dashboard', () => {
@@ -125,6 +144,25 @@ describe('Patient dashboard', () => {
     expect(within(dialog).getByRole('link', { name: 'Call 108 ambulance' })).toHaveAttribute('href', 'tel:108')
   })
 
+  it('shows the detection panel (lazy) and the risk gauge (features 37, 38)', async () => {
+    renderAt('/patient/HT-2026-0001', <PatientDashboard />)
+    await screen.findByRole('heading', { name: 'Rahul Sharma' })
+    expect(await screen.findByRole('heading', { name: 'Emergency detection' })).toBeInTheDocument()
+    expect(detApi.status).toHaveBeenCalledWith('id1')
+    expect(await screen.findByTestId('detection-headline')).toHaveTextContent('No abnormal pattern')
+    expect(screen.getByRole('meter', { name: 'Cardiac risk' })).toHaveAttribute('aria-valuenow', '25')
+    expect(await screen.findByRole('heading', { name: 'Detection history' })).toBeInTheDocument()
+  })
+
+  it('shows a Level 3 detection with its reasons and the open case', async () => {
+    detApi.status.mockResolvedValue(detectionStatus(3, { case: { id: 'abc123456789' } }))
+    renderAt('/patient/HT-2026-0001', <PatientDashboard />)
+    expect(await screen.findByText(/Main reason:/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Heart rate 136 BPM is above 120/).length).toBeGreaterThan(0)
+    expect(screen.getByTestId('case-notice')).toHaveTextContent('456789')
+    expect(screen.getByRole('meter', { name: 'Cardiac risk' })).toHaveAttribute('aria-valuetext', '82 out of 100, High risk')
+  })
+
   it('explains when the backend is not reachable', async () => {
     api.getPatient.mockRejectedValue(Object.assign(new Error('x'), { status: undefined }))
     renderAt('/patient/HT-2026-0001', <PatientDashboard />)
@@ -143,6 +181,26 @@ describe('Presenter panel (feature 26)', () => {
     })
     expect(api.setScenario).toHaveBeenCalledWith('id1', 'cardiac_event')
     await waitFor(() => expect(within(group).getByRole('button', { name: 'Cardiac event' })).toHaveAttribute('aria-pressed', 'true'))
+  })
+})
+
+describe('Presenter detection summary (Phase 6)', () => {
+  it('shows each patient\'s detection level, reason and risk', async () => {
+    detApi.statuses.mockResolvedValue([detectionStatus(3, { case: { id: 'c1' } })])
+    renderAt('/presenter', <PresenterPanel />)
+    const box = await screen.findByLabelText('Detection for Rahul Sharma')
+    expect(within(box).getByText('Level 3 Critical cardiac')).toBeInTheDocument()
+    expect(within(box).getByText(/Very fast heart rate with low oxygen/)).toBeInTheDocument()
+    expect(within(box).getByText('Emergency case open.')).toBeInTheDocument()
+    expect(within(box).getByRole('meter')).toHaveAttribute('aria-valuenow', '82')
+  })
+
+  it('still works when detection is unavailable', async () => {
+    detApi.statuses.mockRejectedValue(new Error('down'))
+    renderAt('/presenter', <PresenterPanel />)
+    const group = await screen.findByRole('group', { name: 'Scenario for Rahul Sharma' })
+    expect(within(group).getByRole('button', { name: 'Stable' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Detection for Rahul Sharma')).not.toBeInTheDocument()
   })
 })
 

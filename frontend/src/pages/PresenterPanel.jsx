@@ -9,6 +9,9 @@ import { VITAL_KEYS, formatVital } from '@shared/vitals.js'
 import { Badge, Button, Card, MedicalBackground, SimulatedNotice } from '../design/index.js'
 import { PortalNav } from '../components/PortalNav.jsx'
 import { monitoringApi, presenterKey } from '../features/monitoring/api.js'
+import { detectionApi } from '../features/detection/api.js'
+import { RiskGauge } from '../features/detection/RiskGauge.jsx'
+import { LEVEL_TEXT, LEVEL_TONE } from '../features/detection/severity.js'
 
 const SHORT = { hr: 'HR', sys: 'SYS', dia: 'DIA', spo2: 'SpO2', temp: 'T', rr: 'RR' }
 
@@ -19,6 +22,7 @@ export default function PresenterPanel() {
   const [error, setError] = useState(null)
   const [needKey, setNeedKey] = useState(null) // { patient, scenario } waiting for a key
   const [keyInput, setKeyInput] = useState('')
+  const [detection, setDetection] = useState({}) // patientId -> detection status
 
   const refresh = useCallback(
     () =>
@@ -28,7 +32,10 @@ export default function PresenterPanel() {
           setPatients(list)
           setError(null)
         })
-        .catch(() => setError('Cannot reach the backend. Start it with "npm run dev" in backend/.')),
+        .catch(() => setError('Cannot reach the backend. Start it with "npm run dev" in backend/.'))
+        .then(() => detectionApi.statuses())
+        .then((list) => setDetection(Object.fromEntries(list.map((d) => [d.patientId, d]))))
+        .catch(() => {}), // detection is optional: the scenario buttons still work without it
     [],
   )
 
@@ -128,6 +135,20 @@ export default function PresenterPanel() {
                     Open dashboard →
                   </Link>
                 </div>
+                {detection[p.id] && (
+                  <div className="mt-3 flex flex-wrap items-center gap-4 rounded-xl border border-line bg-surface-strong px-3 py-2" aria-label={`Detection for ${p.name}`}>
+                    <RiskGauge score={detection[p.id].risk.score} level={detection[p.id].risk.level} size="sm" />
+                    <div className="min-w-0 flex-1 text-sm">
+                      <Badge tone={LEVEL_TONE[detection[p.id].level]} dot={detection[p.id].level > 0 ? true : undefined}>
+                        {detection[p.id].level === 0 ? 'Detection clear' : LEVEL_TEXT[detection[p.id].level]}
+                      </Badge>
+                      <p className="mt-1 text-fg-muted">
+                        {detection[p.id].primary?.message ?? 'No abnormal pattern.'}
+                        {detection[p.id].case && <span className="ml-1 font-medium text-fg">Emergency case open.</span>}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={`Scenario for ${p.name}`}>
                   {scenarios.map((s) => {
                     const active = live?.scenario === s.key

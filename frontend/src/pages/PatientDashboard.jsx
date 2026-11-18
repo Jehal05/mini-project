@@ -14,6 +14,20 @@ import { HealthTimeline } from '../features/monitoring/HealthTimeline.jsx'
 // the live vitals and ECG are already on screen (review 10).
 const HistoryChart = lazy(() => import('../features/monitoring/HistoryChart.jsx').then((m) => ({ default: m.HistoryChart })))
 
+// Detection panels are also loaded after the first screen (they bring their own small chunk).
+const DetectionSection = lazy(() => import('../features/detection/index.jsx').then((m) => ({ default: m.DetectionSection })))
+const DetectionHistorySection = lazy(() => import('../features/detection/index.jsx').then((m) => ({ default: m.DetectionHistorySection })))
+
+function DetectionLoading() {
+  return (
+    <Card title="Emergency detection">
+      <p className="py-6 text-center text-sm text-fg-muted" role="status">
+        Loading detection…
+      </p>
+    </Card>
+  )
+}
+
 function ChartLoading() {
   return (
     <Card title="Health history">
@@ -154,6 +168,10 @@ export default function PatientDashboard() {
                   ))}
                 </section>
 
+                <Suspense fallback={<DetectionLoading />}>
+                  <DetectionSection patientId={patient.id} />
+                </Suspense>
+
                 <Card
                   title="ECG"
                   subtitle="Synthetic waveform at the live heart rate · display only"
@@ -212,6 +230,12 @@ export default function PatientDashboard() {
 
             <div className="mt-6">
               <HealthTimeline patientId={patient.id} refreshKey={refreshKey} />
+            </div>
+
+            <div className="mt-6">
+              <Suspense fallback={null}>
+                <DetectionHistorySection patientId={patient.id} refreshKey={refreshKey} />
+              </Suspense>
             </div>
           </>
         )}

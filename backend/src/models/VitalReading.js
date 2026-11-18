@@ -52,6 +52,23 @@ const vitalReadingSchema = new Schema(
 // History queries: latest first per patient (features 28, 30, 91).
 vitalReadingSchema.index({ patient: 1, recordedAt: -1 })
 
+/**
+ * Review item 11: readings expire after VITALS_RETENTION_DAYS (default 30).
+ * Never below 8 days, so the 7-day graph always has full data.
+ * Note: MongoDB keeps an existing TTL index as created; to change the period on a
+ * database that already has it, run collMod or drop the index (see docs/phase5-monitoring.md).
+ */
+export const MIN_RETENTION_DAYS = 8
+export const DEFAULT_RETENTION_DAYS = 30
+
+export function retentionDays(env = process.env) {
+  const n = Number.parseInt(env.VITALS_RETENTION_DAYS ?? '', 10)
+  if (!Number.isFinite(n)) return DEFAULT_RETENTION_DAYS
+  return Math.max(MIN_RETENTION_DAYS, n)
+}
+
+vitalReadingSchema.index({ recordedAt: 1 }, { expireAfterSeconds: retentionDays() * 24 * 3600, name: 'vitals_ttl' })
+
 // Fill statuses from the default thresholds when the engine has not set them.
 // The engine should pass statuses computed with the admin's current thresholds (feature 36).
 vitalReadingSchema.pre('validate', function fillStatuses(next) {

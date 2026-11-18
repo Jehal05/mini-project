@@ -102,3 +102,21 @@ describe('EmergencyCase', () => {
     expect(options.arrayFilters).toHaveLength(2)
   })
 })
+
+describe('VitalReading retention (review 11)', async () => {
+  const { retentionDays, DEFAULT_RETENTION_DAYS, MIN_RETENTION_DAYS } = await import('../src/models/VitalReading.js')
+
+  it('has a TTL index on recordedAt, 30 days by default', () => {
+    const ttl = VitalReading.schema.indexes().find(([fields, opts]) => fields.recordedAt === 1 && opts.expireAfterSeconds)
+    expect(ttl).toBeDefined()
+    expect(ttl[1].expireAfterSeconds).toBe(30 * 24 * 3600)
+    expect(DEFAULT_RETENTION_DAYS).toBe(30)
+  })
+
+  it('reads VITALS_RETENTION_DAYS but never goes below 8 days', () => {
+    expect(retentionDays({})).toBe(30)
+    expect(retentionDays({ VITALS_RETENTION_DAYS: '90' })).toBe(90)
+    expect(retentionDays({ VITALS_RETENTION_DAYS: '3' })).toBe(MIN_RETENTION_DAYS)
+    expect(retentionDays({ VITALS_RETENTION_DAYS: 'abc' })).toBe(30)
+  })
+})

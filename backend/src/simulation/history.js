@@ -3,7 +3,7 @@
 import mongoose from 'mongoose'
 import { VitalReading } from '../models/VitalReading.js'
 import { HealthEvent } from '../models/HealthEvent.js'
-import { readingStatuses, worstStatus, VITAL_KEYS } from '../../../shared/vitals.js'
+import { worstStatus, VITAL_KEYS } from '../../../shared/vitals.js'
 
 const MIN = 60_000
 const HOUR = 60 * MIN
@@ -20,6 +20,15 @@ export const RANGES = Object.freeze({
 })
 
 const STATUS_RANK = { normal: 0, warning: 1, critical: 2 }
+
+// The 24h/7d buckets use $dateTrunc, added in MongoDB 5.0 (review item 8).
+export const MONGO_VERSION_MESSAGE =
+  'The 24 h and 7 d history needs MongoDB 5.0 or newer ($dateTrunc). Upgrade MongoDB, or use the 1 h view.'
+
+function isMissingDateTrunc(err) {
+  // 168 = InvalidPipelineOperator; older servers report the unknown expression in the message.
+  return err?.code === 168 || err?.code === 31325 || /\$dateTrunc|Unrecognized expression/i.test(err?.message ?? '')
+}
 const RANK_STATUS = ['normal', 'warning', 'critical']
 
 export function parseRange(range) {
@@ -57,7 +66,10 @@ export async function vitalsHistory(patientId, range, { now = new Date(), thresh
       },
     },
     { $sort: { _id: 1 } },
-  ])
+  ]).catch((err) => {
+    if (isMissingDateTrunc(err)) throw Object.assign(new Error(MONGO_VERSION_MESSAGE), { status: 501, code: 'MONGODB_TOO_OLD' })
+    throw err
+  })
 
   return rows.map((r) => {
     const vitals = Object.fromEntries(VITAL_KEYS.map((k) => [k, round(r[k], k === 'temp' ? 2 : 1)]))
@@ -92,4 +104,3 @@ export async function healthTimeline(patientId, range, { now = new Date(), thres
   }
 }
 
-export { readingStatuses }

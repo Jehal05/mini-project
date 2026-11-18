@@ -289,3 +289,27 @@ describe('review fixes: robustness', () => {
     expect(engine.adding.size).toBe(0) // nothing left in flight
   })
 })
+
+describe('review 12: placeholder Patient model', () => {
+  it("reads Jehal's likely field names (cardiacHistory, existingConditions, object items)", () => {
+    const jehalStyle = {
+      _id: 'p-j',
+      age: 61,
+      cardiacHistory: [{ condition: 'Stent', year: 2020 }],
+      existingConditions: [{ condition: 'Hypertension' }, { name: 'Diabetes' }],
+    }
+    const planStyle = { _id: 'p-p', age: 61, cardiacConditions: [{ type: 'stent', year: 2020 }], conditions: ['hypertension', 'diabetes'] }
+    expect(computeBaseline(jehalStyle)).toEqual(computeBaseline(planStyle))
+  })
+
+  it('ignores missing or malformed lists', () => {
+    expect(() => computeBaseline({ age: 30, conditions: 'hypertension', cardiacHistory: null })).not.toThrow()
+  })
+
+  it('attachSimulation warns while the placeholder model is in use', async () => {
+    const { attachSimulation } = await import('../src/simulation/index.js')
+    const logger = { warn: vi.fn(), error: vi.fn() }
+    await attachSimulation({ store: memoryStore(), monitorAll: false, autoStart: false, logger })
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringMatching(/PLACEHOLDER Patient model/))
+  })
+})

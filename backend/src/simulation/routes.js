@@ -107,7 +107,7 @@ export function createSimulationRouter(engine, { guard = allow, presenterGuard =
 
   // eslint-disable-next-line no-unused-vars
   router.use((err, _req, res, _next) => {
-    res.status(err.status ?? 500).json({ error: err.status ? err.message : 'Internal error' })
+    res.status(err.status ?? 500).json({ error: err.status ? err.message : 'Internal error', code: err.code && err.status ? err.code : undefined })
     if (!err.status) console.error('[simulation]', err)
   })
 

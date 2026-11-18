@@ -32,8 +32,17 @@ export async function attachSimulation({
   engineOptions = {},
   monitorAll = true,
   autoStart = true,
+  logger = console,
 } = {}) {
-  const engine = new SimulationEngine({ io, store, ...engineOptions })
+  const engine = new SimulationEngine({ io, store, logger, ...engineOptions })
+
+  if (Patient.isHealthTwinPlaceholder) {
+    // Review item 12: make it obvious when the stand-in model is still in use.
+    logger.warn(
+      '[simulation] Using the PLACEHOLDER Patient model (backend/src/models/Patient.js). ' +
+        "Swap in Jehal's model before release: see docs/phase5-monitoring.md.",
+    )
+  }
 
   if (monitorAll) {
     const patients = await Patient.find({}).lean()

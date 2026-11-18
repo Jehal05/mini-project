@@ -1,9 +1,11 @@
 // PLACEHOLDER Patient model, until Jehal's real schema (features 1-20) is merged.
 //
 // It holds only the fields the simulation engine reads, named as in the feature
-// plan. When Jehal's model lands, delete this file: the engine reads patients
-// through computeBaseline()/riskFactors(), which tolerate small naming changes.
-// `mongoose.models.Patient ||` means Jehal's model wins if it is registered first.
+// plan. TODO(Jehal): when your model lands, follow "Swapping in the real Patient
+// model" in docs/phase5-monitoring.md and delete this file. The engine reads
+// patients through computeBaseline()/riskFactors(), which accept the likely field
+// names (cardiacConditions|cardiacHistory, conditions|existingConditions; items as
+// strings or objects with type|name|condition).
 
 import mongoose from 'mongoose'
 
@@ -24,6 +26,9 @@ const patientSchema = new Schema(
   },
   { timestamps: true },
 )
+
+// Lets attachSimulation() warn loudly while this placeholder is the model in use (review item 12).
+patientSchema.statics.isHealthTwinPlaceholder = true
 
 export const Patient = mongoose.models.Patient || mongoose.model('Patient', patientSchema)
 export default Patient

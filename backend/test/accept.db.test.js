@@ -1,17 +1,12 @@
 // Feature 65 against a real (in-memory) MongoDB: two hospitals accept at once, only one wins.
-// mongodb-memory-server downloads a mongod binary on first run. If it cannot start
-// (offline, blocked network), these tests are skipped rather than failed.
+// mongodb-memory-server downloads a mongod binary on first run. If it cannot start,
+// these tests fail in CI / with REQUIRE_DB_TESTS=1 and are skipped loudly otherwise.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import mongoose from 'mongoose'
 import { EmergencyCase } from '../src/models/index.js'
+import { startMongo } from './helpers/mongo.js'
 
-let server = null
-try {
-  const { MongoMemoryServer } = await import('mongodb-memory-server')
-  server = await MongoMemoryServer.create()
-} catch (err) {
-  console.warn(`[accept.db.test] Skipping DB tests: ${err.message.split('\n')[0]}`)
-}
+const server = await startMongo('accept.db.test')
 
 describe.skipIf(!server)('EmergencyCase.acceptIfPending (MongoDB)', () => {
   beforeAll(async () => {

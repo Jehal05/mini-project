@@ -144,6 +144,28 @@ describe.skipIf(!mongo)('monitoring API (MongoDB)', () => {
     keyedEngine.stop()
   })
 
+  it('creates the vitals TTL index in MongoDB (review 11)', async () => {
+    await VitalReading.syncIndexes()
+    const ttl = (await VitalReading.listIndexes()).find((i) => i.name === 'vitals_ttl')
+    expect(ttl.key).toEqual({ recordedAt: 1 })
+    expect(ttl.expireAfterSeconds).toBe(30 * 24 * 3600)
+  })
+
+  it('explains MongoDB < 5.0 instead of a bare 500 (review 8)', async () => {
+    const { vi } = await import('vitest')
+    const spy = vi
+      .spyOn(VitalReading, 'aggregate')
+      .mockReturnValue(Promise.reject(Object.assign(new Error("Invalid $group :: caused by :: Unrecognized expression '$dateTrunc'"), { code: 168 })))
+    try {
+      const res = await request(app).get('/api/sim/patients/HT-2026-0001/vitals/history?range=24h').expect(501)
+      expect(res.body.error).toMatch(/MongoDB 5\.0 or newer/)
+      expect(res.body.code).toBe('MONGODB_TOO_OLD')
+      await request(app).get('/api/sim/patients/HT-2026-0001/vitals/history?range=1h').expect(200) // 1h still works
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
   it('pushes vitals:update to a subscribed socket in patient:<id>', async () => {
     const client = ioClient(`http://localhost:${port}`, { transports: ['websocket'] })
     try {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AuditLog, User } from '../src/models/index.js';
+import { AuditLog, LoginAttempt } from '../src/models/index.js';
 import { PASSWORD, agent, bearer, loginAs, makeHospital, makeUser } from './helpers.js';
 
 describe('features 2-5: logins', () => {
@@ -62,7 +62,7 @@ describe('features 2-5: logins', () => {
     const locked = await agent().post('/api/auth/login/patient').send({ identifier: user.email, password: PASSWORD });
     expect(locked.status).toBe(429);
 
-    await User.updateOne({ _id: user._id }, { $set: { lockedUntil: new Date(Date.now() - 1000) } });
+    await LoginAttempt.updateMany({}, { $set: { lockedUntil: new Date(Date.now() - 1000) } });
     const ok = await agent().post('/api/auth/login/patient').send({ identifier: user.email, password: PASSWORD });
     expect(ok.status).toBe(200);
   });

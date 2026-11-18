@@ -3,6 +3,7 @@ import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { AuditLog } from '../src/models/index.js';
 import { audit, authorize, errorHandler, hospitalScope, protect } from '../src/middleware/index.js';
+import { drainBackground } from '../src/utils/background.js';
 import { agent, bearer, loginAs, makeHospital, makeUser, app as realApp } from './helpers.js';
 
 // A small app that exercises the middleware the way teammates' routes will.
@@ -19,7 +20,7 @@ function demoApp() {
 }
 const demo = demoApp();
 const get = (path, token) => request(demo).get(path).set(token ? bearer(token) : {});
-const settle = () => new Promise((r) => setTimeout(r, 100));
+const settle = drainBackground;
 
 describe('feature 6: role-based access control', () => {
   it('lets the right role in and keeps every other role out with 403', async () => {

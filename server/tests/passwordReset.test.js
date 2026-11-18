@@ -1,9 +1,10 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { PasswordReset, RefreshToken } from '../src/models/index.js';
 import { outbox } from '../src/utils/mailer.js';
-import { PASSWORD, agent, loginAs, makeUser } from './helpers.js';
+import { PASSWORD, agent, loginAs, makeUser, settleBackground } from './helpers.js';
 
-const tokenFromMail = () => new URL(outbox.at(-1).text.match(/https?:\/\/\S+/)[0]).searchParams.get('token');
+import { lastMailToken } from './helpers.js';
+const tokenFromMail = lastMailToken; // waits for the background send
 const NEW_PASSWORD = 'Brandnew99';
 
 beforeEach(() => { outbox.length = 0; });
@@ -16,6 +17,7 @@ describe('feature 7: forgot password', () => {
     expect(known.status).toBe(200);
     expect(unknown.status).toBe(200);
     expect(unknown.body).toEqual(known.body);
+    await settleBackground();
     expect(outbox).toHaveLength(1);
     expect(outbox[0].to).toBe(user.email);
     expect(outbox[0].text).toMatch(/reset-password\?token=[a-f0-9]{64}/);
@@ -25,7 +27,7 @@ describe('feature 7: forgot password', () => {
   it('stores only a hash of the token and expires it in 15 minutes', async () => {
     const user = await makeUser();
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    const raw = tokenFromMail();
+    const raw = await tokenFromMail();
     const doc = await PasswordReset.findOne();
     expect(doc.tokenHash).not.toBe(raw);
     expect(doc.tokenHash).toHaveLength(64);
@@ -38,7 +40,7 @@ describe('feature 7: forgot password', () => {
     const user = await makeUser();
     const { agent: device } = await loginAs(user);
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    const res = await agent().post('/api/auth/reset-password').send({ token: tokenFromMail(), password: NEW_PASSWORD });
+    const res = await agent().post('/api/auth/reset-password').send({ token: await tokenFromMail(), password: NEW_PASSWORD });
     expect(res.status).toBe(200);
 
     expect(await RefreshToken.countDocuments({ revokedAt: { $exists: false } })).toBe(0);
@@ -50,7 +52,7 @@ describe('feature 7: forgot password', () => {
   it('works only once', async () => {
     const user = await makeUser();
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    const token = tokenFromMail();
+    const token = await tokenFromMail();
     expect((await agent().post('/api/auth/reset-password').send({ token, password: NEW_PASSWORD })).status).toBe(200);
     const again = await agent().post('/api/auth/reset-password').send({ token, password: 'Another1234' });
     expect(again.status).toBe(400);
@@ -60,7 +62,7 @@ describe('feature 7: forgot password', () => {
   it('only one of two simultaneous uses succeeds', async () => {
     const user = await makeUser();
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    const token = tokenFromMail();
+    const token = await tokenFromMail();
     const results = await Promise.all([NEW_PASSWORD, 'Another1234'].map((password) => agent().post('/api/auth/reset-password').send({ token, password })));
     expect(results.map((r) => r.status).sort()).toEqual([200, 400]);
   });
@@ -68,7 +70,7 @@ describe('feature 7: forgot password', () => {
   it('refuses an expired link', async () => {
     const user = await makeUser();
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    const token = tokenFromMail();
+    const token = await tokenFromMail();
     await PasswordReset.updateMany({}, { $set: { expiresAt: new Date(Date.now() - 1000) } });
     const res = await agent().post('/api/auth/reset-password').send({ token, password: NEW_PASSWORD });
     expect(res.status).toBe(400);
@@ -78,9 +80,9 @@ describe('feature 7: forgot password', () => {
   it('only the newest link works when a second one is requested', async () => {
     const user = await makeUser();
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    const first = tokenFromMail();
+    const first = await tokenFromMail();
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    const second = tokenFromMail();
+    const second = await tokenFromMail();
     expect((await agent().post('/api/auth/reset-password').send({ token: first, password: NEW_PASSWORD })).status).toBe(400);
     expect((await agent().post('/api/auth/reset-password').send({ token: second, password: NEW_PASSWORD })).status).toBe(200);
   });
@@ -97,7 +99,7 @@ describe('feature 7: forgot password', () => {
     const user = await makeUser();
     for (let i = 0; i < 5; i += 1) await agent().post('/api/auth/login/patient').send({ identifier: user.email, password: 'Wrong12345' });
     await agent().post('/api/auth/forgot-password').send({ email: user.email });
-    await agent().post('/api/auth/reset-password').send({ token: tokenFromMail(), password: NEW_PASSWORD }).expect(200);
+    await agent().post('/api/auth/reset-password').send({ token: await tokenFromMail(), password: NEW_PASSWORD }).expect(200);
     expect((await loginAs(user, NEW_PASSWORD)).res.status).toBe(200);
   });
 });

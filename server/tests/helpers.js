@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { Hospital, User } from '../src/models/index.js';
+import { drainBackground } from '../src/utils/background.js';
+import { outbox } from '../src/utils/mailer.js';
 
 export const app = createApp();
 export const PASSWORD = 'Heart1234';
@@ -42,3 +44,13 @@ export const validRegistration = (over = {}) => ({
 });
 
 export const bearer = (token) => ({ Authorization: `Bearer ${token}` });
+
+/** forgot-password replies first and sends the email afterwards; wait for that work to finish. */
+export async function settleBackground() {
+  await drainBackground();
+}
+
+export async function lastMailToken() {
+  await drainBackground();
+  return new URL(outbox.at(-1).text.match(/https?:\/\/\S+/)[0]).searchParams.get('token');
+}

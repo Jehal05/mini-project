@@ -1,6 +1,11 @@
+import { assertSafeTestDb } from './dbGuard.js';
+
 // Uses MONGO_URI_TEST when set (CI, or any local mongod); otherwise starts an in-memory MongoDB.
 export default async function setup() {
-  if (process.env.MONGO_URI_TEST) return undefined;
+  if (process.env.MONGO_URI_TEST) {
+    assertSafeTestDb(process.env.MONGO_URI_TEST);
+    return undefined;
+  }
   try {
     const { MongoMemoryServer } = await import('mongodb-memory-server');
     const server = await MongoMemoryServer.create();

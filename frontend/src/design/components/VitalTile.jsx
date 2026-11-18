@@ -22,7 +22,7 @@ export function VitalTile({ vital, value, thresholds = DEFAULT_THRESHOLDS, label
       )}
       data-status={status}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <span className="text-xs font-medium uppercase tracking-wide text-fg-muted">{label ?? t?.label ?? vital}</span>
         <Badge tone={status} />
       </div>

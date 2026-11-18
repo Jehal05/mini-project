@@ -1,0 +1,229 @@
+// Patient Portal dashboard (Phase 5): live simulated vitals, ECG strip, history,
+// timeline and the SOS button placeholder (the real SOS flow is Phase 7).
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { VITAL_KEYS } from '@shared/vitals.js'
+import { Badge, Button, Card, MedicalBackground, Modal, SimulatedBadge, SimulatedNotice, SosButton, VitalTile } from '../design/index.js'
+import { PortalNav } from '../components/PortalNav.jsx'
+import { monitoringApi } from '../features/monitoring/api.js'
+import { useLiveVitals } from '../features/monitoring/useLiveVitals.js'
+import { EcgStrip } from '../features/monitoring/EcgStrip.jsx'
+import { HistoryChart } from '../features/monitoring/HistoryChart.jsx'
+import { HealthTimeline } from '../features/monitoring/HealthTimeline.jsx'
+
+const SCENARIO_LABEL = { stable: 'Stable', exercise: 'Exercise', fever: 'Fever', hypoxia: 'Hypoxia', cardiac_event: 'Cardiac event' }
+const STATUS_TEXT = {
+  normal: 'All vitals in the normal range',
+  warning: 'One or more vitals in the warning range',
+  critical: 'One or more vitals in the critical range',
+}
+
+/** One-tap emergency call (tel: link), styled like a danger button. */
+function CallLink({ number, label = `Call ${number}` }) {
+  return (
+    <a
+      href={`tel:${number}`}
+      className="inline-flex h-10 items-center justify-center rounded-xl bg-critical px-4 text-sm font-semibold text-white transition hover:brightness-110"
+    >
+      {label}
+    </a>
+  )
+}
+
+function ageFrom(dob) {
+  if (!dob) return null
+  const d = new Date(dob)
+  const now = new Date()
+  let a = now.getFullYear() - d.getFullYear()
+  if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) a -= 1
+  return a
+}
+
+export default function PatientDashboard() {
+  const { code = 'HT-2026-0001' } = useParams()
+  const navigate = useNavigate()
+  const [patient, setPatient] = useState(null)
+  const [patients, setPatients] = useState([])
+  const [error, setError] = useState(null)
+  const [sosOpen, setSosOpen] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setPatient(null)
+    setError(null)
+    monitoringApi
+      .getPatient(code)
+      .then((p) => !cancelled && setPatient(p))
+      .catch((e) => !cancelled && setError(e.status === 404 ? `No patient with ID ${code}.` : 'Cannot reach the HealthTwin backend. Start it with "npm run dev" in backend/.'))
+    monitoringApi.listPatients().then((l) => !cancelled && setPatients(l)).catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [code])
+
+  const { live: socketLive, connected } = useLiveVitals(patient?.id)
+  const live = socketLive ?? patient?.live ?? null
+  const status = live?.status ?? 'normal'
+
+  // Refresh the timeline soon after the status or scenario changes (the server logs a
+  // status change once it has held for 3 ticks).
+  const timelineKey = useMemo(() => `${status}|${live?.scenario}`, [status, live?.scenario])
+  const [refreshKey, setRefreshKey] = useState(timelineKey)
+  useEffect(() => {
+    const t = setTimeout(() => setRefreshKey(timelineKey), 7000)
+    return () => clearTimeout(t)
+  }, [timelineKey])
+
+  const age = ageFrom(patient?.dateOfBirth)
+  const cardiac = patient?.cardiacConditions?.map((c) => `${c.type}${c.year ? ` (${c.year})` : ''}`).join(', ')
+
+  return (
+    <MedicalBackground portal="patient">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <PortalNav connected={patient ? connected : undefined} />
+
+        {error && (
+          <Card status="warning" className="mt-6">
+            <p className="text-sm">{error}</p>
+          </Card>
+        )}
+
+        {patient && (
+          <>
+            <header className="mt-6 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-bold sm:text-3xl">{patient.name}</h1>
+                  <Badge tone={status}>{status[0].toUpperCase() + status.slice(1)}</Badge>
+                  <SimulatedBadge />
+                </div>
+                <p className="mt-1 text-sm text-fg-muted">
+                  <span className="font-mono text-fg">{patient.patientCode}</span>
+                  {age !== null && ` · ${age} years`}
+                  {patient.city && ` · ${patient.city}`}
+                  {cardiac && ` · Cardiac history: ${cardiac}`}
+                </p>
+                <p className="mt-1 text-sm text-fg-muted" role="status" aria-live="polite">
+                  {STATUS_TEXT[status]}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {patients.length > 1 && (
+                  <label className="text-xs text-fg-muted">
+                    <span className="sr-only">Switch demo patient</span>
+                    <select
+                      value={patient.patientCode}
+                      onChange={(e) => navigate(`/patient/${e.target.value}`)}
+                      className="rounded-lg border border-line bg-surface-strong px-2 py-1.5 text-sm text-fg"
+                    >
+                      {patients.map((p) => (
+                        <option key={p.id} value={p.patientCode}>
+                          {p.name} ({p.patientCode})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <div className="rounded-2xl border border-line bg-surface px-4 py-2 text-center backdrop-blur-xl">
+                  <p className="text-[10px] uppercase tracking-wide text-fg-muted">Blood group</p>
+                  <p className="font-mono text-2xl font-bold">{patient.bloodGroup ?? '—'}</p>
+                </div>
+              </div>
+            </header>
+
+            <SimulatedNotice className="mt-4" />
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-3">
+              <div className="space-y-6 lg:col-span-2">
+                <section aria-label="Live vitals" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {VITAL_KEYS.map((k) => (
+                    <VitalTile key={k} vital={k} value={live?.vitals?.[k]} />
+                  ))}
+                </section>
+
+                <Card
+                  title="ECG"
+                  subtitle="Synthetic waveform at the live heart rate · display only"
+                  action={
+                    <span className="font-mono text-sm text-fg">
+                      {live?.vitals?.hr ?? '--'} <span className="text-fg-muted">BPM</span>
+                    </span>
+                  }
+                >
+                  <EcgStrip bpm={live?.vitals?.hr ?? 70} status={live?.statuses?.hr ?? 'normal'} />
+                </Card>
+
+                <HistoryChart patientId={patient.id} live={socketLive} />
+              </div>
+
+              <div className="space-y-6">
+                <Card title="Emergency" status="critical">
+                  <div className="flex flex-col items-center gap-4 py-2 text-center">
+                    <SosButton onClick={() => setSosOpen(true)} />
+                    <p className="text-sm text-fg-muted">Press if you feel unwell. Automatic alerts arrive in a later phase.</p>
+                    <div className="flex gap-2">
+                      <CallLink number="112" />
+                      <CallLink number="108" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card title="Monitoring">
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-fg-muted">Connection</dt>
+                      <dd>{connected ? 'Live (every 2 s)' : 'Reconnecting…'}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-fg-muted">Last update</dt>
+                      <dd className="font-mono">{live?.at ? new Date(live.at).toLocaleTimeString() : '--'}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-fg-muted">Demo scenario</dt>
+                      <dd>
+                        <Badge tone={live?.scenario === 'stable' ? 'neutral' : 'accent'} dot={false}>
+                          {SCENARIO_LABEL[live?.scenario] ?? '--'}
+                        </Badge>
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-fg-muted">Saved to history</dt>
+                      <dd>every 30 s</dd>
+                    </div>
+                  </dl>
+                </Card>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <HealthTimeline patientId={patient.id} refreshKey={refreshKey} />
+            </div>
+          </>
+        )}
+
+        <footer className="mt-10 border-t border-line pt-4 text-xs text-fg-muted">
+          Fictional patient. Simulated data for demonstration. Not a medical device. In an emergency call 112.
+        </footer>
+      </div>
+
+      <Modal
+        open={sosOpen}
+        onClose={() => setSosOpen(false)}
+        tone="critical"
+        title="Emergency help"
+        description="The automatic SOS flow (hospital alerts, countdown and contact notifications) is being built in Phase 7. For now, call for help directly."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setSosOpen(false)}>
+              Close
+            </Button>
+            <CallLink number="108" label="Call 108 ambulance" />
+            <CallLink number="112" />
+          </>
+        }
+      >
+        <SimulatedNotice />
+      </Modal>
+    </MedicalBackground>
+  )
+}

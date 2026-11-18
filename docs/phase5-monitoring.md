@@ -52,7 +52,7 @@ Presenter → POST /scenario → target changes → vitals glide there in ~30–
 | Scenario | Target |
 |---|---|
 | Stable | The patient's baseline |
-| Exercise | HR +52, SYS +28, RR +10 |
+| Exercise | HR +22, SYS +20, RR +5 (light exercise; changed in Phase 6 so detection shows at most a Watch) |
 | Fever | Temperature 39.3 °C, HR +22 |
 | Hypoxia | SpO2 86.5 %, RR 27 |
 | Cardiac event | HR 138, SpO2 86, BP 172/104, RR 28 (meets the plan's HR > 120 and SpO2 < 90 rule) |
@@ -146,7 +146,7 @@ engine.onUpdate((u) => { /* in-process listener; Phase 6 detection plugs in here
 | `frontend` | 58 | ECG shape and rate, chart and timeline helpers, chart patient isolation, dashboard, SOS dialog, presenter panel + key, lazy routes; design system, no-raw-colour scan, contrast |
 | `shared` | 28 | Thresholds |
 
-Run any of them with `npm test` in that folder. `npm run check:bundle` in `frontend/` checks the first-load budget.
+Counts above are as of Phase 5; Phase 6 adds more (see `phase6-detection.md`). Run any of them with `npm test` in that folder. `npm run check:bundle` in `frontend/` checks the first-load budget.
 
 ## Known limits
 

@@ -6,14 +6,19 @@
 // Puneet's server can pass its auth middleware as `guard` (all routes) and a
 // role check as `presenterGuard` (scenario switching), and can join sockets to
 // `patient:<id>` itself instead of using the vitals:subscribe handler below.
+//
+// Access control is INTERIM until Jehal's auth (Phase 2) lands; see access.js.
+// TODO(Jehal): pass `guard`, `presenterGuard` and `authorizeSubscribe` built on the real JWT/roles.
 
 import { SimulationEngine, VITALS_EVENT, patientRoom } from './engine.js'
 import { mongoStore } from './store.js'
 import { createSimulationRouter } from './routes.js'
 import { Patient } from '../models/Patient.js'
+import { createPresenterKeyGuard, defaultAuthorizeSubscribe } from './access.js'
 
 export { SimulationEngine, VITALS_EVENT, patientRoom }
 export { computeBaseline } from './baseline.js'
+export { createPresenterKeyGuard, defaultAuthorizeSubscribe, PRESENTER_KEY_HEADER } from './access.js'
 export { SCENARIO_INFO, scenarioTargets } from './scenarios.js'
 
 export async function attachSimulation({
@@ -21,7 +26,8 @@ export async function attachSimulation({
   io,
   basePath = '/api/sim',
   guard,
-  presenterGuard,
+  presenterGuard = createPresenterKeyGuard(),
+  authorizeSubscribe = defaultAuthorizeSubscribe(),
   store = mongoStore,
   engineOptions = {},
   monitorAll = true,
@@ -41,6 +47,9 @@ export async function attachSimulation({
       // Dev convenience: a client asks to follow one patient.
       socket.on('vitals:subscribe', async ({ patientId } = {}, ack) => {
         if (!patientId) return ack?.({ error: 'patientId required' })
+        // TODO(Jehal): real check (patient themself, family link, or hospital staff on their case).
+        const allowed = await Promise.resolve(authorizeSubscribe(socket, String(patientId))).catch(() => false)
+        if (!allowed) return ack?.({ error: 'Not allowed to follow this patient' })
         if (!engine.has(patientId)) {
           const p = await Patient.findById(patientId).lean().catch(() => null)
           if (!p) return ack?.({ error: 'Patient not found' })

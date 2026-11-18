@@ -4,6 +4,7 @@
 //   npm run dev                         uses MONGO_URI if set, otherwise a local
 //                                       MongoDB kept in backend/.data (survives restarts)
 //   MONGO_URI=mongodb://... npm run dev
+//   PRESENTER_KEY=some-secret npm run dev   protects scenario switching (required when NODE_ENV=production)
 //
 // Then open the frontend (cd ../frontend && npm run dev).
 
@@ -61,6 +62,11 @@ async function main() {
   server.listen(PORT, () => {
     console.log(`[dev] HealthTwin monitoring on http://localhost:${PORT}  (db: ${db.where})`)
     console.log(`[dev] monitoring ${engine.list().length} fictional patients; REST under /api/sim`)
+    console.log(
+      process.env.PRESENTER_KEY
+        ? '[dev] presenter controls need the PRESENTER_KEY (x-presenter-key header)'
+        : '[dev] presenter controls are OPEN (no PRESENTER_KEY set; fine for local demos only)',
+    )
   })
 
   const shutdown = async () => {

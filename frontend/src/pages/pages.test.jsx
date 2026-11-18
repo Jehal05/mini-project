@@ -16,7 +16,10 @@ const api = vi.hoisted(() => ({
   scenarios: vi.fn(),
   setScenario: vi.fn(),
 }))
-vi.mock('../features/monitoring/api.js', () => ({ monitoringApi: api, API_URL: 'http://test' }))
+const keyStore = vi.hoisted(() => ({ value: '', get: vi.fn(), set: vi.fn() }))
+keyStore.get.mockImplementation(() => keyStore.value)
+keyStore.set.mockImplementation((v) => (keyStore.value = v))
+vi.mock('../features/monitoring/api.js', () => ({ monitoringApi: api, presenterKey: keyStore, API_URL: 'http://test' }))
 
 const { default: PatientDashboard } = await import('./PatientDashboard.jsx')
 const { default: PresenterPanel } = await import('./PresenterPanel.jsx')
@@ -140,5 +143,25 @@ describe('Presenter panel (feature 26)', () => {
     })
     expect(api.setScenario).toHaveBeenCalledWith('id1', 'cardiac_event')
     await waitFor(() => expect(within(group).getByRole('button', { name: 'Cardiac event' })).toHaveAttribute('aria-pressed', 'true'))
+  })
+})
+
+describe('Presenter key (review 3)', () => {
+  it('asks for the key when the server requires it, then retries the switch', async () => {
+    api.setScenario
+      .mockRejectedValueOnce(Object.assign(new Error('Presenter key required'), { status: 401, code: 'PRESENTER_KEY_REQUIRED' }))
+      .mockResolvedValueOnce({ ...CARDIAC })
+    renderAt('/presenter', <PresenterPanel />)
+    const group = await screen.findByRole('group', { name: 'Scenario for Rahul Sharma' })
+    await userEvent.click(within(group).getByRole('button', { name: 'Cardiac event' }))
+
+    const input = await screen.findByLabelText('Presenter key')
+    await userEvent.type(input, 'demo-key')
+    await userEvent.click(screen.getByRole('button', { name: 'Unlock and switch' }))
+
+    expect(keyStore.set).toHaveBeenLastCalledWith('demo-key')
+    await waitFor(() => expect(api.setScenario).toHaveBeenCalledTimes(2))
+    expect(api.setScenario).toHaveBeenLastCalledWith('id1', 'cardiac_event')
+    expect(screen.queryByLabelText('Presenter key')).not.toBeInTheDocument()
   })
 })

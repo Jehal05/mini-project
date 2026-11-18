@@ -16,6 +16,7 @@ import { parseRange, vitalsHistory, healthTimeline } from './history.js'
 
 const allow = (_req, _res, next) => next()
 
+// presenterGuard defaults to allow here; attachSimulation() passes the PRESENTER_KEY guard (access.js).
 export function createSimulationRouter(engine, { guard = allow, presenterGuard = allow } = {}) {
   const router = express.Router()
   router.use(express.json())

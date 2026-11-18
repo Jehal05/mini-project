@@ -1,12 +1,14 @@
 // Feature 26: presenter control panel. Switches a demo patient's scenario on cue,
-// e.g. Rahul into "Cardiac event" during the final demo. Demo-only tool: when
-// Jehal's auth lands, this page and its endpoint should be limited to central_admin.
+// e.g. Rahul into "Cardiac event" during the final demo.
+// INTERIM access: if the server has PRESENTER_KEY set, the page asks for the key once
+// per tab and sends it with each switch (review item 3).
+// TODO(Jehal): limit this page and its endpoint to central_admin with the real login.
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { VITAL_KEYS, formatVital } from '@shared/vitals.js'
 import { Badge, Button, Card, MedicalBackground, SimulatedNotice } from '../design/index.js'
 import { PortalNav } from '../components/PortalNav.jsx'
-import { monitoringApi } from '../features/monitoring/api.js'
+import { monitoringApi, presenterKey } from '../features/monitoring/api.js'
 
 const SHORT = { hr: 'HR', sys: 'SYS', dia: 'DIA', spo2: 'SpO2', temp: 'T', rr: 'RR' }
 
@@ -15,6 +17,8 @@ export default function PresenterPanel() {
   const [scenarios, setScenarios] = useState([])
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState(null)
+  const [needKey, setNeedKey] = useState(null) // { patient, scenario } waiting for a key
+  const [keyInput, setKeyInput] = useState('')
 
   const refresh = useCallback(
     () =>
@@ -41,7 +45,13 @@ export default function PresenterPanel() {
       const snap = await monitoringApi.setScenario(patient.id, scenario)
       setPatients((list) => list.map((p) => (p.id === patient.id ? { ...p, live: snap } : p)))
     } catch (e) {
-      setError(e.message)
+      if (e.code === 'PRESENTER_KEY_REQUIRED') {
+        presenterKey.set('') // a stored key was wrong or missing
+        setNeedKey({ patient, scenario })
+        setError(null)
+      } else {
+        setError(e.message)
+      }
     } finally {
       setBusy(null)
     }
@@ -61,6 +71,38 @@ export default function PresenterPanel() {
         {error && (
           <Card status="warning" className="mt-4">
             <p className="text-sm">{error}</p>
+          </Card>
+        )}
+        {needKey && (
+          <Card status="info" className="mt-4" title="Presenter key required">
+            <form
+              className="flex flex-wrap items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                presenterKey.set(keyInput.trim())
+                const pending = needKey
+                setNeedKey(null)
+                setKeyInput('')
+                choose(pending.patient, pending.scenario)
+              }}
+            >
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-fg-muted">This server protects scenario switching. Enter the key from PRESENTER_KEY.</span>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  className="h-10 w-64 rounded-xl border border-line bg-surface-strong px-3 text-fg"
+                  aria-label="Presenter key"
+                  required
+                />
+              </label>
+              <Button type="submit">Unlock and switch</Button>
+              <Button variant="ghost" onClick={() => setNeedKey(null)}>
+                Cancel
+              </Button>
+            </form>
           </Card>
         )}
 

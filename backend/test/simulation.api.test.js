@@ -124,6 +124,26 @@ describe.skipIf(!mongo)('monitoring API (MongoDB)', () => {
     await request(app).post('/api/sim/patients/HT-2026-0001/scenario').send({ scenario: 'stable' }).expect(200)
   })
 
+  it('POST /scenario needs the presenter key when PRESENTER_KEY is set (review 3)', async () => {
+    const { createPresenterKeyGuard, PRESENTER_KEY_HEADER } = await import('../src/simulation/access.js')
+    const keyed = express()
+    const keyedEngine = await attachSimulation({
+      app: keyed,
+      autoStart: false,
+      presenterGuard: createPresenterKeyGuard({ env: { NODE_ENV: 'production', PRESENTER_KEY: 'k-123' } }),
+    })
+    const res = await request(keyed).post('/api/sim/patients/HT-2026-0002/scenario').send({ scenario: 'fever' }).expect(401)
+    expect(res.body.code).toBe('PRESENTER_KEY_REQUIRED')
+    const ok = await request(keyed)
+      .post('/api/sim/patients/HT-2026-0002/scenario')
+      .set(PRESENTER_KEY_HEADER, 'k-123')
+      .send({ scenario: 'fever' })
+      .expect(200)
+    expect(ok.body.scenario).toBe('fever')
+    await request(keyed).post('/api/sim/patients/HT-2026-0002/scenario').set(PRESENTER_KEY_HEADER, 'k-123').send({ scenario: 'stable' })
+    keyedEngine.stop()
+  })
+
   it('pushes vitals:update to a subscribed socket in patient:<id>', async () => {
     const client = ioClient(`http://localhost:${port}`, { transports: ['websocket'] })
     try {

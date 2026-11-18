@@ -1,0 +1,78 @@
+<!doctype html>
+<!-- Minimal Socket.IO test client: connects, joins "admin", sends ping:test and shows pong:test. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HealthTwin - Socket.IO test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #050b18; color: #e6edf7; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 20px; }
+    .status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+    .ok { background: #14532d; color: #bbf7d0; }
+    .bad { background: #7f1d1d; color: #fecaca; }
+    button { background: #00c2ff; color: #050b18; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 600; cursor: pointer; margin-right: 8px; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    pre { background: #0b1a33; border: 1px solid #1e2b45; border-radius: 8px; padding: 12px; min-height: 160px; white-space: pre-wrap; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>HealthTwin AI - Socket.IO test</h1>
+  <p>Connection: <span id="status" class="status bad">disconnected</span></p>
+  <p>
+    <button id="join" disabled>Join "admin"</button>
+    <button id="ping" disabled>Send ping:test</button>
+  </p>
+  <pre id="log"></pre>
+
+  <!-- Socket.IO client from the CDN (the server also serves it at /socket.io/socket.io.js) -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
+  <script>
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+    const joinBtn = document.getElementById('join');
+    const pingBtn = document.getElementById('ping');
+
+    const log = (msg, data) => {
+      const line = `[${new Date().toLocaleTimeString()}] ${msg}` + (data ? `\n  ${JSON.stringify(data)}` : '');
+      logEl.textContent = line + '\n' + logEl.textContent;
+    };
+
+    // Same origin as the API (served by Express), so no CORS setup is needed here.
+    const socket = io(window.location.origin);
+
+    socket.on('connect', () => {
+      statusEl.textContent = `connected (${socket.id})`;
+      statusEl.className = 'status ok';
+      joinBtn.disabled = false;
+      pingBtn.disabled = false;
+      log('Connected');
+      // Join "admin" and ping automatically, so the checklist passes on page load.
+      joinAdmin();
+      sendPing();
+    });
+
+    socket.on('disconnect', (reason) => {
+      statusEl.textContent = 'disconnected';
+      statusEl.className = 'status bad';
+      joinBtn.disabled = true;
+      pingBtn.disabled = true;
+      log(`Disconnected: ${reason}`);
+    });
+
+    socket.on('connect_error', (err) => log(`Connection error: ${err.message}`));
+    socket.on('pong:test', (data) => log('Received pong:test', data));
+
+    function joinAdmin() {
+      socket.emit('join', { role: 'admin' }, (result) => log('Join result', result));
+    }
+    function sendPing() {
+      socket.emit('ping:test', { from: 'socket-test.html' });
+      log('Sent ping:test');
+    }
+
+    joinBtn.addEventListener('click', joinAdmin);
+    pingBtn.addEventListener('click', sendPing);
+  </script>
+</body>
+</html>

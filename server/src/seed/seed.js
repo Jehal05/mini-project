@@ -64,13 +64,6 @@ export async function seed({ log = console.log } = {}) {
   log(`\nDemo password for every seeded account: ${DEMO_PASSWORD}  (fictional data, development only)`);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  if (config.isProd) { console.error('Refusing to seed demo accounts in production.'); process.exit(1); }
-  await connectDb();
-  await seed();
-  await disconnectDb();
-}
-
 const DEMO_PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 100]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n');
 
 /** Phase 2: Rahul's full medical profile. Each part is added only if it is still empty, so re-running never duplicates or overwrites edits. */
@@ -100,4 +93,11 @@ export async function seedRahulProfile(log = console.log) {
       throw err;
     }
   }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  if (config.isProd) { console.error('Refusing to seed demo accounts in production.'); process.exit(1); }
+  await connectDb();
+  await seed();
+  await disconnectDb();
 }

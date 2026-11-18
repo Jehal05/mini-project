@@ -92,7 +92,8 @@ and sends `ping:test` automatically. You should see `Received pong:test` with a 
 | --- | --- | --- |
 | GET | `/api/health` | `{ status, db, time }` |
 | GET | `/api/hospitals` | `{ count, hospitals }` (active only) |
-| GET | `/api/hospitals/near?lat=&lng=&radiusKm=` | `{ origin, radiusKm, count, hospitals[] }` nearest-first, each with `distanceKm`. `radiusKm` defaults to 10, max 100 |
+| GET | `/api/hospitals/near?lat=&lng=&radiusKm=&cardiacOnly=` | `{ origin, radiusKm, cardiacOnly, count, hospitals[] }` nearest-first, each with `distanceKm`. `radiusKm` defaults to 10, max 100. `cardiacOnly=true` keeps hospitals with a cath lab or a cardiologist on duty |
+| GET | `/api/hospitals/search?q=&lat=&lng=` | `{ q, origin, count, hospitals[] }`. Case-insensitive match on name or address (max 50 chars). With `lat`/`lng`: `distanceKm` added (Haversine) and sorted nearest-first; without: sorted by name |
 
 The near route uses `$geoNear`, the aggregation form of `$near`: same nearest-first
 order on the 2dsphere index, and it also returns each hospital's distance.

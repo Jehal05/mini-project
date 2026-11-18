@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext.jsx';
 import { ApiRequestError, post } from '../api/http.js';
 import AuthShell from '../components/AuthShell.jsx';
 import PasswordField from '../components/PasswordField.jsx';
-import { passwordRules } from './Register.jsx';
+import PasswordRules from '../components/PasswordRules.jsx';
+import { passwordValid } from '../auth/passwordRules.js';
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
+  const { status, logout } = useAuth();
   const token = params.get('token') || '';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -26,7 +29,7 @@ export default function ResetPassword() {
   async function onSubmit(e) {
     e.preventDefault();
     const found = {};
-    if (!passwordRules.every(([, ok]) => ok(password))) found.password = 'Your password does not meet the rules below';
+    if (!passwordValid(password)) found.password = 'Your password does not meet the rules below';
     if (confirm !== password) found.confirm = 'Passwords do not match';
     setErrors(found);
     setFormError('');
@@ -34,6 +37,7 @@ export default function ResetPassword() {
     setBusy(true);
     try {
       await post('/auth/reset-password', { token, password }, { auth: false });
+      if (status === 'authenticated') await logout(); // the reset ended every session, including this one
       setDone(true);
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -58,11 +62,7 @@ export default function ResetPassword() {
       <form onSubmit={onSubmit} noValidate>
         {formError && <p className="form-error" role="alert">{formError}</p>}
         <PasswordField label="New password" name="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} />
-        <ul className="rules" aria-label="Password rules">
-          {passwordRules.map(([label, ok]) => (
-            <li key={label} className={ok(password) ? 'met' : ''}>{ok(password) ? '✓' : '○'} {label}</li>
-          ))}
-        </ul>
+        <PasswordRules password={password} />
         <PasswordField label="Confirm new password" name="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={errors.confirm} />
         <button type="submit" className="btn btn-primary full" disabled={busy}>{busy ? 'Saving…' : 'Update password'}</button>
       </form>

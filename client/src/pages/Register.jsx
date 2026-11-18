@@ -6,12 +6,8 @@ import { portalPath } from '../auth/roles.js';
 import AuthShell from '../components/AuthShell.jsx';
 import Field from '../components/Field.jsx';
 import PasswordField from '../components/PasswordField.jsx';
-
-export const passwordRules = [
-  ['At least 8 characters', (p) => p.length >= 8],
-  ['A letter', (p) => /[A-Za-z]/.test(p)],
-  ['A number', (p) => /\d/.test(p)],
-];
+import PasswordRules from '../components/PasswordRules.jsx';
+import { passwordValid } from '../auth/passwordRules.js';
 
 export default function Register() {
   const { register } = useAuth();
@@ -27,7 +23,7 @@ export default function Register() {
     if (form.fullName.trim().length < 2) e.fullName = 'Enter your full name';
     if (!form.email.trim() && !form.phone.trim()) e.email = 'Enter an email or a phone number';
     if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email.trim())) e.email = 'Enter a valid email';
-    if (!passwordRules.every(([, ok]) => ok(form.password))) e.password = 'Your password does not meet the rules below';
+    if (!passwordValid(form.password)) e.password = 'Your password does not meet the rules below';
     if (form.confirm !== form.password) e.confirm = 'Passwords do not match';
     if (!form.dataUse) e.dataUse = 'You must agree to data use to create an account';
     return e;
@@ -71,11 +67,7 @@ export default function Register() {
           <Field label="Phone (optional if you gave an email)" name="phone" type="tel" autoComplete="tel" value={form.phone} onChange={set('phone')} error={errors.phone} hint="10-digit Indian number or with country code" />
         </div>
         <PasswordField label="Password" name="password" autoComplete="new-password" value={form.password} onChange={set('password')} error={errors.password} />
-        <ul className="rules" aria-label="Password rules">
-          {passwordRules.map(([label, ok]) => (
-            <li key={label} className={ok(form.password) ? 'met' : ''}>{ok(form.password) ? '✓' : '○'} {label}</li>
-          ))}
-        </ul>
+        <PasswordRules password={form.password} />
         <PasswordField label="Confirm password" name="confirm" autoComplete="new-password" value={form.confirm} onChange={set('confirm')} error={errors.confirm} />
 
         <fieldset className="consents">

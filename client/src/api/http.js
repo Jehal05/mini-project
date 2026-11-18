@@ -43,21 +43,40 @@ async function send(path, { method = 'GET', body, auth = true } = {}) {
   return data;
 }
 
+const RACE_RETRY_MS = 300;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function requestRefresh() {
+  try {
+    return await send('/auth/refresh', { method: 'POST', auth: false });
+  } catch (err) {
+    // Another tab renewed the session a moment before us. The browser now holds the new cookie, so retry once.
+    if (err instanceof ApiRequestError && err.code === 'REFRESH_RACE') {
+      await sleep(RACE_RETRY_MS);
+      return send('/auth/refresh', { method: 'POST', auth: false });
+    }
+    throw err;
+  }
+}
+
 /** Feature 100: exchanges the httpOnly refresh cookie for a new access token. One call at a time. */
 export function refreshSession() {
-  refreshInFlight ??= send('/auth/refresh', { method: 'POST', auth: false })
+  refreshInFlight ??= requestRefresh()
     .then((data) => { accessToken = data.accessToken; return data; })
     .catch((err) => { accessToken = null; throw err; })
     .finally(() => { refreshInFlight = null; });
   return refreshInFlight;
 }
 
+// An access token that expired, or whose login was just rotated, is worth one silent refresh and retry.
+const REFRESHABLE = new Set(['TOKEN_EXPIRED', 'SESSION_REVOKED']);
+
 /** Calls the API; if the access token has expired, refreshes silently once and retries. */
 export async function api(path, options = {}) {
   try {
     return await send(path, options);
   } catch (err) {
-    if (!(err instanceof ApiRequestError) || err.code !== 'TOKEN_EXPIRED' || options.auth === false) throw err;
+    if (!(err instanceof ApiRequestError) || !REFRESHABLE.has(err.code) || options.auth === false) throw err;
     try {
       await refreshSession();
     } catch (refreshErr) {

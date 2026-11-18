@@ -61,4 +61,39 @@ describe('feature 100: silent refresh in the browser', () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('failed'))));
     await expect(api('/x')).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
   });
+
+  it('also refreshes and retries when the login behind the token was just rotated (SESSION_REVOKED)', async () => {
+    vi.stubGlobal('fetch', vi.fn((url, init) => {
+      if (url.endsWith('/auth/refresh')) return json(200, { accessToken: 'new', user: {} });
+      return init.headers.Authorization === 'Bearer new' ? json(200, { ok: true }) : json(401, { error: { code: 'SESSION_REVOKED', message: 'ended' } });
+    }));
+    expect(await api('/things')).toEqual({ ok: true });
+  });
+
+  it('gives up cleanly when the session really was revoked', async () => {
+    const lost = vi.fn();
+    setAuthLostHandler(lost);
+    vi.stubGlobal('fetch', vi.fn((url) => (url.endsWith('/auth/refresh') ? json(401, { error: { code: 'REFRESH_TOKEN_REVOKED', message: 'ended' } }) : json(401, { error: { code: 'SESSION_REVOKED', message: 'ended' } }))));
+    await expect(api('/a')).rejects.toMatchObject({ code: 'SESSION_REVOKED' });
+    expect(lost).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries once when another tab renewed the session at the same moment (REFRESH_RACE)', async () => {
+    let refreshCalls = 0;
+    vi.stubGlobal('fetch', vi.fn(() => {
+      refreshCalls += 1;
+      return refreshCalls === 1 ? json(401, { error: { code: 'REFRESH_RACE', message: 'retry' } }) : json(200, { accessToken: 'second', user: { id: '1' } });
+    }));
+    const data = await refreshSession();
+    expect(refreshCalls).toBe(2);
+    expect(data.accessToken).toBe('second');
+    expect(getAccessToken()).toBe('second');
+  });
+
+  it('does not loop forever on a persistent REFRESH_RACE', async () => {
+    const fetchMock = vi.fn(() => json(401, { error: { code: 'REFRESH_RACE', message: 'retry' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(refreshSession()).rejects.toMatchObject({ code: 'REFRESH_RACE' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

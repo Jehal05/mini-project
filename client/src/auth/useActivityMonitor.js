@@ -33,6 +33,7 @@ export function useActivityMonitor({ enabled, idleMs, onIdle }) {
   useEffect(() => {
     if (!enabled) { setSecondsLeft(null); return undefined; }
     mark();
+    let fired = false; // sign out once, even though the timer keeps ticking while the logout request is in flight
     let throttle = 0;
     const onEvent = () => { const now = Date.now(); if (now - throttle > 1000) { throttle = now; mark(); } };
     EVENTS.forEach((e) => window.addEventListener(e, onEvent, { passive: true }));
@@ -41,7 +42,8 @@ export function useActivityMonitor({ enabled, idleMs, onIdle }) {
       const now = Date.now();
       const lastSeen = Math.max(last.current, readShared());
       const idleFor = now - lastSeen;
-      if (idleFor >= idleMs) { onIdleRef.current(); return; }
+      if (fired) return;
+      if (idleFor >= idleMs) { fired = true; onIdleRef.current(); return; }
       setSecondsLeft(idleMs - idleFor <= WARN_MS ? Math.ceil((idleMs - idleFor) / 1000) : null);
       if (dirty.current && now - lastPing.current >= PING_EVERY_MS) {
         dirty.current = false;

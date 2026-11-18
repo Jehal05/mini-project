@@ -27,8 +27,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
+      {/* Outside PublicOnly: someone who is signed in can still follow a reset link from their email. */}
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route element={<RequireAuth roles={['patient']} />}>
         <Route path="/patient/*" element={<PatientHome />} />

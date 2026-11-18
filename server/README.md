@@ -93,6 +93,9 @@ and sends `ping:test` automatically. You should see `Received pong:test` with a 
 | GET | `/api/health` | `{ status, db, time }` |
 | GET | `/api/hospitals` | `{ count, hospitals }` (active only) |
 | GET | `/api/hospitals/near?lat=&lng=&radiusKm=&cardiacOnly=` | `{ origin, radiusKm, cardiacOnly, count, hospitals[] }` nearest-first, each with `distanceKm`. `radiusKm` defaults to 10, max 100. `cardiacOnly=true` keeps hospitals with a cath lab or a cardiologist on duty |
+| GET | `/api/hospitals/rank?lat=&lng=&radiusKm=&exclude=` | Phase 3. `{ origin, radiusKm, weights, suitableCount, top[], alternatives[], notSuitable[], excluded[], suggestedRadiusKm }`. Each ranked item: `{ rank, hospital, score: { total, breakdown[] }, warnings[] }`. `exclude` = comma-separated hospital ids that rejected. See [docs/phase3-ranking.md](../docs/phase3-ranking.md) |
+| GET | `/api/hospitals/:id` | `{ hospital }` (400 bad id, 404 not found) |
+| PATCH | `/api/hospitals/:id/capabilities` | Demo only. Body: any of `cathLab`, `cardiologistOnDuty` (boolean), `icuBedsFree`, `ccuBedsFree`, `alsAmbulances` (0–999). Broadcasts Socket.IO `hospital:capabilities` |
 | GET | `/api/hospitals/search?q=&lat=&lng=` | `{ q, origin, count, hospitals[] }`. Case-insensitive match on name or address (max 50 chars). With `lat`/`lng`: `distanceKm` added (Haversine) and sorted nearest-first; without: sorted by name |
 
 The near route uses `$geoNear`, the aggregation form of `$near`: same nearest-first
@@ -107,6 +110,13 @@ order on the 2dsphere index, and it also returns each hospital's distance.
 | server → client | `join:error` | `{ ok: false, error }` (when no ack callback) |
 | client → server | `ping:test` | any |
 | server → client | `pong:test` | `{ message: "pong", echo, serverTime }` |
+| server → all | `hospital:capabilities` | `{ hospitalId, capabilities, updatedAt }` after a capacity change |
+
+## Tests
+
+```bash
+npm test   # Vitest: ranking rules in tests/ranking.test.js
+```
 
 Roles: `patient`, `doctor`, `hospital_staff`, `hospital_admin`, `crew`, `admin`.
 Rooms: `admin`, `hospital:<id>`, `patient:<id>`.

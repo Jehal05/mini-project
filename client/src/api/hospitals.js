@@ -23,6 +23,25 @@ export async function searchHospitals({ q, lat, lng, signal }) {
   return data.hospitals;
 }
 
+// Features 57-60: suitable hospitals ranked with score breakdowns. exclude = ids that rejected.
+export async function rankHospitals({ lat, lng, radiusKm = 10, exclude = [], signal }) {
+  const params = { lat, lng, radiusKm };
+  if (exclude.length) params.exclude = exclude.join(',');
+  const { data } = await api.get('/api/hospitals/rank', { params, signal });
+  return data;
+}
+
+export async function getHospital(id) {
+  const { data } = await api.get(`/api/hospitals/${id}`);
+  return data.hospital;
+}
+
+// Feature 58 demo controls: change capacity (beds, cath lab, cardiologist, ALS).
+export async function updateCapabilities(id, changes) {
+  const { data } = await api.patch(`/api/hospitals/${id}/capabilities`, changes);
+  return data.hospital;
+}
+
 // Returns null for cancelled requests (they are not errors), otherwise a message for the UI.
 export function errorMessage(err) {
   if (axios.isCancel(err)) return null;

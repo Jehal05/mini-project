@@ -19,7 +19,8 @@ All data is simulated and fictional. Not a medical device.
 | --- | --- | --- |
 | 1 | Backend foundation: server, schemas, seed data, Socket.IO | Built |
 | 2 | Location and hospital finding (features 51–56) | Built |
-| 3 | Choosing the right hospital (57–60) | Next |
+| 3 | Choosing the right hospital (57–60) — [docs](docs/phase3-ranking.md) | Built |
+| 4 | Hospital alerts and coordination (61–68) | Next |
 
 ## Quick start
 

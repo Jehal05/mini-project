@@ -9,6 +9,8 @@ const capabilitiesSchema = new mongoose.Schema(
     icuBedsFree: { type: Number, default: 0, min: 0 },
     ccuBedsFree: { type: Number, default: 0, min: 0 },
     alsAmbulances: { type: Number, default: 0, min: 0 },
+    // When capacity was last changed (shown as "Updated 2 min ago").
+    updatedAt: { type: Date, default: Date.now },
   },
   { _id: false }
 );

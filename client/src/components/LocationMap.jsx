@@ -102,6 +102,8 @@ export default function LocationMap({
   focus,
   onSelectHospital,
   fitNonce,
+  rankById = {}, // { [hospitalId]: 1 | 2 | 3 } for the cardiac ranking
+  fadedIds = null, // Set of not-suitable hospital ids, drawn at 40% opacity
 }) {
   const markerRefs = useRef({});
 
@@ -167,7 +169,9 @@ export default function LocationMap({
           <Marker
             key={h._id}
             position={toLatLng(h)}
-            icon={hospitalIcon(h, focus?.id === h._id)}
+            icon={hospitalIcon(h, focus?.id === h._id, rankById[h._id] ?? null)}
+            opacity={fadedIds?.has(h._id) ? 0.4 : 1}
+            zIndexOffset={rankById[h._id] ? 500 - rankById[h._id] : 0}
             ref={(el) => {
               if (el) markerRefs.current[h._id] = el;
               else delete markerRefs.current[h._id];

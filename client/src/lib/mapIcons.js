@@ -36,18 +36,21 @@ export const patientIcon = L.divIcon({
 
 const hospitalIconCache = new Map();
 
-export function hospitalIcon(hospital, selected = false) {
+// rank (1-3) replaces the "H" for the top hospitals in the cardiac ranking (feature 59).
+export function hospitalIcon(hospital, selected = false, rank = null) {
   const kind = capabilityKind(hospital);
-  const key = `${kind}-${selected}`;
+  const key = `${kind}-${selected}-${rank ?? ''}`;
   if (!hospitalIconCache.has(key)) {
+    const size = rank ? 32 : 28;
+    const classes = ['hospital-pin', selected && 'selected', rank && 'ranked'].filter(Boolean).join(' ');
     hospitalIconCache.set(
       key,
       L.divIcon({
         className: '',
-        html: `<div class="hospital-pin${selected ? ' selected' : ''}" style="background:${CAPABILITY_COLORS[kind]}">H</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-        popupAnchor: [0, -16],
+        html: `<div class="${classes}" style="background:${CAPABILITY_COLORS[kind]}">${rank ?? 'H'}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -(size / 2 + 2)],
       })
     );
   }

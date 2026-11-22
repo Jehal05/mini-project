@@ -8,6 +8,7 @@ import { TrendsPanel } from './TrendsPanel.jsx'
 import { VITAL_UNIT, compareAll, heartState, twinSummary } from './twinModel.js'
 import { formatVital } from '@shared/vitals.js'
 
+// TODO(Jehal): feature 93 (full risk score) is blocked on feature 18. Not built; see docs/phase4-twin.md.
 export function TwinCard({ patientId, live, baseline }) {
   const { status: detection } = useDetection(patientId)
   const rows = useMemo(() => compareAll(live, baseline), [live, baseline])

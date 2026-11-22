@@ -37,6 +37,13 @@ cd e2e && npm run build:frontend && npm test
 | Detection role checks (`detection/routes.js` TODO) | Interim presenter key | config -> central_admin, thresholds -> doctor, history -> patient or their doctor | `detection.api.test.js` |
 | Real notifier (email, web push) (`notifier` option) | Dev notifier logs only. Only the WhatsApp link is real | Provide `{ email, push }` with real providers and env vars | `emergency.service.test.js` (group "47"), **new** test per provider |
 
+## Detection + Patient portal: twin (Phase 4)
+
+| Hook | Today | When it lands | Tests |
+|---|---|---|---|
+| Feature 93, full risk score on the twin (`TODO(Jehal)`, blocked on feature 18) | Not built. Twin shows detection status only | Jehal's risk model supplies the score; show it in `features/twin/TwinCard.jsx` | **new test needed** |
+| Trends route ownership (`GET /api/sim/patients/:id/trends`) | Open like the other sim routes | Same `guard` as history: patient, family link, doctor | `trends.api.test.js` (**add** ownership tests) |
+
 ## What was run in Phase 12 (the ticked part)
 
 - [x] `discovery.notify` contract: called with round and radius 10/20/30 km, once per round, also after a server restart (journeys a, d, e, g, h with a labelled FAKE).

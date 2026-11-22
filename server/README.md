@@ -174,3 +174,50 @@ Or use the Hospital Portal tab in the client and press "Create demo emergency".
 ```js
 Hospital.find({ location: { $near: { $geometry: { type: 'Point', coordinates: [lng, lat] }, $maxDistance: 10000 } } });
 ```
+
+## Phase 10: ambulance fleet, assignment and simulation (features 71-80, 107)
+
+**Fleet (71, 72)** `POST/GET /api/ambulances`, `PATCH /api/ambulances/:id/status` (available <-> maintenance only, and not while
+reserved), `GET /api/hospitals/:id/ambulances/summary` (counts per status and type). Staff see and register only their own hospital.
+
+**Assignment (73)** When a hospital accepts, `autoAssign` reserves its nearest free ambulance: every free ALS first (nearest first),
+BLS only if no ALS is free. Reserving sets `Ambulance.currentCase` with one atomic update, so two cases can never get the same
+vehicle. `GET /api/cases/:id/ambulance-options` and `POST /api/cases/:id/ambulance {ambulanceId}` let staff override.
+If nothing is free the case timeline records `no_ambulance_available`; the accepted case is never undone.
+
+**Dispatch (74)** `POST /api/cases/:id/dispatch` builds both route legs (ambulance to patient, patient to hospital) and creates the `Trip`.
+
+**Routes and ETA (75-77)** Geometry comes from `ROUTING_PROVIDER` (osrm | mapbox | google). If it fails, a straight-line path is used
+and the leg is marked `etaSource: "estimate"`. The simulator ticks every `AMBULANCE_TICK_SECONDS`, moves each trip at
+`AMBULANCE_SPEED_KMH` using real elapsed time, and emits `ambulance:position` (with `etaMinutes`) to the case room, the patient room
+and the accepting hospital room. ETA = remaining metres / speed. A tick applies only if nobody else ticked first.
+
+**Stages (78-80)** `en_route -> at_patient -> patient_on_board -> en_route_to_hospital -> at_hospital`, one step at a time (409 otherwise).
+The simulator moves the ambulance to `at_patient` (sets `ambulanceAtPatientAt`, which starts the 10-minute scene clock).
+`POST /api/trips/:caseId/pickup` (crew) sets `patientOnBoardAt`; the simulator then drives the hospital leg.
+`POST /api/trips/:caseId/arrive` (crew or the receiving hospital) opens an `Admission`, sets the case to `arrived`,
+frees the ambulance at its home hospital and emits `emergency:arrived`.
+`GET /api/trips/:caseId/public` is the patient and family view (no crew names). `GET /api/trips/crew/current` is the crew view.
+
+**Events** `ambulance:position`, `ambulance:status` (stage change), `emergency:arrived`.
+**Env** `AMBULANCE_SPEED_KMH` (default 60), `AMBULANCE_TICK_SECONDS` (default 2).
+
+### What the other owners must connect
+
+- **Jehal (auth):** replace `requireAmbulanceCrew` / `requireCrewOrHospitalStaff` (dev headers `x-ambulance-id`, `x-hospital-id`) and
+  protect `/api/trips/:caseId/public` with the patient login. `GET /api/ambulances/crew-options` is a dev-only helper (404 in production).
+- **Jehal (admission management, 84):** `confirmArrival` creates a minimal `Admission` (`emergencyCase`, `patient`, `hospital`, `admittedAt`).
+  Build ward, bed and doctor handling on top of it.
+- **Daksh (case closing):** after arrival the case status is `arrived`. Close it by setting `status: 'closed'` and `closedAt`.
+
+### Full demo
+
+```bash
+npm run seed && npm run dev          # seed creates ambulances at each hospital
+```
+1. Hospital Portal tab: pick a hospital, press "Create demo emergency".
+2. Accept the takeover alert. The nearest ALS ambulance is reserved automatically (override in the Ambulance section).
+3. Press "Dispatch ambulance". Watch the map, ETA and stage tracker. Open the Patient status tab to see what the patient sees.
+4. Crew view tab: choose that ambulance. When it shows "At patient" press "Patient picked up".
+5. When the stage is "En route to hospital" press "Arrived at hospital" (or "Confirm arrival at ED" in the portal).
+Tip: `AMBULANCE_SPEED_KMH=300` makes the demo quick.

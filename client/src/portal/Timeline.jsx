@@ -12,6 +12,14 @@ const LABELS = {
   ecgReady_done: 'ECG ready on arrival',
   firstMedicalContact: 'First medical contact',
   treatmentStarted: 'Treatment started',
+  ambulance_assigned: 'Ambulance reserved',
+  ambulance_overridden: 'Ambulance changed by staff',
+  no_ambulance_available: 'No ambulance available',
+  ambulance_dispatched: 'Ambulance dispatched',
+  ambulance_at_patient: 'Ambulance reached the patient',
+  patient_on_board: 'Patient on board',
+  departed_scene: 'Left the scene for the hospital',
+  arrived_at_hospital: 'Arrived at the hospital',
 };
 
 // Feature 70: every step, oldest first, with timestamps.

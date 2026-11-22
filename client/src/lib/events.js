@@ -5,4 +5,7 @@ export const EVENTS = {
   EMERGENCY_REJECTED: 'emergency:rejected',
   PREPARATION_UPDATE: 'preparation:update',
   CASE_UPDATE: 'case:update',
+  AMBULANCE_POSITION: 'ambulance:position',
+  AMBULANCE_STATUS: 'ambulance:status',
+  EMERGENCY_ARRIVED: 'emergency:arrived',
 };

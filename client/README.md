@@ -21,3 +21,11 @@ Tabs: **Find hospitals** (Phase 8), **Hospital Portal**, **Patient status**.
 In the portal pick a hospital (temporary demo login), then press "Create demo emergency". The case appears live in the
 queues of the top 3 hospitals, a critical case takes over the screen with an alarm, and Accept / Reject / doctor /
 checklist / timer / timeline all call the server. Open the Patient status tab to see the patient-side message.
+
+## Ambulance tracking (Phase 10)
+
+- **Hospital Portal > Ambulance fleet:** register ambulances, live counts, maintenance toggle.
+- **Case screen > Ambulance:** reserved ambulance, change it, **Dispatch**, live map with both route legs (current leg in red),
+  moving marker, ETA, five-stage tracker, **Confirm arrival at ED**.
+- **Crew view tab (mobile friendly):** pick an ambulance (temporary login), big **Patient picked up** / **Arrived at hospital** buttons, Call 112 / 108.
+- **Patient status tab:** live ambulance ETA and map once the hospital dispatches.

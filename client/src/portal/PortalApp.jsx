@@ -5,6 +5,7 @@ import { useQueue } from './useQueue.js';
 import CaseQueue from './CaseQueue.jsx';
 import CaseView from './CaseView.jsx';
 import TakeoverScreen from './TakeoverScreen.jsx';
+import FleetPanel from './FleetPanel.jsx';
 
 const KEY = 'ht.portalHospital';
 
@@ -17,6 +18,7 @@ export default function PortalApp() {
   const [busy, setBusy] = useState(false);
   const [takeoverError, setTakeoverError] = useState('');
   const [info, setInfo] = useState('');
+  const [showFleet, setShowFleet] = useState(false);
 
   useEffect(() => { fetchHospitals().then(setHospitals).catch(() => setHospitals([])); }, []);
   useEffect(() => { if (hospitalId) localStorage.setItem(KEY, hospitalId); }, [hospitalId]);
@@ -74,6 +76,7 @@ export default function PortalApp() {
             <button className="rounded border px-3 py-1 text-sm" onClick={async () => setInfo(await enableBackgroundAlerts(hospitalId).catch((e) => e.message))}>
               Alerts when tab is closed
             </button>
+            <button className="rounded border px-3 py-1 text-sm" onClick={() => setShowFleet((v) => !v)}>{showFleet ? 'Hide fleet' : 'Ambulance fleet'}</button>
             <button className="rounded bg-red-700 px-3 py-1 text-sm font-semibold text-white" onClick={demo}>Create demo emergency</button>
           </>
         )}
@@ -87,6 +90,8 @@ export default function PortalApp() {
         </div>
       ))}
       {error && <p className="mb-2 rounded bg-red-50 p-2 text-sm text-red-800">{error}</p>}
+
+      {hospitalId && showFleet && <div className="mb-4"><FleetPanel hospitalId={hospitalId} /></div>}
 
       {!hospitalId ? (
         <p className="rounded bg-white p-4 text-sm shadow">Choose a hospital to see its incoming emergencies.</p>

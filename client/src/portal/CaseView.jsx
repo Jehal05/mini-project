@@ -5,6 +5,7 @@ import Vitals from './Vitals.jsx';
 import GoldenHourClock from './GoldenHourClock.jsx';
 import Timeline from './Timeline.jsx';
 import Countdown from './Countdown.jsx';
+import AmbulancePanel from './AmbulancePanel.jsx';
 
 const REASONS = [
   ['no_beds', 'No beds'],
@@ -113,6 +114,8 @@ export default function CaseView({ hospitalId, caseData, onChange, onGone }) {
 
       {mine && (
         <>
+          <AmbulancePanel hospitalId={hospitalId} caseData={caseData} onChange={onChange} />
+
           <section>
             <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Doctor</h3>
             <div className="flex gap-2">

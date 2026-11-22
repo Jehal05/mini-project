@@ -245,6 +245,21 @@ describe('LevelAlert (feature 42)', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('does not vibrate before the person has touched the page (the browser blocks it and logs a console error)', async () => {
+    const vibrate = vi.fn()
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
+    Object.defineProperty(navigator, 'userActivation', { value: { hasBeenActive: false }, configurable: true })
+    await mount(0)
+    await update(3)
+    expect(vibrate).not.toHaveBeenCalled()
+    Object.defineProperty(navigator, 'userActivation', { value: { hasBeenActive: true }, configurable: true })
+    await update(0)
+    await update(3)
+    expect(vibrate).toHaveBeenCalledTimes(1)
+    delete navigator.vibrate
+    delete navigator.userActivation
+  })
+
   it('opening the page while already at Level 2 shows the banner but does not beep', async () => {
     await mount(2)
     expect(screen.getByRole('alert')).toHaveTextContent('Level 2 Urgent')

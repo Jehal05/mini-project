@@ -36,7 +36,8 @@ export function LevelAlert({ patientId }) {
       if (live && before !== null && level >= 2 && level > before) {
         setDismissed(0)
         if (soundRef.current) setNeedsTap(!playAlert(level))
-        if (level >= 3) globalThis.navigator?.vibrate?.([200, 100, 200])
+        // Browsers refuse to vibrate until the person has touched the page, and log a console error if asked.
+        if (level >= 3 && globalThis.navigator?.userActivation?.hasBeenActive) globalThis.navigator.vibrate?.([200, 100, 200])
       }
     }
     detectionApi

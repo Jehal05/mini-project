@@ -1,6 +1,8 @@
 // Feature 50: the patient's own past incidents, each with its full timeline.
 import { useEffect, useState } from 'react'
+import { EMERGENCY_EVENTS } from '@shared/emergency.js'
 import { Badge, Button, Card } from '../../design/index.js'
+import { getSocket } from '../monitoring/useLiveVitals.js'
 import { emergencyApi } from './api.js'
 import { CANCEL_LABEL, SOURCE_TEXT, STATUS_TEXT, STATUS_TONE } from './status.js'
 
@@ -10,8 +12,25 @@ export function EmergencyHistory({ patientId, refreshKey }) {
   const [page, setPage] = useState(1)
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
+  const [tick, setTick] = useState(0) // bumped by this patient's emergency events
 
   useEffect(() => setPage(1), [patientId])
+  // A case that is sent, escalated, cancelled or unresolved changes its row: read the list again.
+  useEffect(() => {
+    let alive = true
+    let detach = () => {}
+    getSocket().then((s) => {
+      if (!alive) return
+      const onEvent = (p) => p?.patientId === patientId && setTick((n) => n + 1)
+      const names = Object.values(EMERGENCY_EVENTS)
+      for (const n of names) s.on(n, onEvent)
+      detach = () => names.forEach((n) => s.off(n, onEvent))
+    })
+    return () => {
+      alive = false
+      detach()
+    }
+  }, [patientId])
   useEffect(() => {
     let alive = true
     emergencyApi
@@ -21,7 +40,7 @@ export function EmergencyHistory({ patientId, refreshKey }) {
     return () => {
       alive = false
     }
-  }, [patientId, page, refreshKey])
+  }, [patientId, page, refreshKey, tick])
 
   return (
     <Card title="Emergency incidents" subtitle="Your past emergencies · simulated">

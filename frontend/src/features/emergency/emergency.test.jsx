@@ -423,6 +423,18 @@ describe('SosDialog (feature 41)', () => {
 describe('EmergencyHistory (feature 50)', () => {
   const item = (id, status, over = {}) => ({ id, status, source: 'auto_detection', createdAt: '2026-11-10T10:00:00Z', timeline: [{ type: 'sent', at: '2026-11-10T10:00:10Z', message: 'Patient confirmed: sent now' }], ...over })
 
+  it('refreshes when this patient\'s case changes, so a finished case does not keep its old status (found in the Phase 12 screenshots)', async () => {
+    api.mine.mockResolvedValue({ items: [item('a', 'searching')], page: 1, pages: 1, total: 1 })
+    render(<EmergencyHistory patientId="p1" />)
+    expect(await screen.findByText('Looking for a hospital')).toBeInTheDocument()
+    api.mine.mockResolvedValue({ items: [item('a', 'unresolved')], page: 1, pages: 1, total: 1 })
+    const calls = api.mine.mock.calls.length
+    await hear('emergency:unresolved', { patientId: 'someone-else' })
+    expect(api.mine.mock.calls.length).toBe(calls)
+    await hear('emergency:unresolved', { patientId: 'p1' })
+    expect(await screen.findByText(/No hospital has accepted yet/)).toBeInTheDocument()
+  })
+
   it('lists incidents with status, cancel reason and timeline', async () => {
     api.mine.mockResolvedValue({ items: [item('a', 'cancelled', { cancellation: { reason: 'false_alarm' } }), item('b', 'closed', { source: 'manual_sos' })], page: 1, pages: 1, total: 2 })
     render(<EmergencyHistory patientId="p1" />)

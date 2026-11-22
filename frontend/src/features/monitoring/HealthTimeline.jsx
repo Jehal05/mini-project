@@ -107,7 +107,7 @@ export function HealthTimeline({ patientId, refreshKey }) {
             <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rotate-45 rounded-[2px] bg-primary" /> Event</span>
           </div>
 
-          <ol className="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1" aria-label="Events">
+          <ol tabIndex={0} className="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1" aria-label="Events">
             {events.length === 0 && <li className="text-sm text-fg-muted">No events in this range.</li>}
             {[...events].reverse().map((e) => (
               <li key={e.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface px-3 py-2">

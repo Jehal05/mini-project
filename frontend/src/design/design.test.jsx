@@ -98,6 +98,14 @@ describe('Table', () => {
   })
 })
 
+describe('Table scrolling (found by the Phase 12 axe run)', () => {
+  it('its sideways-scrolling wrapper can be reached with the keyboard and has a name', () => {
+    render(<Table rows={[{ id: 1, a: 'x' }]} columns={[{ key: 'a', header: 'A' }]} caption="Detections" />)
+    const region = screen.getByRole('region', { name: 'Detections' })
+    expect(region).toHaveAttribute('tabindex', '0')
+  })
+})
+
 describe('MedicalBackground', () => {
   it('shows the alert vignette only on the hospital portal', () => {
     const { rerender } = render(<MedicalBackground portal="hospital" alert>x</MedicalBackground>)

@@ -10,7 +10,8 @@ export function Table({ columns, rows, rowKey = 'id', caption, empty = 'Nothing 
   const alignClass = { left: 'text-left', right: 'text-right', center: 'text-center' }
 
   return (
-    <div className={cx('overflow-x-auto rounded-2xl border border-line bg-surface backdrop-blur-xl', className)}>
+    // Scrollable regions must be reachable with the keyboard (axe: scrollable-region-focusable).
+    <div role="region" tabIndex={0} aria-label={caption ?? 'Table'} className={cx('overflow-x-auto rounded-2xl border border-line bg-surface backdrop-blur-xl', className)}>
       <table className="w-full border-collapse text-sm">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ApiError } from '../utils/ApiError.js';
 import * as c from '../controllers/profile.controller.js';
+import { ownDischargeSummary } from '../controllers/ownDischarge.controller.js';
 import { protect, validate } from '../middleware/index.js';
 import { loadOwnPatient } from '../middleware/ownPatient.js';
 import { uploadDocument, uploadPhoto } from '../middleware/upload.js';
@@ -11,7 +12,7 @@ import {
 
 /** Everything here acts on the signed-in patient's own record, taken from the token (never from the URL). */
 const router = Router();
-for (const name of ['itemId', 'contactId', 'docId']) {
+for (const name of ['itemId', 'contactId', 'docId', 'summaryId']) {
   router.param(name, (_req, _res, next, value) => (/^[a-f\d]{24}$/i.test(value) ? next() : next(ApiError.notFound('Not found'))));
 }
 router.use(protect({ roles: ['patient'] }), loadOwnPatient);
@@ -40,6 +41,8 @@ router.get('/documents', c.listDocuments);
 router.post('/documents', uploadDocument, c.uploadDocument);
 router.get('/documents/:docId/file', c.getDocumentFile);
 router.delete('/documents/:docId', c.deleteDocument);
+
+router.get('/discharge-summaries/:summaryId', ownDischargeSummary);
 
 router.get('/qr', c.getQr);
 router.post('/qr/regenerate', c.regenerateQr);

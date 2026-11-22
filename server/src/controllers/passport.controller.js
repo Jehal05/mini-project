@@ -6,6 +6,7 @@ import { Document } from '../models/Document.js';
 import { Patient } from '../models/Patient.js';
 import { EVENTS, appEvents } from '../events.js';
 import { getEmergencySummary, getFullRecord } from '../services/patientSummary.js';
+import { buildHealthSummary } from '../services/healthSummary.js';
 import { consumeQuota } from '../utils/quota.js';
 import { readFile } from '../utils/storage.js';
 import { mimeFor, setFileHeaders } from './profile.controller.js';
@@ -77,7 +78,7 @@ export async function fullRecord(req, res) {
   await writeAudit({ req, action: 'record.view', resourceType: 'patient', resourceId: patient.patientId, strict: true });
   const record = await getFullRecord(patient, { photoPath: `/api/passport/${req.params.token}/photo` });
   res.set('Cache-Control', 'private, no-store');
-  res.json({ patient: record });
+  res.json({ patient: record, summary: buildHealthSummary(patient) });
 }
 
 export async function fullRecordDocument(req, res) {

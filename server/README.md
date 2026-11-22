@@ -117,3 +117,33 @@ Contact limit (3), unique priorities, section size (50), document count (50), te
 are all enforced in a single database operation, so parallel requests cannot go past them. Audit entries hold the patient ID, section and operation only, never health text or the QR token.
 Uploaded files get a random name, live in `UPLOAD_DIR` (default `server/uploads/`, git-ignored, not served statically), and are returned only through authenticated routes.
 Photos have metadata (EXIF) removed before storing.
+
+## Phase 3: hospital management (Jehal)
+
+### Routes
+Central admin, `/api/admin` (central admins only): `GET|POST /hospitals`, `GET|PATCH /hospitals/:id`. Creating a hospital also creates its hospital-admin account with a random
+password nobody sees; the admin gets a one-time link to choose their own. Closing a hospital (`isActive: false`) switches off all its staff accounts.
+
+Hospital portal, `/api/hospital` (doctor, hospital_staff, hospital_admin; always the caller's own hospital, taken from the token):
+`GET /me`, `PATCH /me` (admin), `GET /dashboard`, `GET|POST /doctors`, `PATCH /doctors/:id` (admin), `GET|POST /beds`, `POST /beds/bulk`, `PATCH|DELETE /beds/:id`,
+`GET /ed`, `POST /ed/bays`, `PATCH|DELETE /ed/bays/:id`, `GET /history`, `GET|POST /admissions`, `GET /admissions/:id[/record|/summary]`,
+`GET|POST /admissions/:id/records` (+ `/records/file`, `/records/:recordId/file`), `GET|POST /admissions/:id/prescriptions` (+ `/check?drug=`), `GET|POST /admissions/:id/discharge`.
+Patients read their own summaries at `GET /api/patients/me/discharge-summaries/:id`.
+
+### For teammates (Puneet: connection and response)
+- **Cases.** `services/hospitalCases.js`: call `recordHospitalCase({ hospitalId, emergencyCaseId, patientId, summary, severity })` when a hospital is notified and
+  `updateHospitalCase({ hospitalId, emergencyCaseId }, { status: 'accepted' | 'rejected' | 'arrived' | 'closed', etaMinutes, rejectionReason, outcome })` when it answers.
+  The dashboard (82), ED "arriving now" list (86) and emergency history (90) read these rows. Nothing there depends on Daksh's EmergencyCase model.
+- **Beds.** `getBedAvailability(hospitalId)` (`services/beds.js`) returns counts by type and status for the capability card (58). The `hospital:beds_changed` event
+  `{ hospitalId, availability }` fires after every change, for the Socket.IO push.
+- **Doctors.** `isCardiologistOnDuty(hospitalId)` and `getDoctorsOnDuty(hospitalId)` (`services/doctors.js`) feed ranking (59) and assignment (68). `hospital:doctor_duty_changed`
+  `{ hospitalId, cardiologistOnDuty, doctorsOnDuty }` fires when the roster changes.
+- **Handover summary (63, feature 94).** `buildHealthSummary(patientDoc, { latest, baseline })` (`services/healthSummary.js`) returns `{ text, lines, vitals }` from a fixed template.
+  Pass Daksh's latest and baseline vitals as `{ heartRate, systolic, diastolic, spo2, temperatureC }`. The QR full-record response includes it as `summary`.
+- **Admission** links to a case through `caseId` and moves the case to `admitted`; discharge closes it.
+
+### Rules enforced (and tested)
+One bed per admission and one open admission per patient (conditional update plus a partial unique index), one discharge per admission, bed limit (300) and bay limit (40) via atomic counters.
+Every read of patient health data by a hospital writes `record.view` before anything is returned; audit entries hold ids and the kind of view, never health text.
+A prescription whose drug matches a recorded allergy (including drug families such as penicillin / amoxicillin) is refused with `ALLERGY_WARNING` until the doctor confirms; the override is stored.
+Seed: 5 fictional Pune hospitals with beds, ED bays and doctors; the demo hospital also has sample cases.

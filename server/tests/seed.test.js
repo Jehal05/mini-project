@@ -28,7 +28,7 @@ describe('demo seed', () => {
     await seed(quiet);
     await seed(quiet);
     expect(await User.countDocuments()).toBe(DEMO_ACCOUNTS.length + 1);
-    expect(await Hospital.countDocuments()).toBe(1);
+    expect(await Hospital.countDocuments()).toBe(5);
     expect(await Patient.countDocuments()).toBe(1);
   });
 

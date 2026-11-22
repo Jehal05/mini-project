@@ -2,13 +2,13 @@ import bcrypt from 'bcryptjs';
 import { pathToFileURL } from 'node:url';
 import { connectDb, disconnectDb } from '../config/db.js';
 import { config } from '../config/env.js';
-import { Counter, Document, Hospital, Patient, User } from '../models/index.js';
+import { Bed, Counter, Doctor, Document, EdBay, Hospital, HospitalCase, Patient, User } from '../models/index.js';
 import { randomToken } from '../utils/crypto.js';
 import { deleteFile, saveFile } from '../utils/storage.js';
 
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD || 'Demo@12345';
 
-// Fictional demo data only. Phase 3 (hospital management) extends the hospital list to 5 Pune hospitals.
+// Fictional demo data only. The 5 Pune hospitals (feature 81) are this one plus OTHER_HOSPITALS below.
 export const DEMO_HOSPITAL = {
   name: 'HealthTwin Demo Heart Hospital (fictional)',
   address: 'Shivajinagar, Pune, Maharashtra',
@@ -17,6 +17,13 @@ export const DEMO_HOSPITAL = {
   location: { type: 'Point', coordinates: [73.8474, 18.5308] }, // [lng, lat]
   capabilities: { cathLab: true, icuBeds: 10, ccuBeds: 6, cardiologist24x7: true, alsAmbulances: 2 },
 };
+
+export const OTHER_HOSPITALS = [
+  { name: 'Deccan Heart Institute (fictional)', address: 'Deccan Gymkhana, Pune, Maharashtra', city: 'Pune', phone: '+912000000001', location: { type: 'Point', coordinates: [73.8412, 18.5167] }, capabilities: { cathLab: true, icuBeds: 8, ccuBeds: 4, cardiologist24x7: true, alsAmbulances: 1 } },
+  { name: 'Kothrud Multispeciality Hospital (fictional)', address: 'Kothrud, Pune, Maharashtra', city: 'Pune', phone: '+912000000002', location: { type: 'Point', coordinates: [73.8077, 18.5074] }, capabilities: { cathLab: false, icuBeds: 6, ccuBeds: 2, cardiologist24x7: false, alsAmbulances: 1 } },
+  { name: 'Hadapsar Care Hospital (fictional)', address: 'Hadapsar, Pune, Maharashtra', city: 'Pune', phone: '+912000000003', location: { type: 'Point', coordinates: [73.926, 18.5089] }, capabilities: { cathLab: true, icuBeds: 6, ccuBeds: 3, cardiologist24x7: false, alsAmbulances: 2 } },
+  { name: 'Pimpri Cardiac Centre (fictional)', address: 'Pimpri, Pimpri-Chinchwad, Maharashtra', city: 'Pune', phone: '+912000000004', location: { type: 'Point', coordinates: [73.8009, 18.6279] }, capabilities: { cathLab: true, icuBeds: 10, ccuBeds: 5, cardiologist24x7: true, alsAmbulances: 2 } },
+];
 
 export const DEMO_ACCOUNTS = [
   { name: 'Central Admin (demo)', email: 'admin@healthtwin.example', role: 'central_admin' },
@@ -60,6 +67,7 @@ export async function seed({ log = console.log } = {}) {
   } else {
     log('= patient         rahul.sharma@example.com (already there)');
   }
+  await seedHospitals(hospital, log);
   await seedRahulProfile(log);
   log(`\nDemo password for every seeded account: ${DEMO_PASSWORD}  (fictional data, development only)`);
 }
@@ -92,6 +100,48 @@ export async function seedRahulProfile(log = console.log) {
       await deleteFile('documents', storedName);
       throw err;
     }
+  }
+}
+
+/** Phase 3: 5 Pune hospitals, each with beds, doctors and ED bays; the demo hospital also gets sample cases. Re-runnable: each part is added only if missing. */
+export async function seedHospitals(demoHospital, log = console.log) {
+  const hospitals = [demoHospital];
+  for (const data of OTHER_HOSPITALS) {
+    const h = await Hospital.findOneAndUpdate({ name: data.name }, { $setOnInsert: data }, { upsert: true, returnDocument: 'after' });
+    hospitals.push(h);
+  }
+  for (const h of hospitals) {
+    const cap = h.capabilities;
+    if (!(await Bed.exists({ hospital: h._id }))) {
+      const make = (type, prefix, n) => Array.from({ length: n }, (_, i) => ({ hospital: h._id, type, label: `${prefix}-${i + 1}` }));
+      const beds = [...make('general', 'GEN', 12), ...make('icu', 'ICU', cap.icuBeds), ...make('ccu', 'CCU', cap.ccuBeds)];
+      await Bed.insertMany(beds);
+      await Counter.updateOne({ _id: `beds:${h._id}` }, { $max: { seq: beds.length } }, { upsert: true });
+      log(`+ beds            ${h.name}: ${beds.length}`);
+    }
+    if (!(await EdBay.exists({ hospital: h._id }))) {
+      await EdBay.insertMany(['ED-1', 'ED-2', 'ED-3', 'ED-4'].map((label) => ({ hospital: h._id, label })));
+      await Counter.updateOne({ _id: `edbays:${h._id}` }, { $max: { seq: 4 } }, { upsert: true });
+    }
+    if (!(await Doctor.exists({ hospital: h._id }))) {
+      const first = h._id.equals(demoHospital._id) ? await User.findOne({ email: 'doctor@healthtwin.example' }) : null;
+      await Doctor.insertMany([
+        { hospital: h._id, fullName: first ? 'Dr. Meera Kulkarni (demo)' : `Dr. A. Joshi (fictional, ${h.name.split(' ')[0]})`, specialization: 'Cardiology', isCardiologist: true, onDuty: true, user: first?._id, dutyChangedAt: new Date() },
+        { hospital: h._id, fullName: `Dr. S. Khan (fictional, ${h.name.split(' ')[0]})`, specialization: 'Emergency medicine', isCardiologist: false, onDuty: true, dutyChangedAt: new Date() },
+        { hospital: h._id, fullName: `Dr. R. Rao (fictional, ${h.name.split(' ')[0]})`, specialization: 'Cardiology', isCardiologist: true, onDuty: false, dutyChangedAt: new Date() },
+      ]);
+    }
+  }
+  if (!(await HospitalCase.exists({ hospital: demoHospital._id }))) {
+    const now = Date.now();
+    const min = (m) => new Date(now - m * 60_000);
+    await HospitalCase.insertMany([
+      { hospital: demoHospital._id, emergencyCaseId: 'DEMO-CASE-001', patientId: 'HT-2026-0001', summary: 'Suspected heart attack, 45 M (demo)', severity: 'critical', status: 'accepted', receivedAt: min(6), respondedAt: min(5), etaMinutes: 9 },
+      { hospital: demoHospital._id, emergencyCaseId: 'DEMO-CASE-002', summary: 'Chest pain, 62 F (demo)', severity: 'high', status: 'received', receivedAt: min(1) },
+      { hospital: demoHospital._id, emergencyCaseId: 'DEMO-CASE-003', summary: 'Arrhythmia, 58 M (demo)', severity: 'high', status: 'closed', receivedAt: min(300), respondedAt: min(298), arrivedAt: min(280), closedAt: min(120), outcome: 'Discharged' },
+      { hospital: demoHospital._id, emergencyCaseId: 'DEMO-CASE-004', summary: 'Fainting, 70 M (demo)', severity: 'moderate', status: 'rejected', receivedAt: min(600), respondedAt: min(597), rejectionReason: 'No ICU bed free at the time' },
+    ]);
+    log('+ cases           4 demo cases at the demo hospital');
   }
 }
 

@@ -201,7 +201,7 @@ export async function testAlert(req, res) {
 
 // ---- photo (feature 8) and documents (feature 19) --------------------------------------------------------
 
-function checkedUpload(req, allowedKinds, label) {
+export function checkedUpload(req, allowedKinds, label) {
   if (!req.file?.buffer?.length) throw new ApiError(400, 'FILE_REQUIRED', 'Choose a file to upload');
   const type = detectFileType(req.file.buffer);
   if (!type || !allowedKinds.includes(type.kind)) throw new ApiError(400, 'INVALID_FILE_TYPE', `${label} must be ${allowedKinds.map((k) => k.toUpperCase()).join(', ')} (checked from the file contents)`);

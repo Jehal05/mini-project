@@ -12,6 +12,16 @@ import { EventEmitter } from 'node:events';
  *     location: { latitude, longitude, accuracyMeters? }, reportedAt (Date) }
  *   The BystanderReport row has status "pending"; the consumer sets it to "handed_off" or "dismissed".
  */
-export const EVENTS = Object.freeze({ BYSTANDER_REPORT: 'emergency:bystander_report' });
+export const EVENTS = Object.freeze({
+  BYSTANDER_REPORT: 'emergency:bystander_report',
+  BEDS_CHANGED: 'hospital:beds_changed',
+  DOCTOR_DUTY_CHANGED: 'hospital:doctor_duty_changed',
+});
+
+/**
+ * hospital:beds_changed  (feature 85)  { hospitalId, availability }  availability = services/beds.js getBedAvailability()
+ *   Emitted after every bed change so Puneet's Socket.IO layer can push the new counts to the hospital room.
+ * hospital:doctor_duty_changed  (feature 83)  { hospitalId, cardiologistOnDuty (boolean), doctorsOnDuty (number) }
+ */
 
 export const appEvents = new EventEmitter();

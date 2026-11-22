@@ -90,7 +90,17 @@ async function runViewport(vpName, viewport, out, keyboard) {
     await until(async () => (await s.active(ANANYA))?.status === 'unresolved', { timeout: 40000, what: 'unresolved' })
     await sleep(1500)
     await check(ana, '12-unresolved', vpName, out)
-    for (const p of [page, fam, pres, ana]) keyboard.problems.push(...p.problems.map((x) => `${vpName}: ${x}`))
+    // The twin without WebGL (2D heart fallback).
+    const flat = await openPage(browser, viewport)
+    await flat.addInitScript(() => {
+      const orig = HTMLCanvasElement.prototype.getContext
+      HTMLCanvasElement.prototype.getContext = function (type, ...rest) { return /webgl/.test(type) ? null : orig.call(this, type, ...rest) }
+    })
+    await flat.goto(`${stack.url}/patient/${ANANYA}`)
+    await flat.getByRole('region', { name: 'Digital Twin' }).getByRole('table', { name: /trend of each vital/i }).waitFor()
+    await sleep(800)
+    await check(flat, '13-twin-2d-fallback', vpName, out)
+    for (const p of [page, fam, pres, ana, flat]) keyboard.problems.push(...p.problems.map((x) => `${vpName}: ${x}`))
   })
 }
 

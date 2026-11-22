@@ -1,16 +1,16 @@
 {
   "runs": 10,
   "secondsPerRun": [
-    165,
-    165,
-    165,
-    164,
-    163,
-    167,
-    164,
-    163,
-    163,
-    161
+    192,
+    184,
+    184,
+    180,
+    183,
+    184,
+    181,
+    179,
+    179,
+    182
   ],
   "tests": [
     {
@@ -135,6 +135,38 @@
     },
     {
       "name": "F8. the patient has no allergy record: first aid never suggests aspirin (missing means hidden)",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "i. Digital Twin: baseline vs now, the heart follows a cardiac event, trends and a11y states",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "i2. reduced motion: the heart neither beats nor spins, but still turns with the arrow keys",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "i3. with motion allowed the heart is alive (frames change over time)",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "i4. no WebGL: the 2D heart is shown with a text description and the page still works",
       "runs": 10,
       "pass": 10,
       "fail": 0,

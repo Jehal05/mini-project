@@ -1,6 +1,6 @@
 {
   "summary": {
-    "states": 24,
+    "states": 26,
     "statesMissingSimulatedLabel": [],
     "horizontalScroll": [],
     "axeTotal": 0,
@@ -116,6 +116,14 @@
       "horizontalScroll": false
     },
     {
+      "state": "13-twin-2d-fallback",
+      "viewport": "mobile-390",
+      "screenshot": "13-twin-2d-fallback-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
       "state": "01-dashboard-idle",
       "viewport": "desktop-1366",
       "screenshot": "01-dashboard-idle-desktop-1366.png",
@@ -207,6 +215,14 @@
       "state": "12-unresolved",
       "viewport": "desktop-1366",
       "screenshot": "12-unresolved-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "13-twin-2d-fallback",
+      "viewport": "desktop-1366",
+      "screenshot": "13-twin-2d-fallback-desktop-1366.png",
       "simulatedLabel": true,
       "axeViolations": [],
       "horizontalScroll": false

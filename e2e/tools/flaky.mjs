@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const RUNS = Number(process.env.RUNS ?? 10)
-const files = ['journeys/a-d.test.mjs', 'journeys/e-h.test.mjs', 'journeys/failure-modes.test.mjs']
+const files = ['journeys/a-d.test.mjs', 'journeys/e-h.test.mjs', 'journeys/failure-modes.test.mjs', 'journeys/i-twin.test.mjs']
 const tally = new Map()
 const runTimes = []
 for (let i = 1; i <= RUNS; i++) {

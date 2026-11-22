@@ -30,7 +30,7 @@
 .passport-top { display: flex; gap: 1rem; align-items: center; }
 .blood { font-size: 3rem; font-weight: 800; margin: 0; color: #ff6b6b; line-height: 1; }
 .calls { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-.call-btn, .btn-danger { background: var(--critical); color: #fff; text-decoration: none; padding: 0.8rem 1.2rem; border-radius: 12px; font-weight: 700; border: 0; font-size: 1rem; cursor: pointer; }
+.call-btn, .btn-danger { background: var(--critical-strong); color: #fff; text-decoration: none; padding: 0.8rem 1.2rem; border-radius: 12px; font-weight: 700; border: 0; font-size: 1rem; cursor: pointer; }
 .call-btn { flex: 1; text-align: center; }
 .btn-danger:disabled { opacity: 0.6; cursor: wait; }
 .qr-reader { width: 100%; max-width: 360px; margin: 0 auto 1rem; }

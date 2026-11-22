@@ -12,9 +12,17 @@ import ScanPage from './features/profile/public/ScanPage.jsx';
 import { PublicOnly, RequireAuth } from './auth/guards.jsx';
 import { portalPath } from './auth/roles.js';
 import { useAuth } from './auth/AuthContext.jsx';
-import AdminHome from './pages/AdminHome.jsx';
+import AdminLayout from './features/admin/AdminLayout.jsx';
+import HospitalLayout from './features/hospital/HospitalLayout.jsx';
+import AdmissionPage from './features/hospital/pages/AdmissionPage.jsx';
+import AdmissionsPage from './features/hospital/pages/AdmissionsPage.jsx';
+import BedsPage from './features/hospital/pages/BedsPage.jsx';
+import DashboardPage from './features/hospital/pages/DashboardPage.jsx';
+import DoctorsPage from './features/hospital/pages/DoctorsPage.jsx';
+import EdPage from './features/hospital/pages/EdPage.jsx';
+import HistoryPage from './features/hospital/pages/HistoryPage.jsx';
+import './features/hospital/hospital.css';
 import ForgotPassword from './pages/ForgotPassword.jsx';
-import HospitalHome from './pages/HospitalHome.jsx';
 import Login from './pages/Login.jsx';
 import NotFound from './pages/NotFound.jsx';
 import PatientHome from './pages/PatientHome.jsx';
@@ -60,10 +68,19 @@ export default function App() {
       </Route>
       <Route element={<RequireAuth roles={['doctor', 'hospital_staff', 'hospital_admin']} />}>
         <Route path="/p/:token/full" element={<FullRecordPage />} />
-        <Route path="/hospital/*" element={<HospitalHome />} />
+        <Route path="/hospital" element={<HospitalLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="admissions" element={<AdmissionsPage />} />
+          <Route path="admissions/:id" element={<AdmissionPage />} />
+          <Route path="beds" element={<BedsPage />} />
+          <Route path="ed" element={<EdPage />} />
+          <Route path="doctors" element={<DoctorsPage />} />
+          <Route path="history" element={<HistoryPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Route>
       <Route element={<RequireAuth roles={['central_admin']} />}>
-        <Route path="/admin/*" element={<AdminHome />} />
+        <Route path="/admin/*" element={<AdminLayout />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

@@ -9,6 +9,7 @@
   --normal: #22c55e;
   --warning: #f59e0b;
   --critical: #ef4444;
+  --critical-strong: #b91c1c; /* white text on this passes WCAG AA; on --critical it does not */
   --text: #e6edf7;
   --text-2: #94a3b8;
   --font-ui: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;

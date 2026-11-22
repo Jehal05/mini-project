@@ -6,6 +6,7 @@ export default function PortalLayout({ title, children }) {
   const { user, logout } = useAuth();
   return (
     <div className="portal-bg">
+      <a href="#main" className="skip-link">Skip to main content</a>
       <header className="portal-header">
         <p className="brand">HealthTwin <span>AI</span></p>
         <div className="portal-user">
@@ -15,7 +16,7 @@ export default function PortalLayout({ title, children }) {
         </div>
       </header>
       <IdleWarning />
-      <main className="portal-main">
+      <main className="portal-main" id="main" tabIndex={-1}>
         <h1>{title}</h1>
         {children}
       </main>

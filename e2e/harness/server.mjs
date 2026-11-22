@@ -67,6 +67,17 @@ export async function startHarness({ port = 0, roundSeconds = 60, tickMs = 400, 
       if (c) emergency.emit(c, 'emergency:ack', { fake: true })
       r.json({ ok: Boolean(c) })
     })
+    // FAKE hospital console: a stand-in for Puneet's hospital portal so the demo can show "a hospital accepts".
+    app.get('/__e2e/hospital', (_q, r) => r.type('html').send(`<!doctype html><meta charset="utf-8"><title>FAKE hospital console</title>
+<body style="font:16px system-ui;max-width:36rem;margin:2rem auto;padding:0 1rem">
+<h1>FAKE hospital console</h1><p><strong>FAKE: replace when Puneet's hospital portal lands.</strong> Simulated demo only.</p>
+<p id="none">No case is waiting for a hospital.</p><ul id="list"></ul>
+<script>
+async function tick(){const cs=(await (await fetch('/__e2e/db-cases')).json()).filter(c=>c.status==='searching');
+document.getElementById('none').hidden=cs.length>0;
+document.getElementById('list').innerHTML=cs.map(c=>'<li>'+c.patientCode+' (round '+c.escalation.round+') <button data-id="'+c._id+'">Accept this emergency</button></li>').join('');}
+document.addEventListener('click',async e=>{const id=e.target.dataset?.id;if(id){await fetch('/__e2e/hospital-accept',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({caseId:id})});tick()}});
+setInterval(tick,700);tick();</script>`))
     app.get('/__e2e/db-cases', async (_q, r) => r.json(await EmergencyCase.find({}).lean()))
     app.use(express.static(DIST))
     app.use((q, r, next) => (q.method === 'GET' && !q.path.startsWith('/api') && !q.path.startsWith('/socket.io') ? r.sendFile(path.join(DIST, 'index.html')) : next()))

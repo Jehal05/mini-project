@@ -1,0 +1,109 @@
+{
+  "runs": [
+    {
+      "resetAndSeedSeconds": 2.1,
+      "totalSeconds": 26.8,
+      "marks": [
+        {
+          "step": "1 patient dashboard open",
+          "atSeconds": 1.1
+        },
+        {
+          "step": "2 presenter switches Rahul to \"Cardiac event\"",
+          "atSeconds": 1.6
+        },
+        {
+          "step": "3 Level 2 alert on the patient screen",
+          "atSeconds": 18.1
+        },
+        {
+          "step": "4 Level 3: \"Are you okay?\" + 10 s countdown",
+          "atSeconds": 24.5
+        },
+        {
+          "step": "5 patient taps \"Send help now\": searching 10 km",
+          "atSeconds": 24.8
+        },
+        {
+          "step": "6 FAKE hospital accepts: patient screen follows",
+          "atSeconds": 25.3
+        },
+        {
+          "step": "7 family opens the link and taps \"I have seen this\": patient sees Seen",
+          "atSeconds": 26.8
+        }
+      ],
+      "problems": []
+    },
+    {
+      "resetAndSeedSeconds": 2.1,
+      "totalSeconds": 26.8,
+      "marks": [
+        {
+          "step": "1 patient dashboard open",
+          "atSeconds": 0.6
+        },
+        {
+          "step": "2 presenter switches Rahul to \"Cardiac event\"",
+          "atSeconds": 1.6
+        },
+        {
+          "step": "3 Level 2 alert on the patient screen",
+          "atSeconds": 16.1
+        },
+        {
+          "step": "4 Level 3: \"Are you okay?\" + 10 s countdown",
+          "atSeconds": 24.5
+        },
+        {
+          "step": "5 patient taps \"Send help now\": searching 10 km",
+          "atSeconds": 24.8
+        },
+        {
+          "step": "6 FAKE hospital accepts: patient screen follows",
+          "atSeconds": 25.4
+        },
+        {
+          "step": "7 family opens the link and taps \"I have seen this\": patient sees Seen",
+          "atSeconds": 26.8
+        }
+      ],
+      "problems": []
+    },
+    {
+      "resetAndSeedSeconds": 2.1,
+      "totalSeconds": 25.9,
+      "marks": [
+        {
+          "step": "1 patient dashboard open",
+          "atSeconds": 0.7
+        },
+        {
+          "step": "2 presenter switches Rahul to \"Cardiac event\"",
+          "atSeconds": 1.4
+        },
+        {
+          "step": "3 Level 2 alert on the patient screen",
+          "atSeconds": 16.3
+        },
+        {
+          "step": "4 Level 3: \"Are you okay?\" + 10 s countdown",
+          "atSeconds": 24.2
+        },
+        {
+          "step": "5 patient taps \"Send help now\": searching 10 km",
+          "atSeconds": 24.5
+        },
+        {
+          "step": "6 FAKE hospital accepts: patient screen follows",
+          "atSeconds": 25
+        },
+        {
+          "step": "7 family opens the link and taps \"I have seen this\": patient sees Seen",
+          "atSeconds": 25.9
+        }
+      ],
+      "problems": []
+    }
+  ]
+}

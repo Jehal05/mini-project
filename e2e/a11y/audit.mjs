@@ -65,9 +65,14 @@ async function runViewport(vpName, viewport, out, keyboard) {
     await fam.goto(`${stack.url}/status/${token}`)
     await fam.getByRole('heading', { name: 'Emergency status' }).waitFor()
     await check(fam, '08-family-status', vpName, out)
-    await fam.goto(`${stack.url}/status/${'1'.repeat(32)}`)
-    await fam.getByText('This status link is not valid.').waitFor()
-    await check(fam, '09-family-invalid-link', vpName, out)
+    // The deliberately invalid link answers 404 once, and the browser logs that. It is expected, so it is
+    // counted on its own page and not mixed into the "no console errors" gate.
+    const bad = await openPage(browser, viewport)
+    await bad.goto(`${stack.url}/status/${'1'.repeat(32)}`)
+    await bad.getByText('This status link is not valid.').waitFor()
+    await sleep(11000) // one poll interval: it must not ask again
+    await check(bad, '09-family-invalid-link', vpName, out)
+    keyboard.invalidLink[vpName] = bad.problems.length
     await s.call('POST', `/api/emergency/${c.id}/cancel`, { reason: 'false_alarm' })
     await page.getByText(/Reason: It was a false alarm/).waitFor({ timeout: 15000 })
     await snap('10-cancelled')
@@ -119,7 +124,7 @@ async function keyboardRun() {
 }
 
 const out = []
-const problems = { problems: [] }
+const problems = { problems: [], invalidLink: {} }
 await runViewport('mobile-390', MOBILE, out, problems)
 await runViewport('desktop-1366', DESKTOP, out, problems)
 const keyboard = await keyboardRun()
@@ -130,6 +135,7 @@ const summary = {
   axeTotal: out.reduce((n, r) => n + r.axeViolations.length, 0),
   axeSeriousOrCritical: out.flatMap((r) => r.axeViolations.filter((v) => ['serious', 'critical'].includes(v.impact)).map((v) => `${r.state}@${r.viewport}: ${v.id}`)),
   consoleAndPageErrors: problems.problems,
+  invalidLinkErrorsExpectedTwoEach: problems.invalidLink, // one http 404 plus the browser's console line, and no repeats
 }
 fs.writeFileSync(path.join(here, '../results/quality.json'), JSON.stringify({ summary, keyboard, out }, null, 2))
 console.log(JSON.stringify({ summary, keyboard }, null, 2))

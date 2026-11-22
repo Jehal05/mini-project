@@ -1,16 +1,16 @@
 {
   "runs": 10,
   "secondsPerRun": [
-    163,
-    161,
-    166,
-    162,
+    165,
+    165,
+    165,
     164,
-    162,
     163,
+    167,
     164,
-    185,
-    164
+    163,
+    163,
+    161
   ],
   "tests": [
     {
@@ -64,12 +64,10 @@
     {
       "name": "g. server restarts during the countdown: the case is resumed and still sent on time, no duplicate",
       "runs": 10,
-      "pass": 9,
-      "fail": 1,
-      "passRate": "90%",
-      "failedInRuns": [
-        9
-      ]
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
     },
     {
       "name": "h. two tabs press \"Send help now\" together: one case, one hospital search, one alert per contact",
@@ -144,5 +142,5 @@
       "failedInRuns": []
     }
   ],
-  "allGreen": false
+  "allGreen": true
 }

@@ -9,7 +9,8 @@
     "a11y": "node a11y/audit.mjs",
     "flaky": "node tools/flaky.mjs",
     "dry-run": "node tools/dry-run.mjs",
-    "build:frontend": "cd ../frontend && VITE_API_URL= npx vite build --outDir ../e2e/dist --emptyOutDir"
+    "build:frontend": "cd ../frontend && VITE_API_URL= npx vite build --outDir ../e2e/dist --emptyOutDir",
+    "demo": "node tools/demo.mjs"
   },
   "devDependencies": {
     "axe-core": "^4.10.0",

@@ -5,25 +5,14 @@
     "horizontalScroll": [],
     "axeTotal": 0,
     "axeSeriousOrCritical": [],
-    "consoleAndPageErrors": [
-      "mobile-390: http 404 http://127.0.0.1:46269/api/emergency/status/11111111111111111111111111111111",
-      "mobile-390: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "mobile-390: http 404 http://127.0.0.1:46269/api/emergency/status/11111111111111111111111111111111",
-      "mobile-390: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "mobile-390: http 404 http://127.0.0.1:46269/api/emergency/status/11111111111111111111111111111111",
-      "mobile-390: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
-      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
-      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
-      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
-      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
-    ]
+    "consoleAndPageErrors": [],
+    "invalidLinkErrorsExpectedTwoEach": {
+      "mobile-390": 2,
+      "desktop-1366": 2
+    }
   },
   "keyboard": {
-    "tabsToSosButton": 24,
+    "tabsToSosButton": 16,
     "focusMovedIntoDialog": true,
     "tabsToSendInsideDialog": 3,
     "caseOpened": true,

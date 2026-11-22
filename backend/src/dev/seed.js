@@ -20,6 +20,7 @@ export const DEMO_PATIENTS = [
     city: 'Pune',
     cardiacConditions: [{ type: 'heart attack', year: 2022 }],
     conditions: [],
+    emergencyContacts: [{ name: 'Meera Sharma', relation: 'spouse', phone: '+919800000001', email: 'meera.demo@example.com' }],
   },
   {
     patientCode: 'HT-2026-0002',
@@ -31,6 +32,9 @@ export const DEMO_PATIENTS = [
     cardiacConditions: [],
     conditions: [],
     fitnessLevel: 'high',
+    allergies: [], // known: no allergies and no medicines, so the aspirin step can be shown in the demo
+    medications: [],
+    emergencyContacts: [{ name: 'Lakshmi Iyer', relation: 'mother', phone: '+919800000002' }],
   },
   {
     patientCode: 'HT-2026-0003',

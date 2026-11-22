@@ -21,6 +21,11 @@ const patientSchema = new Schema(
     city: String,
     cardiacConditions: [{ _id: false, type: { type: String }, year: Number }], // feature 13
     conditions: [String], // feature 14
+    // Phase 7 (features 16, 17, 47): read by first aid (aspirin rule) and contact alerts. Left undefined
+    // (not []) when unknown, so "no record" is never mistaken for "no allergy". TODO(Jehal): your model owns these.
+    allergies: { type: [String], default: undefined },
+    medications: { type: [String], default: undefined },
+    emergencyContacts: [{ _id: false, name: String, relation: String, phone: String, email: String }],
     fitnessLevel: { type: String, enum: ['low', 'normal', 'high'], default: 'normal' },
     fictional: { type: Boolean, default: true, immutable: true },
   },

@@ -85,3 +85,36 @@ export const ESCALATION = Object.freeze({
 export const LOCATION_SOURCES = Object.freeze(['gps', 'manual', 'registered_address', 'bystander'])
 
 export const SCENARIOS = Object.freeze(['stable', 'exercise', 'fever', 'hypoxia', 'cardiac_event'])
+
+// ---- Phase 7: SOS, confirmation, escalation, cancellation (features 41-50) ----
+
+/** Socket.IO events for an emergency, sent to the room patient:<id> (and the rooms below). */
+export const EMERGENCY_EVENTS = Object.freeze({
+  CREATED: 'emergency:created', // Level 3 or SOS opened a case (Phase 6 / 41)
+  CONFIRMED: 'emergency:confirmed', // the patient sent it manually (43)
+  SENT: 'emergency:sent', // moved to searching: Puneet's hospital discovery starts here (43, 44)
+  ESCALATED: 'emergency:escalated', // a wider search round began (45)
+  UNRESOLVED: 'emergency:unresolved', // 3 rounds, nobody accepted (45)
+  CANCELLED: 'emergency:cancelled', // cancelled with a reason; tells the accepting hospital and crew (49)
+  ACK: 'emergency:ack', // somebody tapped "Seen" (48)
+  LOCATION: 'emergency:location', // live location changed (46)
+  CONTACTS: 'emergency:contacts', // emergency contacts were alerted (47)
+})
+
+/** Room for the central admin alert. TODO(Jehal): agree the room name with the admin portal. */
+export const ADMIN_ROOM = 'central-admin'
+/** Room for hospital staff and the ambulance crew. TODO(Puneet): confirm the real room names. */
+export const hospitalRoom = (hospitalId) => `hospital:${hospitalId}`
+
+/** Before any hospital has accepted. */
+export const PRE_ACCEPT_STATUSES = Object.freeze([CASE_STATUS.AWAITING_CONFIRMATION, CASE_STATUS.SEARCHING, CASE_STATUS.UNRESOLVED])
+/** After a hospital accepted but before the patient reached the hospital: a cancel still tells them. */
+export const POST_ACCEPT_STATUSES = Object.freeze([CASE_STATUS.ACCEPTED, CASE_STATUS.AMBULANCE_ASSIGNED, CASE_STATUS.PATIENT_ON_BOARD])
+
+/** Feature 48 */
+export const ACK_RECIPIENT_TYPES = Object.freeze(['patient', 'contact', 'hospital_staff', 'doctor', 'crew', 'central_admin'])
+
+export const EMERGENCY_NUMBERS = Object.freeze([
+  { number: '112', label: 'Emergency (all services)' },
+  { number: '108', label: 'Ambulance' },
+])

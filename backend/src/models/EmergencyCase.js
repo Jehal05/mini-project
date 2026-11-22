@@ -125,7 +125,8 @@ const contactAlertSchema = new Schema(
     phone: String,
     email: String,
     channels: [{ type: String, enum: ['email', 'push', 'whatsapp'] }],
-    statusLinkToken: String, // live-status link for family
+    statusLinkToken: String, // live-status link for family (the token is the credential)
+    whatsappLink: String, // pre-filled wa.me link the patient can tap
     sentAt: { type: Date, default: Date.now },
   },
   { _id: false },
@@ -224,6 +225,7 @@ emergencyCaseSchema.index({ patient: 1, createdAt: -1 }) // feature 50: patient'
 emergencyCaseSchema.index({ status: 1, severity: -1, createdAt: 1 }) // feature 95: queues
 emergencyCaseSchema.index({ 'hospitalResponses.hospital': 1, createdAt: -1 }) // feature 90
 emergencyCaseSchema.index({ 'location.point': '2dsphere' }) // command-centre map
+emergencyCaseSchema.index({ 'contactAlerts.statusLinkToken': 1 }, { sparse: true }) // family status link (feature 47/48)
 
 // One live case per patient (feature 39, and the SOS button in feature 41 must join it
 // rather than open a second). The database enforces it, so two server processes or two

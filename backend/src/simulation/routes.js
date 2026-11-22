@@ -13,6 +13,7 @@ import mongoose from 'mongoose'
 import { Patient } from '../models/Patient.js'
 import { SCENARIOS, SCENARIO_INFO } from './scenarios.js'
 import { parseRange, vitalsHistory, healthTimeline } from './history.js'
+import { patientTrends } from './trends.js'
 
 const allow = (_req, _res, next) => next()
 
@@ -86,6 +87,14 @@ export function createSimulationRouter(engine, { guard = allow, presenterGuard =
       const range = parseRange(req.query.range ?? '24h')
       if (!range) return res.status(400).json({ error: 'range must be 1h, 24h or 7d' })
       res.json({ range, ...(await healthTimeline(req.patientId, range, { thresholds: engine.thresholds })) })
+    } catch (err) {
+      next(err)
+    }
+  })
+
+  router.get('/patients/:id/trends', resolvePatient, async (req, res, next) => {
+    try {
+      res.json(await patientTrends(req.patient, { thresholds: engine.thresholds }))
     } catch (err) {
       next(err)
     }

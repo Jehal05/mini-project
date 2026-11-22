@@ -59,6 +59,8 @@ const emergencyCaseSchema = new mongoose.Schema(
     firstMedicalContactAt: Date,
     treatmentStartedAt: Date,
     closedAt: Date,
+    // Phase 12: true for the generated demo history (npm run seed:demo-history). Never set for real cases.
+    simulatedHistory: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 );

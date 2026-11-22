@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/seed/seed.js",
+    "seed:demo-history": "node src/seed/demoHistory.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

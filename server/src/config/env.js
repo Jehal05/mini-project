@@ -24,5 +24,7 @@ export const env = {
   priorityWeights: process.env.PRIORITY_WEIGHTS || '0.5,0.3,0.2',
   priorityWaitCapMin: Number(process.env.PRIORITY_WAIT_CAP_MIN) || 30,
   priorityDistanceCapKm: Number(process.env.PRIORITY_DISTANCE_CAP_KM) || 20,
+  // Admin dev login (Phase 12). Jehal replaces it with real admin auth.
+  adminDevToken: process.env.ADMIN_DEV_TOKEN || '',
   sweepIntervalSeconds: Number(process.env.NO_ANSWER_SWEEP_SECONDS) || 5,
 };

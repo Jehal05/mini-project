@@ -25,6 +25,8 @@ export const profileApi = {
   documentBlob: (id) => getBlob(`${ME}/documents/${id}/file`),
   deleteDocument: (id) => del(`${ME}/documents/${id}`),
 
+  dischargeSummary: (id) => api(`${ME}/discharge-summaries/${id}`),
+
   getQr: () => api(`${ME}/qr`),
   regenerateQr: () => post(`${ME}/qr/regenerate`, {}),
 };

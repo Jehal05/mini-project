@@ -1,5 +1,6 @@
 import CrudSection from '../CrudSection.jsx';
 import { CARDIAC_LABELS } from '../constants.js';
+import ReportsSection from '../ReportsSection.jsx';
 
 const SEVERITY = [['mild', 'Mild'], ['moderate', 'Moderate'], ['severe', 'Severe']];
 const day = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : '');
@@ -32,6 +33,7 @@ export default function MedicalPage() {
       <CrudSection section="familyHistory" title="Family history"
         fields={[{ name: 'relative', label: 'Relative' }, { name: 'condition', label: 'Condition' }, { name: 'ageAtDiagnosis', label: 'Age at diagnosis', type: 'number' }]}
         describe={(f) => `${f.relative}: ${f.condition}${f.ageAtDiagnosis !== undefined ? ` (age ${f.ageAtDiagnosis})` : ''}`} />
+      <ReportsSection />
     </div>
   );
 }

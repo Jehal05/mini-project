@@ -221,3 +221,50 @@ npm run seed && npm run dev          # seed creates ambulances at each hospital
 4. Crew view tab: choose that ambulance. When it shows "At patient" press "Patient picked up".
 5. When the stage is "En route to hospital" press "Arrived at hospital" (or "Confirm arrival at ED" in the portal).
 Tip: `AMBULANCE_SPEED_KMH=300` makes the demo quick.
+
+## Phase 12: prioritization, admin analytics, backup (features 95, 96, 99)
+
+### 95 Emergency prioritization
+`src/services/priority.js` is the only place that orders cases (the client mirrors it in `client/src/lib/priority.js`; both are tested against `shared/priority-fixtures.json`).
+- Severity is a hard tier: critical > high > moderate > low. A lower tier never outranks a higher one.
+- Inside a tier: `score = risk*wRisk + wait*wWait + distance*wDistance`, each factor 0 to 100.
+  risk = `riskScore`; wait = minutes since `detectedAt` as a share of the cap; distance = hospital to patient, nearer is higher, 0 beyond the cap.
+- Missing data scores 0 (no crash, no random order). Ties: earlier `detectedAt`, then id.
+- `GET /api/hospitals/:id/cases?sort=priority|newest` (default `priority`). Each case carries `priority: { priorityScore, tier, factors, waitMinutes, distanceKm, config }`.
+- Env: `PRIORITY_WEIGHTS=0.5,0.3,0.2` (risk,wait,distance, normalised), `PRIORITY_WAIT_CAP_MIN=30`, `PRIORITY_DISTANCE_CAP_KM=20`.
+
+### 96 Admin analytics
+`GET /api/admin/analytics/summary?from=&to=&hospitalId=&tzOffsetMinutes=` (default last 30 days, at most 366, `from` before `to`; a date-only `to` includes that whole day).
+Returns cases per day by severity, median and 90th percentile minutes from detection to accept, dispatch, pickup and arrival, golden-hour compliance,
+rejection and no-answer reasons, per-hospital acceptance and response time, ambulance utilisation, and counts of "no ambulance" and "all hospitals busy".
+- Aggregates only. The database read selects no patient reference, name, phone, address, location or vitals.
+- Groups of 1 or 2 (reasons, hospitals, ambulances, timing stats, the two counts) come back as `masked: true, label: "fewer than 3"`. The per-day series is not masked.
+- Golden-hour "first contact within 60 min" = share of cases whose `firstMedicalContactAt` is within 60 minutes of detection. The stage targets are the Phase 9 ones (30, 10, 90 min).
+- "Not on a trip" is shown instead of "available", because maintenance history is not recorded.
+- Demo data: `npm run seed:demo-history` (after `npm run seed`) writes about 60 simulated closed cases over 30 days, marked `simulatedHistory`. Re-running replaces them, it never touches real cases.
+
+### 99 Backup, export, restore
+Node only (no mongodump). One file per backup in `BACKUP_DIR` (default `server/backups`, git-ignored): a JSON manifest line (schema version, app version, time, per-collection counts, SHA-256) then gzip of Extended JSON, optionally AES-256-GCM encrypted.
+- Every backup is verified right after writing (decrypt, checksum, counts). A backup that fails is deleted and reported.
+- Retention: newest `BACKUP_KEEP` (default 14) regular backups, deleted only after a new one verified. Labelled backups (the pre-restore safety copies) are never auto-deleted.
+- In production a backup without `BACKUP_ENCRYPTION_KEY` is refused. `node scripts/backup.js keygen` makes a key. Keep a copy elsewhere: without it encrypted backups cannot be read.
+- Restore: dry run by default. A real restore needs the phrase `RESTORE` (`--confirm RESTORE` on the CLI, `{"confirm":"RESTORE"}` in the API). It refuses a failed checksum, a newer schema version, and production unless `ALLOW_PRODUCTION_RESTORE=true`.
+  It takes a safety backup first (and stops if that fails), stages every collection under a temporary name, swaps them in, then rebuilds indexes (including `2dsphere`).
+  A failure while staging leaves live data untouched. Collections that are not in the backup are left alone.
+- Export (reference data only): `GET /api/admin/export/:collection?format=json|csv` for `hospitals`, `beds`, `ambulances`, `doctors`. Patient, vitals, case and account data are not exportable. CSV cells that start with `=`, `+`, `-` or `@` are prefixed with `'`.
+- Every backup, verify, dry run, restore and export writes an `AuditLog` entry (`admin_*`).
+- API (admin only): `POST/GET /api/admin/backups`, `POST /api/admin/backups/:name/verify`, `POST /api/admin/backups/:name/restore`. Names must match `healthtwin-YYYYMMDD-HHMMSS[-label].htbak`.
+- CLI: `npm run backup -- backup | list | verify <file> | restore <file> [--confirm RESTORE] | keygen`.
+- Env: `ADMIN_DEV_TOKEN`, `BACKUP_DIR`, `BACKUP_KEEP`, `BACKUP_ENCRYPTION_KEY`, `ALLOW_PRODUCTION_RESTORE`.
+
+### Restore drill
+1. `npm run backup -- backup` then `npm run backup -- verify <file>`.
+2. Change something (for example make a bed busy).
+3. `npm run backup -- restore <file>` (dry run), check the counts, then `... --confirm RESTORE`.
+4. Confirm the change is gone and that hospital search still works (the `2dsphere` index was rebuilt).
+Pause traffic during a real restore: requests that arrive mid-swap can see a mix of old and new collections.
+
+### What Jehal must connect
+- Real admin auth to replace `middleware/requireAdmin.js` (it sets `req.admin = { userId }`, which is then recorded as the audit actor).
+- Where backups live off the server (object storage with its own access rules), and a schedule (cron or the host's job runner) that runs `npm run backup -- backup`.
+- Who may hold `BACKUP_ENCRYPTION_KEY`, and where its copy is kept.

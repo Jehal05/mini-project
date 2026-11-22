@@ -58,3 +58,4 @@ function emitToRoom(type, id, event, payload) {
 export const emitToHospital = (hospitalId, event, payload) => emitToRoom('hospital', hospitalId, event, payload);
 export const emitToCase = (caseId, event, payload) => emitToRoom('case', caseId, event, payload);
 export const emitToPatient = (patientId, event, payload) => emitToRoom('patient', patientId, event, payload);
+export const emitToDoctor = (doctorId, event, payload) => emitToRoom('doctor', doctorId, event, payload);

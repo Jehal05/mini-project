@@ -13,4 +13,9 @@ export const env = {
   mapsApiKey: process.env.MAPS_API_KEY || '',
   osrmUrl: process.env.OSRM_URL || 'https://router.project-osrm.org',
   noAnswerTimeoutSeconds: Number(process.env.NO_ANSWER_TIMEOUT_SECONDS) || 120,
+  // Hospital notification (Phase 9). Web push is skipped when the VAPID keys are empty.
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
+  vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
+  sweepIntervalSeconds: Number(process.env.NO_ANSWER_SWEEP_SECONDS) || 5,
 };

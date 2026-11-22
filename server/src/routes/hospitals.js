@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { nearby, rank, search, capability } from '../controllers/hospitalController.js';
+import { requireHospitalStaff } from '../middleware/requireHospitalStaff.js';
+import { hospitalQueue, hospitalDoctors, savePushSubscription } from '../controllers/caseController.js';
 
 const router = Router();
 
@@ -7,6 +9,9 @@ const router = Router();
 router.get('/nearby', nearby);
 router.get('/rank', rank);
 router.get('/:id/capability', capability);
+router.get('/:id/cases', requireHospitalStaff, hospitalQueue); // feature 62
+router.get('/:id/doctors', requireHospitalStaff, hospitalDoctors);
+router.post('/:id/push-subscription', requireHospitalStaff, savePushSubscription); // feature 61
 router.get('/', search);
 
 export default router;

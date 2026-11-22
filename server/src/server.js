@@ -3,12 +3,15 @@ import app from './app.js';
 import { env } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { initSocket } from './sockets/index.js';
+import { startNoAnswerScheduler } from './services/notifications.js';
 
 async function start() {
   await connectDB();
 
   const httpServer = http.createServer(app);
   const io = initSocket(httpServer, { corsOrigin: env.clientUrl });
+
+  const stopScheduler = startNoAnswerScheduler();
 
   httpServer.listen(env.port, () => {
     console.log(`[server] listening on http://localhost:${env.port}`);
@@ -19,6 +22,7 @@ async function start() {
     if (shuttingDown) return;
     shuttingDown = true;
     console.log(`[server] ${signal} received, shutting down`);
+    stopScheduler();
     io.close();
     httpServer.close(async () => {
       await disconnectDB();

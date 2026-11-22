@@ -12,3 +12,4 @@ export { default as Prescription } from './Prescription.js';
 export { default as Document } from './Document.js';
 export { default as Notification } from './Notification.js';
 export { default as AuditLog } from './AuditLog.js';
+export { default as PushSubscription } from './PushSubscription.js';

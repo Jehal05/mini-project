@@ -7,6 +7,7 @@ const q = (v) => encodeURIComponent(v)
 
 export const emergencyApi = {
   sos: (patient, location) => request('/sos', json('POST', { patient, ...(location && { location }) })),
+  get: (caseId) => request(`/${caseId}`),
   active: (patient) => request(`/active?patient=${q(patient)}`),
   mine: (patient, { page = 1, limit = 5 } = {}) => request(`/mine?patient=${q(patient)}&page=${page}&limit=${limit}`),
   firstAid: (patient) => request(`/first-aid?patient=${q(patient)}`),

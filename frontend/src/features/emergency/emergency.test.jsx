@@ -14,7 +14,7 @@ vi.mock('../monitoring/useLiveVitals.js', () => ({ getSocket: () => Promise.reso
 const hear = (name, payload) => act(async () => (handlers.map.get(name) ?? []).forEach((fn) => fn(payload)))
 
 const api = vi.hoisted(() => ({
-  sos: vi.fn(), active: vi.fn(), mine: vi.fn(), firstAid: vi.fn(), saveSymptoms: vi.fn(), confirm: vi.fn(), cancel: vi.fn(), location: vi.fn(), ack: vi.fn(), publicStatus: vi.fn(), seen: vi.fn(),
+  sos: vi.fn(), active: vi.fn(), mine: vi.fn(), firstAid: vi.fn(), saveSymptoms: vi.fn(), confirm: vi.fn(), cancel: vi.fn(), location: vi.fn(), ack: vi.fn(), publicStatus: vi.fn(), seen: vi.fn(), get: vi.fn(),
 }))
 vi.mock('./api.js', () => ({ emergencyApi: api }))
 const detApi = vi.hoisted(() => ({ status: vi.fn() }))
@@ -494,6 +494,18 @@ describe('useEmergency and EmergencySection', () => {
     expect(api.cancel).toHaveBeenCalledWith('c1', 'feeling_better', undefined)
     expect(await screen.findByRole('heading', { name: 'Emergency cancelled' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Are you okay?' })).not.toBeInTheDocument()
+  })
+
+  it('when the case is cancelled from somewhere else (another tab, the hospital), this tab says so instead of going blank', async () => {
+    api.active.mockResolvedValue({ case: baseCase(), serverNow: iso(0) })
+    render(<EmergencySection patientId="p1" refreshKey={0} />)
+    expect(await screen.findByRole('heading', { name: 'Emergency in progress' })).toBeInTheDocument()
+    api.active.mockResolvedValue({ case: null, serverNow: iso(0) })
+    api.get.mockResolvedValue(baseCase({ isLive: false, status: 'cancelled', cancellation: { reason: 'false_alarm' } }))
+    await hear('emergency:cancelled', { patientId: 'p1' })
+    expect(await screen.findByRole('heading', { name: 'Emergency cancelled' })).toBeInTheDocument()
+    expect(screen.getByText(/It was a false alarm/)).toBeInTheDocument()
+    expect(api.get).toHaveBeenCalledWith('c1')
   })
 
   it('after acceptance the cancel dialog warns about the hospital and ambulance', async () => {

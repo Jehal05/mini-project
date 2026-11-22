@@ -1,5 +1,5 @@
 // One lazy chunk for everything the SOS flow draws on the patient dashboard.
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Card } from '../../design/index.js'
 import { CancelDialog } from './CancelDialog.jsx'
 import { CaseStatus } from './CaseStatus.jsx'
@@ -21,6 +21,22 @@ export function EmergencySection({ patientId, refreshKey }) {
   const [cancelOpen, setCancelOpen] = useState(false)
   const [ended, setEnded] = useState(null)
 
+  // If the case stops being live without this tab cancelling it (another tab, the hospital, an admin),
+  // read its final state so the person is told what happened instead of watching the card vanish.
+  const lastLive = useRef(null)
+  useEffect(() => {
+    if (caseView?.isLive) {
+      lastLive.current = caseView.id
+      return
+    }
+    const id = lastLive.current
+    if (!id || caseView) return
+    lastLive.current = null
+    Promise.resolve(emergencyApi.get(id))
+      .then((final) => final && !final.isLive && setEnded((prev) => prev ?? final))
+      .catch(() => {})
+  }, [caseView])
+
   const live = Boolean(caseView?.isLive)
   const awaiting = caseView?.status === 'awaiting_confirmation'
   const afterAcceptance = ['accepted', 'ambulance_assigned', 'patient_on_board'].includes(caseView?.status)
@@ -31,6 +47,7 @@ export function EmergencySection({ patientId, refreshKey }) {
   async function cancel(reason, note) {
     const res = await emergencyApi.cancel(caseView.id, reason, note)
     setCancelOpen(false)
+    lastLive.current = null // this tab ended it and already knows why
     setEnded(res.case)
     apply(res.case)
   }

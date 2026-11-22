@@ -10,11 +10,12 @@ import RankingList from './components/RankingList.jsx';
 import PortalApp from './portal/PortalApp.jsx';
 import PatientStatus from './portal/PatientStatus.jsx';
 import CrewApp from './crew/CrewApp.jsx';
+import AdminApp from './admin/AdminApp.jsx';
 
 const DEFAULT_FILTERS = { q: '', cathLab: false, cardiologist: false, minCcuBeds: '', radiusKm: 10, cardiacOnly: true };
 
 export default function App() {
-  const [tab, setTab] = useState('find'); // find | portal | patient | crew
+  const [tab, setTab] = useState('find'); // find | portal | patient | crew | admin
   const geo = useGeolocation();
   const [location, setLocation] = useState(null); // { lat, lng, source }
   const [manual, setManual] = useState(false);
@@ -103,7 +104,7 @@ export default function App() {
       <header className="px-4 pt-3">
         <h1 className="text-2xl font-bold">HealthTwin AI</h1>
         <nav className="mt-2 flex gap-2 text-sm">
-          {[['find', 'Find hospitals'], ['portal', 'Hospital Portal'], ['patient', 'Patient status'], ['crew', 'Crew view']].map(([key, label]) => (
+          {[['find', 'Find hospitals'], ['portal', 'Hospital Portal'], ['patient', 'Patient status'], ['crew', 'Crew view'], ['admin', 'Admin']].map(([key, label]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -118,6 +119,7 @@ export default function App() {
       {tab === 'portal' && <PortalApp />}
       {tab === 'patient' && <PatientStatus />}
       {tab === 'crew' && <CrewApp />}
+      {tab === 'admin' && <AdminApp />}
     </div>
   );
 }

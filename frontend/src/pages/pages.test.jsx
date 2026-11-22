@@ -25,6 +25,21 @@ vi.mock('../features/monitoring/api.js', () => ({ monitoringApi: api, presenterK
 const detApi = vi.hoisted(() => ({ statuses: vi.fn(), status: vi.fn(), detections: vi.fn() }))
 vi.mock('../features/detection/api.js', () => ({ detectionApi: detApi }))
 
+const emApi = vi.hoisted(() => ({
+  sos: vi.fn(),
+  active: vi.fn(),
+  mine: vi.fn(),
+  firstAid: vi.fn(),
+  saveSymptoms: vi.fn(),
+  confirm: vi.fn(),
+  cancel: vi.fn(),
+  location: vi.fn(),
+  ack: vi.fn(),
+  publicStatus: vi.fn(),
+  seen: vi.fn(),
+}))
+vi.mock('../features/emergency/api.js', () => ({ emergencyApi: emApi }))
+
 const { default: PatientDashboard } = await import('./PatientDashboard.jsx')
 const { default: PresenterPanel } = await import('./PresenterPanel.jsx')
 
@@ -95,6 +110,10 @@ beforeEach(() => {
   detApi.status.mockResolvedValue(detectionStatus(0))
   detApi.statuses.mockResolvedValue([detectionStatus(0)])
   detApi.detections.mockResolvedValue({ items: [], page: 1, pages: 1, total: 0, limit: 6 })
+  emApi.active.mockResolvedValue({ case: null, serverNow: new Date().toISOString(), numbers: [], simulated: true })
+  emApi.mine.mockResolvedValue({ items: [], page: 1, pages: 1, total: 0, limit: 5, simulated: true })
+  emApi.firstAid.mockResolvedValue({ source: { name: 'Source', url: 'https://example.org', also: 'Other' }, dispatcherFirst: 'Follow the dispatcher.', steps: [], aspirin: { shown: false }, numbers: [] })
+  emApi.sos.mockResolvedValue({ created: true, joined: false, case: { id: 'c1', isLive: true, status: 'searching' } })
 })
 
 describe('Patient dashboard', () => {
@@ -136,12 +155,32 @@ describe('Patient dashboard', () => {
     await waitFor(() => expect(api.history).toHaveBeenCalledWith('id1', '7d'))
   })
 
-  it('SOS placeholder opens a dialog with working call links', async () => {
+  it('SOS opens a confirmation dialog with working call links; "Send SOS" posts it for this patient (feature 41)', async () => {
     renderAt('/patient/HT-2026-0001', <PatientDashboard />)
     await userEvent.click(await screen.findByRole('button', { name: 'Send emergency SOS' }))
-    const dialog = screen.getByRole('alertdialog', { name: 'Emergency help' })
+    const dialog = await screen.findByRole('alertdialog', { name: 'Send an emergency request?' })
     expect(within(dialog).getByRole('link', { name: 'Call 112' })).toHaveAttribute('href', 'tel:112')
     expect(within(dialog).getByRole('link', { name: 'Call 108 ambulance' })).toHaveAttribute('href', 'tel:108')
+    expect(emApi.sos).not.toHaveBeenCalled() // opening the dialog sends nothing: a pocket press is harmless
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Send SOS' }))
+    await waitFor(() => expect(emApi.sos).toHaveBeenCalledWith('id1', undefined))
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+    await waitFor(() => expect(emApi.active.mock.calls.length).toBeGreaterThan(1)) // the live flow reloads at once
+  })
+
+  it('shows the open emergency (confirmation screen) above the vitals, and the incident history', async () => {
+    emApi.active.mockResolvedValue({
+      case: {
+        id: 'c1', isLive: true, status: 'awaiting_confirmation', source: 'auto_detection', severity: 3, symptoms: null, location: null, acknowledgements: [], contactAlerts: [], timeline: [],
+        escalation: { confirmDeadline: new Date(Date.now() + 8000).toISOString(), round: 0, radiusKm: 10 },
+      },
+      serverNow: new Date().toISOString(),
+      simulated: true,
+    })
+    renderAt('/patient/HT-2026-0001', <PatientDashboard />)
+    expect(await screen.findByRole('heading', { name: 'Are you okay?' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send help now' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Emergency incidents' })).toBeInTheDocument()
   })
 
   it('shows the detection panel (lazy) and the risk gauge (features 37, 38)', async () => {

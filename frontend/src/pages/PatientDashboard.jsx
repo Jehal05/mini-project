@@ -1,9 +1,9 @@
 // Patient Portal dashboard (Phase 5): live simulated vitals, ECG strip, history,
-// timeline and the SOS button placeholder (the real SOS flow is Phase 7).
+// timeline, and the SOS flow (Phase 7: alerts, confirmation and countdown, search, location, first aid, cancel).
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { VITAL_KEYS } from '@shared/vitals.js'
-import { Badge, Button, Card, MedicalBackground, Modal, SimulatedBadge, SimulatedNotice, SosButton, VitalTile } from '../design/index.js'
+import { Badge, Card, MedicalBackground, SimulatedBadge, SimulatedNotice, SosButton, VitalTile } from '../design/index.js'
 import { PortalNav } from '../components/PortalNav.jsx'
 import { monitoringApi } from '../features/monitoring/api.js'
 import { useLiveVitals } from '../features/monitoring/useLiveVitals.js'
@@ -17,6 +17,11 @@ const HistoryChart = lazy(() => import('../features/monitoring/HistoryChart.jsx'
 // Detection panels are also loaded after the first screen (they bring their own small chunk).
 const DetectionSection = lazy(() => import('../features/detection/index.jsx').then((m) => ({ default: m.DetectionSection })))
 const DetectionHistorySection = lazy(() => import('../features/detection/index.jsx').then((m) => ({ default: m.DetectionHistorySection })))
+
+// The SOS flow is its own chunk too (loaded after the first screen; the SOS dialog only when opened).
+const EmergencySection = lazy(() => import('../features/emergency/index.jsx').then((m) => ({ default: m.EmergencySection })))
+const EmergencyHistorySection = lazy(() => import('../features/emergency/index.jsx').then((m) => ({ default: m.EmergencyHistorySection })))
+const SosDialog = lazy(() => import('../features/emergency/index.jsx').then((m) => ({ default: m.SosDialog })))
 
 function DetectionLoading() {
   return (
@@ -73,6 +78,7 @@ export default function PatientDashboard() {
   const [patients, setPatients] = useState([])
   const [error, setError] = useState(null)
   const [sosOpen, setSosOpen] = useState(false)
+  const [emergencyKey, setEmergencyKey] = useState(0) // bumped when SOS is sent, so the live flow reloads at once
 
   useEffect(() => {
     let cancelled = false
@@ -160,6 +166,10 @@ export default function PatientDashboard() {
 
             <SimulatedNotice className="mt-4" />
 
+            <Suspense fallback={null}>
+              <EmergencySection patientId={patient.id} refreshKey={emergencyKey} />
+            </Suspense>
+
             <div className="mt-6 grid gap-6 lg:grid-cols-3">
               <div className="space-y-6 lg:col-span-2">
                 <section aria-label="Live vitals" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -193,7 +203,7 @@ export default function PatientDashboard() {
                 <Card title="Emergency" status="critical">
                   <div className="flex flex-col items-center gap-4 py-2 text-center">
                     <SosButton onClick={() => setSosOpen(true)} />
-                    <p className="text-sm text-fg-muted">Press if you feel unwell. Automatic alerts arrive in a later phase.</p>
+                    <p className="text-sm text-fg-muted">Press if you feel unwell. You will be asked to confirm. Serious warnings also alert you automatically.</p>
                     <div className="flex gap-2">
                       <CallLink number="112" />
                       <CallLink number="108" />
@@ -237,6 +247,12 @@ export default function PatientDashboard() {
                 <DetectionHistorySection patientId={patient.id} refreshKey={refreshKey} />
               </Suspense>
             </div>
+
+            <div className="mt-6">
+              <Suspense fallback={null}>
+                <EmergencyHistorySection patientId={patient.id} refreshKey={`${refreshKey}|${emergencyKey}`} />
+              </Suspense>
+            </div>
           </>
         )}
 
@@ -245,24 +261,11 @@ export default function PatientDashboard() {
         </footer>
       </div>
 
-      <Modal
-        open={sosOpen}
-        onClose={() => setSosOpen(false)}
-        tone="critical"
-        title="Emergency help"
-        description="The automatic SOS flow (hospital alerts, countdown and contact notifications) is being built in Phase 7. For now, call for help directly."
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setSosOpen(false)}>
-              Close
-            </Button>
-            <CallLink number="108" label="Call 108 ambulance" />
-            <CallLink number="112" />
-          </>
-        }
-      >
-        <SimulatedNotice />
-      </Modal>
+      {sosOpen && patient && (
+        <Suspense fallback={null}>
+          <SosDialog open={sosOpen} onClose={() => setSosOpen(false)} patientId={patient.id} onSent={() => setEmergencyKey((k) => k + 1)} />
+        </Suspense>
+      )}
     </MedicalBackground>
   )
 }

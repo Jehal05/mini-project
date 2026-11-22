@@ -19,6 +19,7 @@ export const doctors = [
   { name: 'Dr. Demo Cardiologist C', hospitalCode: 'HT-H05', specialty: 'cardiologist', onDuty: true },
   { name: 'Dr. Demo Cardiologist D', hospitalCode: 'HT-H07', specialty: 'cardiologist', onDuty: true },
   { name: 'Dr. Demo Emergency C', hospitalCode: 'HT-H04', specialty: 'emergency', onDuty: true },
+  { name: 'Dr. Demo Cardiologist F', hospitalCode: 'HT-H04', specialty: 'cardiologist', onDuty: true },
   { name: 'Dr. Demo Cardiologist E', hospitalCode: 'HT-H08', specialty: 'cardiologist', onDuty: true },
 ];
 

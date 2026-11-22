@@ -20,6 +20,16 @@ const emergencyCaseSchema = new mongoose.Schema(
     hospital: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital' },
     ambulance: { type: mongoose.Schema.Types.ObjectId, ref: 'Ambulance' },
     timeline: [{ event: String, at: { type: Date, default: Date.now } }],
+    // Added for Phase 8 hospital alternatives (feature 60, see services/alternatives.js).
+    candidateHospitals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hospital' }], // ranked order
+    notifiedHospitals: [
+      {
+        _id: false,
+        hospital: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital' },
+        notifiedAt: { type: Date, default: Date.now },
+      },
+    ],
+    rejectedHospitals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hospital' }],
   },
   { timestamps: true },
 );

@@ -115,6 +115,58 @@ await markRejected(caseId, hospitalId);       // when a hospital rejects
 
 `ROUTING_PROVIDER`, `MAPS_API_KEY`, `OSRM_URL`, `NO_ANSWER_TIMEOUT_SECONDS`: see `.env.example`.
 
+## Hospital notification API (Phase 9, features 61-70, 103, 105)
+
+**Login stub:** hospital staff endpoints need an `x-hospital-id: <hospital _id>` header for now
+(`src/middleware/requireHospitalStaff.js`, marked `OWNER: Jehal`). Jehal replaces that one file with real JWT
+auth that sets `req.staff = { hospitalId, userId }`. In production the stub answers 503.
+
+| Endpoint | Feature |
+|---|---|
+| `GET /api/hospitals/:id/cases` | 62: queue (pending + own active), ordered by severity, risk score, waiting time. Each case has `respondBy`, severity, risk score, latest vitals |
+| `GET /api/cases/:caseId` | Case detail for an involved hospital |
+| `GET /api/cases/:caseId/patient` | 63: patient record. Only a notified hospital, only while open (after one accepts, only that hospital). Every read is written to `AuditLog`. Parts not built yet are marked `{ available: false, note }` |
+| `POST /api/cases/:caseId/accept` | 65, 67: first accept wins (atomic update). Second gets `409` |
+| `POST /api/cases/:caseId/reject` | 66: body `{ reason }` = `no_beds`, `no_cardiologist`, `cath_lab_busy`, `other`. Notifies the next hospital |
+| `POST /api/cases/:caseId/doctor` | 68: body `{ doctorId }`, an on-duty cardiologist or ED doctor of that hospital |
+| `PATCH /api/cases/:caseId/preparation` | 69: body `{ item, done }`, item = `edBayReady`, `cathLabTeamAlerted`, `ccuBedReserved`, `ecgReady` |
+| `POST /api/cases/:caseId/milestones` | 105: body `{ name }` = `firstMedicalContact` or `treatmentStarted` |
+| `GET /api/cases/:caseId/timeline` | 70: every step in order, plus golden-hour stages |
+| `GET /api/hospitals/:id/doctors` | On-duty cardiologists and ED doctors for the doctor picker |
+| `POST /api/hospitals/:id/push-subscription`, `GET /api/push/public-key` | 61: web push registration |
+| `POST /api/demo/emergency` | Dev only: body `{ lat, lng }` creates a simulated critical case and notifies hospitals |
+
+**Events (rooms):** `hospital:alert` to `hospital:<id>` (new case, also doctor assignment to `doctor:<id>`);
+`emergency:accepted` to the case, patient and every notified hospital (others get `acceptedByAnotherHospital: true`);
+`emergency:rejected` to case, patient and the rejecting hospital (`allHospitalsBusy: true` when nobody is left);
+`preparation:update` and `case:update` (full refreshed case) to the case and hospital rooms. New in Phase 9: `preparation:update`,
+`case:update`, and the `doctor:<id>` room.
+
+**No-answer handling:** every `NO_ANSWER_SWEEP_SECONDS` (default 5) the server finds notified hospitals silent for
+`NO_ANSWER_TIMEOUT_SECONDS`, records each once (`timedOutHospitals`), and notifies the next hospital. Running it twice never repeats work.
+
+**Golden-hour targets (feature 105):** alert to cath lab team 30 min (from the first hospital alert), ambulance scene time
+10 min (`ambulanceAtPatientAt` to `patientOnBoardAt`, set by Phase 10), first medical contact to treatment 90 min.
+Each stage returns `elapsedMin` and `overdue`.
+
+**Env:** `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (web push, optional), `NO_ANSWER_SWEEP_SECONDS`. See `.env.example`.
+
+### What the other owners must connect
+
+- **Daksh (case creation):** after creating an `EmergencyCase`, call `await notifyHospitals(caseId)` from `src/services/notifications.js`.
+  The case needs `patient`, `severity`, `riskScore` and `location` (GeoJSON `[lng, lat]`). Set `closedAt` and `status: 'closed'` when a case ends.
+- **Jehal (auth, patient profile):** swap `requireHospitalStaff`; add `cardiacHistory`, `allergies`, `medicines` to `Patient`
+  (the patient-info endpoint shows them automatically once they exist); Daksh adds `symptomAnswers` and `twinSnapshot`.
+- **Phase 10 (ambulance):** set `ambulanceAtPatientAt` and `patientOnBoardAt` on the case.
+
+### Try it
+
+```bash
+npm run seed && npm run dev
+curl -X POST localhost:5000/api/demo/emergency -H 'Content-Type: application/json' -d '{"lat":18.5679,"lng":73.9143}'
+```
+Or use the Hospital Portal tab in the client and press "Create demo emergency".
+
 ## Hospital discovery note
 
 `Hospital.location` is a GeoJSON Point with a 2dsphere index. Coordinates are `[longitude, latitude]`:

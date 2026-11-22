@@ -7,10 +7,13 @@ import ManualLocationPicker from './components/ManualLocationPicker.jsx';
 import HospitalFilters from './components/HospitalFilters.jsx';
 import HospitalMap from './components/HospitalMap.jsx';
 import RankingList from './components/RankingList.jsx';
+import PortalApp from './portal/PortalApp.jsx';
+import PatientStatus from './portal/PatientStatus.jsx';
 
 const DEFAULT_FILTERS = { q: '', cathLab: false, cardiologist: false, minCcuBeds: '', radiusKm: 10, cardiacOnly: true };
 
 export default function App() {
+  const [tab, setTab] = useState('find'); // find | portal | patient
   const geo = useGeolocation();
   const [location, setLocation] = useState(null); // { lat, lng, source }
   const [manual, setManual] = useState(false);
@@ -97,9 +100,22 @@ export default function App() {
     <div className="min-h-screen">
       <EmergencyBanner emergency={emergency} />
       <header className="px-4 pt-3">
-        <h1 className="text-2xl font-bold">HealthTwin AI: Nearby hospitals</h1>
+        <h1 className="text-2xl font-bold">HealthTwin AI</h1>
+        <nav className="mt-2 flex gap-2 text-sm">
+          {[['find', 'Find hospitals'], ['portal', 'Hospital Portal'], ['patient', 'Patient status']].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`rounded px-3 py-1 ${tab === key ? 'bg-blue-600 text-white' : 'bg-white shadow'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </header>
-      {body}
+      {tab === 'find' && body}
+      {tab === 'portal' && <PortalApp />}
+      {tab === 'patient' && <PatientStatus />}
     </div>
   );
 }

@@ -6,7 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     // Forward API calls to the Express server so the browser sees one origin.
-    proxy: { '/api': 'http://localhost:5000' },
+    proxy: {
+      '/api': 'http://localhost:5000',
+      '/socket.io': { target: 'http://localhost:5000', ws: true },
+    },
   },
   test: { environment: 'node', include: ['src/**/*.test.js'] },
 });

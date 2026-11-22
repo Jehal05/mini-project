@@ -42,7 +42,13 @@ export function useEmergency(patientId, refreshKey = 0) {
       const onEvent = (p) => p?.patientId === patientId && load()
       const names = Object.values(EMERGENCY_EVENTS)
       for (const n of names) s.on(n, onEvent)
-      detach = () => names.forEach((n) => s.off(n, onEvent))
+      // Events sent while the connection was down are gone: read the case again when it comes back.
+      const onReconnect = () => load()
+      s.on('connect', onReconnect)
+      detach = () => {
+        names.forEach((n) => s.off(n, onEvent))
+        s.off('connect', onReconnect)
+      }
     })
     return () => {
       alive.current = false

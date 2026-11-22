@@ -465,6 +465,15 @@ describe('useEmergency and EmergencySection', () => {
     expect(await screen.findByText('searching')).toBeInTheDocument()
   })
 
+  it('re-reads the case when the connection comes back, so events missed during an outage are not lost', async () => {
+    api.active.mockResolvedValue({ case: awaiting(), serverNow: iso(0) })
+    render(<Probe />)
+    expect(await screen.findByText('awaiting_confirmation')).toBeInTheDocument()
+    api.active.mockResolvedValue({ case: baseCase(), serverNow: iso(0) }) // it was sent while the phone was offline
+    await hear('connect')
+    expect(await screen.findByText('searching')).toBeInTheDocument()
+  })
+
   it('shows nothing when there is no live case', async () => {
     render(<Probe />)
     expect(await screen.findByText('none')).toBeInTheDocument()

@@ -155,6 +155,15 @@ describe('Patient dashboard', () => {
     await waitFor(() => expect(api.history).toHaveBeenCalledWith('id1', '7d'))
   })
 
+  it('has a skip link that moves focus straight to the SOS button (keyboard users otherwise tab 16+ times)', async () => {
+    renderAt('/patient/HT-2026-0001', <PatientDashboard />)
+    await screen.findByRole('heading', { name: 'Rahul Sharma' })
+    const skip = screen.getByRole('link', { name: 'Skip to the SOS button' })
+    expect(document.body.querySelector('a, button')).toBe(skip) // first thing a keyboard user reaches
+    await userEvent.click(skip)
+    expect(screen.getByRole('button', { name: 'Send emergency SOS' })).toHaveFocus()
+  })
+
   it('SOS opens a confirmation dialog with working call links; "Send SOS" posts it for this patient (feature 41)', async () => {
     renderAt('/patient/HT-2026-0001', <PatientDashboard />)
     await userEvent.click(await screen.findByRole('button', { name: 'Send emergency SOS' }))

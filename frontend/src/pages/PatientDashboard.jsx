@@ -113,6 +113,16 @@ export default function PatientDashboard() {
   return (
     <MedicalBackground portal="patient">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <a
+          href="#sos-button"
+          onClick={(e) => {
+            e.preventDefault()
+            document.getElementById('sos-button')?.focus()
+          }}
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-critical-solid focus:px-4 focus:py-2 focus:font-semibold focus:text-critical-fg"
+        >
+          Skip to the SOS button
+        </a>
         <PortalNav connected={patient ? connected : undefined} />
 
         {error && (
@@ -202,7 +212,7 @@ export default function PatientDashboard() {
               <div className="space-y-6">
                 <Card title="Emergency" status="critical">
                   <div className="flex flex-col items-center gap-4 py-2 text-center">
-                    <SosButton onClick={() => setSosOpen(true)} />
+                    <SosButton id="sos-button" onClick={() => setSosOpen(true)} />
                     <p className="text-sm text-fg-muted">Press if you feel unwell. You will be asked to confirm. Serious warnings also alert you automatically.</p>
                     <div className="flex gap-2">
                       <CallLink number="112" />

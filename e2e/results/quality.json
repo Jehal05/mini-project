@@ -12,7 +12,7 @@
     }
   },
   "keyboard": {
-    "tabsToSosButton": 16,
+    "tabsToSosButton": 1,
     "focusMovedIntoDialog": true,
     "tabsToSendInsideDialog": 3,
     "caseOpened": true,

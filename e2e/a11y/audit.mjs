@@ -110,7 +110,11 @@ async function keyboardRun() {
       }
       throw new Error(`Could not reach "${name}" with Tab in ${max} presses`)
     }
-    const t1 = await tabTo('Send emergency SOS')
+    // Skip link first (1 Tab + Enter lands on SOS), then Enter opens the dialog. Also measure the plain path.
+    const skipTabs = await tabTo('Skip to the SOS button', 3)
+    await page.keyboard.press('Enter')
+    const focused = await page.evaluate(() => document.activeElement.getAttribute('aria-label'))
+    const t1 = focused === 'Send emergency SOS' ? skipTabs : -1
     await page.keyboard.press('Enter')
     await page.getByRole('button', { name: 'Send SOS' }).waitFor()
     const focusInDialog = await until(() => page.evaluate(() => Boolean(document.activeElement.closest('[role="dialog"], [role="alertdialog"]'))), { timeout: 2000, what: 'focus inside the dialog' }).catch(() => false)

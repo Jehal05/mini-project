@@ -39,6 +39,7 @@ export function serializeCase(c, { hospitalId, patient, latestVitals, timeoutMs,
     acceptedAt: c.acceptedAt ? new Date(c.acceptedAt).toISOString() : null,
     acceptedBy: c.hospital ? String(c.hospital) : null,
     doctor: c.doctor ? String(c.doctor) : null,
+    ambulance: c.ambulance ? String(c.ambulance) : null,
     allHospitalsBusy: Boolean(c.allHospitalsBusy),
     respondBy,
     latestVitals: latestVitals

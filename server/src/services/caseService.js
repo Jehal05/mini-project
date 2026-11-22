@@ -8,6 +8,7 @@ import { computeGoldenHour } from './goldenHour.js';
 import { buildCasePayload, advanceToNextHospital, safeEmit } from './notifications.js';
 import { httpError } from '../utils/httpError.js';
 import { isObjectId } from '../utils/ids.js';
+import { autoAssignSafely } from './assignment.js';
 
 export const REJECT_REASONS = ['no_beds', 'no_cardiologist', 'cath_lab_busy', 'other'];
 const ACTIVE = repo.ACTIVE_STATUSES;
@@ -28,7 +29,7 @@ function requireInvolved(c, hospitalId) {
   }
 }
 
-async function broadcastCase(caseId, hospitalId) {
+export async function broadcastCase(caseId, hospitalId) {
   const fresh = await repo.getCase(caseId);
   const payload = await buildCasePayload(fresh, hospitalId);
   safeEmit(emitToCase, caseId, EVENTS.CASE_UPDATE, payload);
@@ -118,7 +119,9 @@ export async function acceptCase(caseId, hospitalId) {
       });
     }
   }
-  return buildCasePayload(doc, hospitalId);
+  // Phase 10 (feature 73): reserve the nearest available ambulance. Never blocks or fails the accept.
+  await autoAssignSafely(doc._id);
+  return buildCasePayload((await repo.getCase(caseId)) || doc, hospitalId);
 }
 
 // Feature 66

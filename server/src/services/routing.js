@@ -15,7 +15,7 @@ export function estimateRoute(from, to) {
   };
 }
 
-async function fetchJson(url, fetchImpl, timeoutMs) {
+export async function fetchJson(url, fetchImpl, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

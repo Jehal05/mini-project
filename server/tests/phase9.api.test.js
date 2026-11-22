@@ -10,6 +10,8 @@ vi.mock('../src/services/alternatives.js', async () => {
   const f = await import('./helpers/fakeDb.js');
   return { prepareCandidates: f.prepareCandidates, markNotified: f.markNotified, nextHospital: f.nextHospital };
 });
+vi.mock('../src/services/ambulanceRepo.js', async () => await import('./helpers/fakeDb.js'));
+vi.mock('../src/services/tripRepo.js', async () => await import('./helpers/fakeDb.js'));
 vi.mock('../src/services/push.js', () => ({ pushToHospital: vi.fn(async () => ({ sent: 0 })) }));
 
 import app from '../src/app.js';

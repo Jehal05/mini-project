@@ -16,6 +16,9 @@ const ambulanceSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' },
       coordinates: { type: [Number], default: [0, 0] },
     },
+    // Added in Phase 10: the case this ambulance is reserved for or serving. Null means free.
+    // Claiming it is one atomic update, so two cases can never get the same ambulance (feature 73).
+    currentCase: { type: mongoose.Schema.Types.ObjectId, ref: 'EmergencyCase', default: null },
     simulated: { type: Boolean, default: false },
   },
   { timestamps: true },

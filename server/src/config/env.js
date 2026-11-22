@@ -17,5 +17,8 @@ export const env = {
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
+  // Ambulance simulation (Phase 10)
+  ambulanceSpeedKmh: Number(process.env.AMBULANCE_SPEED_KMH) || 60,
+  ambulanceTickSeconds: Number(process.env.AMBULANCE_TICK_SECONDS) || 2,
   sweepIntervalSeconds: Number(process.env.NO_ANSWER_SWEEP_SECONDS) || 5,
 };

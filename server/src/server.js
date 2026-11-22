@@ -4,6 +4,7 @@ import { env } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { initSocket } from './sockets/index.js';
 import { startNoAnswerScheduler } from './services/notifications.js';
+import { startAmbulanceSimulator } from './services/simulator.js';
 
 async function start() {
   await connectDB();
@@ -12,6 +13,7 @@ async function start() {
   const io = initSocket(httpServer, { corsOrigin: env.clientUrl });
 
   const stopScheduler = startNoAnswerScheduler();
+  const stopSimulator = startAmbulanceSimulator();
 
   httpServer.listen(env.port, () => {
     console.log(`[server] listening on http://localhost:${env.port}`);
@@ -23,6 +25,7 @@ async function start() {
     shuttingDown = true;
     console.log(`[server] ${signal} received, shutting down`);
     stopScheduler();
+    stopSimulator();
     io.close();
     httpServer.close(async () => {
       await disconnectDB();

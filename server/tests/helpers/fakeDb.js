@@ -20,9 +20,14 @@ export function resetDb() {
   db.vitals = [];
   db.audit = [];
   db.subs = [];
+  db.ambulances = new Map();
+  db.trips = new Map();
+  db.admissions = [];
   db.ranking = []; // hospital ids, best first (what ranking would return for any case)
   db.patients.set(oid(500), { _id: oid(500), fullName: 'Rahul Sharma (demo)', phone: '0000000000', address: 'Pune' });
-  for (const n of [1, 2, 3, 4]) db.hospitals.set(oid(n), { _id: oid(n), name: `Hospital ${n}` });
+  for (const n of [1, 2, 3, 4]) {
+    db.hospitals.set(oid(n), { _id: oid(n), name: `Hospital ${n}`, location: { type: 'Point', coordinates: [73.85 + n * 0.01, 18.52] } });
+  }
   db.ranking = [oid(1), oid(2), oid(3), oid(4)];
   db.vitals.push({ patient: oid(500), heartRate: 128, systolic: 88, diastolic: 56, spo2: 90, recordedAt: new Date() });
 }
@@ -154,4 +159,123 @@ export const nextHospital = async (id, { now } = {}) => {
     now,
     timeoutMs: env.noAnswerTimeoutSeconds * 1000,
   });
+};
+
+// ---------- ambulanceRepo (Phase 10) ----------
+let ambCounter = 900;
+let tripCounter = 700;
+export function seedAmbulance(over = {}) {
+  const id = oid(++ambCounter);
+  const a = {
+    _id: id, vehicleNumber: `MH12-${ambCounter}`, type: 'ALS', homeHospital: oid(1), status: 'available', currentCase: null,
+    crew: [], equipment: [], location: { type: 'Point', coordinates: [73.86, 18.52] }, ...over,
+  };
+  db.ambulances.set(id, a);
+  return id;
+}
+export const storedAmbulance = (id) => db.ambulances.get(sid(id));
+export const storedTrip = (caseId) => [...db.trips.values()].find((t) => sid(t.emergencyCase) === sid(caseId));
+
+export const createAmbulance = async (doc) => {
+  if ([...db.ambulances.values()].some((a) => a.vehicleNumber === doc.vehicleNumber)) throw Object.assign(new Error('duplicate'), { code: 11000 });
+  const id = seedAmbulance({ ...doc, homeHospital: sid(doc.homeHospital) });
+  return clone(db.ambulances.get(id));
+};
+export const getAmbulance = async (id) => clone(db.ambulances.get(sid(id)));
+export const listAmbulances = async ({ hospitalId, type, status } = {}) =>
+  [...db.ambulances.values()]
+    .filter((a) => (!hospitalId || sid(a.homeHospital) === sid(hospitalId)) && (!type || a.type === type) && (!status || a.status === status))
+    .sort((a, b) => a.vehicleNumber.localeCompare(b.vehicleNumber))
+    .map(clone);
+export const listFreeAmbulances = async (hid) =>
+  [...db.ambulances.values()].filter((a) => sid(a.homeHospital) === sid(hid) && a.status === 'available' && !a.currentCase).map(clone);
+export const listForCrewLogin = async () =>
+  [...db.ambulances.values()].map((a) => ({ ...clone(a), homeHospital: { _id: a.homeHospital, name: db.hospitals.get(sid(a.homeHospital))?.name } }));
+
+const amb = (id) => db.ambulances.get(sid(id));
+export const setAmbulanceStatus = async (id, hid, from, to) => {
+  const a = amb(id);
+  if (!a || sid(a.homeHospital) !== sid(hid) || !from.includes(a.status) || a.currentCase) return null;
+  a.status = to;
+  return clone(a);
+};
+export const claimAmbulance = async (id, caseId, hid) => {
+  const a = amb(id);
+  if (!a || sid(a.homeHospital) !== sid(hid) || a.status !== 'available' || a.currentCase) return null;
+  a.currentCase = sid(caseId);
+  return clone(a);
+};
+export const releaseAmbulance = async (id, caseId) => {
+  const a = amb(id);
+  if (!a || sid(a.currentCase) !== sid(caseId) || a.status !== 'available') return null;
+  a.currentCase = null;
+  return clone(a);
+};
+const moveStatus = (from, to) => async (id, caseId) => {
+  const a = amb(id);
+  if (!a || sid(a.currentCase) !== sid(caseId) || a.status !== from) return null;
+  a.status = to;
+  return clone(a);
+};
+export const markDispatched = moveStatus('available', 'dispatched');
+export const revertDispatched = moveStatus('dispatched', 'available');
+export const markOnTrip = moveStatus('dispatched', 'on_trip');
+export const freeAmbulance = async (id, caseId, coordinates) => {
+  const a = amb(id);
+  if (!a || sid(a.currentCase) !== sid(caseId)) return null;
+  Object.assign(a, { status: 'available', currentCase: null, location: { type: 'Point', coordinates } });
+  return clone(a);
+};
+export const updateAmbulanceLocation = async (id, coordinates) => {
+  const a = amb(id);
+  if (a) a.location = { type: 'Point', coordinates };
+};
+
+// ---------- tripRepo (Phase 10) ----------
+const MOVING = ['en_route', 'patient_on_board', 'en_route_to_hospital'];
+export const createTrip = async (doc) => {
+  if (storedTrip(doc.emergencyCase)) throw Object.assign(new Error('duplicate'), { code: 11000 });
+  const id = oid(++tripCounter);
+  db.trips.set(id, { _id: id, ...clone(doc), stageTimes: { ...doc.stageTimes } });
+  return clone(db.trips.get(id));
+};
+export const getTripByCase = async (caseId) => clone(storedTrip(caseId));
+export const getActiveTripForAmbulance = async (aid) =>
+  clone([...db.trips.values()].find((t) => sid(t.ambulance) === sid(aid) && t.stage !== 'at_hospital'));
+export const listMovingTrips = async () => [...db.trips.values()].filter((t) => MOVING.includes(t.stage)).map(clone);
+export const advanceTrip = async (tripId, expected, set) => {
+  const t = db.trips.get(sid(tripId));
+  if (!t || new Date(t.lastTickAt).getTime() !== new Date(expected.lastTickAt).getTime() || t.stage !== expected.stage) return null;
+  Object.assign(t, clone(set));
+  return clone(t);
+};
+export const transitionTrip = async (caseId, from, to, now, extra = {}) => {
+  const t = storedTrip(caseId);
+  if (!t || t.stage !== from) return null;
+  Object.assign(t, clone(extra), { stage: to, lastTickAt: now });
+  t.stageTimes = { ...t.stageTimes, [to]: now };
+  return clone(t);
+};
+export const assignAmbulanceToCase = async (caseId, hid, aid) => {
+  const c = db.cases.get(sid(caseId));
+  if (!c || sid(c.hospital) !== sid(hid) || c.status !== 'accepted') return null;
+  c.ambulance = sid(aid);
+  return clone(c);
+};
+export const dispatchCase = async (caseId, hid, aid, now) => {
+  const c = db.cases.get(sid(caseId));
+  if (!c || sid(c.hospital) !== sid(hid) || c.status !== 'accepted' || sid(c.ambulance) !== sid(aid)) return null;
+  c.status = 'ambulance_assigned';
+  c.timeline.push({ event: 'ambulance_dispatched', hospital: hid, at: now });
+  return clone(c);
+};
+export const setCaseFields = async (caseId, set, entry) => {
+  const c = db.cases.get(sid(caseId));
+  Object.assign(c, clone(set));
+  if (entry) c.timeline.push({ ...entry });
+};
+export const createAdmission = async (doc) => {
+  let a = db.admissions.find((x) => sid(x.emergencyCase) === sid(doc.emergencyCase));
+  if (!a) db.admissions.push((a = { ...doc }));
+  return clone(a);
 };

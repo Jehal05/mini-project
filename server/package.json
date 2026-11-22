@@ -10,6 +10,7 @@
     "dev": "nodemon src/server.js",
     "seed": "node src/seed/seed.js",
     "seed:demo-history": "node src/seed/demoHistory.js",
+    "backup": "node scripts/backup.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

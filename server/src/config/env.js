@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -26,5 +28,10 @@ export const env = {
   priorityDistanceCapKm: Number(process.env.PRIORITY_DISTANCE_CAP_KM) || 20,
   // Admin dev login (Phase 12). Jehal replaces it with real admin auth.
   adminDevToken: process.env.ADMIN_DEV_TOKEN || '',
+  // Backup and restore (Phase 12, feature 99)
+  backupDir: process.env.BACKUP_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../backups'),
+  backupKeep: Number(process.env.BACKUP_KEEP) || 14,
+  backupEncryptionKey: process.env.BACKUP_ENCRYPTION_KEY || '', // 64 hex characters. Required in production.
+  allowProductionRestore: process.env.ALLOW_PRODUCTION_RESTORE === 'true',
   sweepIntervalSeconds: Number(process.env.NO_ANSWER_SWEEP_SECONDS) || 5,
 };

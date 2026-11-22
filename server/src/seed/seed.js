@@ -64,8 +64,10 @@ export async function seed() {
           ],
           equipment: a.type === 'ALS' ? ['defibrillator', 'ECG monitor', 'oxygen'] : ['oxygen', 'first aid kit'],
           simulated: true,
+          // Re-seeding resets the fleet so a demo that was left half-way never leaves an ambulance stuck.
+          status: 'available',
+          currentCase: null,
         },
-        $setOnInsert: { status: 'available' },
       },
       { upsert: true },
     );

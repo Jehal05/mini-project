@@ -1,20 +1,8 @@
 // Pure helpers that shape a case for the Hospital Portal (features 62, 64, 105).
 import { computeGoldenHour } from './goldenHour.js';
+export { severityRank } from './priority.js';
 
-const SEVERITY_ORDER = { critical: 4, high: 3, moderate: 2, low: 1 };
-export const severityRank = (s) => SEVERITY_ORDER[s] ?? 0;
 export const PREP_ITEMS = ['edBayReady', 'cathLabTeamAlerted', 'ccuBedReserved', 'ecgReady'];
-
-// Queue order: severity, then risk score, then who has waited longest, then id (stable).
-export function sortCases(cases) {
-  return [...cases].sort(
-    (a, b) =>
-      severityRank(b.severity) - severityRank(a.severity) ||
-      (b.riskScore ?? 0) - (a.riskScore ?? 0) ||
-      new Date(a.detectedAt ?? 0).getTime() - new Date(b.detectedAt ?? 0).getTime() ||
-      String(a._id).localeCompare(String(b._id)),
-  );
-}
 
 export function normalizePreparation(prep = {}) {
   return Object.fromEntries(

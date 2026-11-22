@@ -118,6 +118,23 @@ describe('feature 62 and 64: incoming queue', () => {
     expect(first.latestVitals.spo2).toBe(90);
   });
 
+  it('feature 95: explains the order, and supports ?sort=newest and rejects unknown sort modes', async () => {
+    const older = seedCase({ severity: 'critical', riskScore: 90, detectedAt: new Date(Date.now() - 600000) });
+    const newer = seedCase({ severity: 'critical', riskScore: 20, detectedAt: new Date() });
+    await notifyHospitals(older);
+    await notifyHospitals(newer);
+
+    const byPriority = await request(app).get(`/api/hospitals/${H1}/cases`).set(as(H1));
+    expect(byPriority.body.sort).toBe('priority');
+    expect(byPriority.body.results.map((r) => r.id)).toEqual([older, newer]);
+    expect(byPriority.body.results[0].priority).toMatchObject({ tier: 4 });
+    expect(byPriority.body.results[0].priority.factors).toHaveProperty('wait');
+
+    const byNewest = await request(app).get(`/api/hospitals/${H1}/cases?sort=newest`).set(as(H1));
+    expect(byNewest.body.results.map((r) => r.id)).toEqual([newer, older]);
+    expect((await request(app).get(`/api/hospitals/${H1}/cases?sort=banana`).set(as(H1))).status).toBe(400);
+  });
+
   it('does not list cases this hospital already rejected, or ones it was never notified about', async () => {
     const id = seedCase();
     await notifyHospitals(id);

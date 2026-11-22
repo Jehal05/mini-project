@@ -2,18 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { getSocket, joinRoom } from '../lib/socket.js';
 import { EVENTS } from '../lib/events.js';
 import { portalFetch } from '../lib/portalApi.js';
-
-const SEVERITY = { critical: 4, high: 3, moderate: 2, low: 1 };
-const sortCases = (list) =>
-  [...list].sort(
-    (a, b) =>
-      (SEVERITY[b.severity] ?? 0) - (SEVERITY[a.severity] ?? 0) ||
-      (b.riskScore ?? 0) - (a.riskScore ?? 0) ||
-      new Date(a.detectedAt) - new Date(b.detectedAt),
-  );
+import { prioritizeCases, sortNewest, DEFAULT_CONFIG } from '../lib/priority.js';
 
 // Feature 62: the live queue. Loads once, then stays current from Socket.IO events (no reload needed).
-export function useQueue(hospitalId) {
+// Feature 95: the order comes from lib/priority.js (a mirror of the server). the 30 s timer forces a re-render, which re-sorts, so wait time keeps counting.
+export function useQueue(hospitalId, { sort = 'priority', origin = null } = {}) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
   const [cases, setCases] = useState({});
   const [notices, setNotices] = useState([]);
   const [error, setError] = useState('');
@@ -68,8 +66,15 @@ export function useQueue(hospitalId) {
     };
   }, [hospitalId, reload, upsert, remove]);
 
+  const open = Object.values(cases).filter((c) => c.severity);
+  const config = open.find((c) => c.priority?.config)?.priority.config || DEFAULT_CONFIG;
+  const ordered =
+    sort === 'newest'
+      ? sortNewest(open).map((c) => ({ ...c, priority: prioritizeCases([c], { origin, config })[0].priority }))
+      : prioritizeCases(open, { origin, config }).map((x) => ({ ...x.case, priority: x.priority }));
+
   return {
-    cases: sortCases(Object.values(cases).filter((c) => c.severity)),
+    cases: ordered,
     notices,
     dismissNotice: (id) => setNotices((n) => n.filter((x) => x.id !== id)),
     error,

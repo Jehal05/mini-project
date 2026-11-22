@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { computeGoldenHour } from '../src/services/goldenHour.js';
 import { findNewTimeouts } from '../src/services/noAnswer.js';
-import { sortCases, serializeCase } from '../src/services/caseView.js';
+import { serializeCase } from '../src/services/caseView.js';
+import { prioritizeCases } from '../src/services/priority.js';
 
 const T0 = new Date('2026-11-22T10:00:00Z').getTime();
 const min = (n) => new Date(T0 + n * 60000);
@@ -79,8 +80,8 @@ describe('queue ordering and serialising (features 62, 64)', () => {
   const c = (id, severity, riskScore, detectedMin) => ({ _id: id, severity, riskScore, detectedAt: min(detectedMin) });
 
   it('orders by severity, then risk score, then longest waiting', () => {
-    const sorted = sortCases([c('a', 'high', 90, 0), c('b', 'critical', 50, 5), c('c', 'critical', 50, 1), c('d', 'critical', 70, 9)]);
-    expect(sorted.map((x) => x._id)).toEqual(['d', 'c', 'b', 'a']);
+    const sorted = prioritizeCases([c('a', 'high', 90, 0), c('b', 'critical', 50, 5), c('c', 'critical', 50, 1), c('d', 'critical', 70, 9)], { now: min(10).getTime() });
+    expect(sorted.map((x) => x.case._id)).toEqual(['d', 'c', 'b', 'a']);
   });
 
   it('adds a response deadline only for a pending case this hospital was notified about', () => {

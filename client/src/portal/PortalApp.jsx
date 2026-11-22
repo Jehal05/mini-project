@@ -23,7 +23,9 @@ export default function PortalApp() {
   useEffect(() => { fetchHospitals().then(setHospitals).catch(() => setHospitals([])); }, []);
   useEffect(() => { if (hospitalId) localStorage.setItem(KEY, hospitalId); }, [hospitalId]);
 
-  const { cases, notices, dismissNotice, error, upsert, remove } = useQueue(hospitalId);
+  const [sort, setSort] = useState('priority');
+  const here = hospitals.find((h) => h.id === hospitalId)?.location || null;
+  const { cases, notices, dismissNotice, error, upsert, remove } = useQueue(hospitalId, { sort, origin: here });
   const selected = cases.find((c) => c.id === selectedId) || null;
 
   // Feature 103: the most urgent critical case that has not been acknowledged takes over the screen.
@@ -97,7 +99,7 @@ export default function PortalApp() {
         <p className="rounded bg-white p-4 text-sm shadow">Choose a hospital to see its incoming emergencies.</p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
-          <CaseQueue cases={cases} selectedId={selectedId} onSelect={setSelectedId} hospitalId={hospitalId} />
+          <CaseQueue cases={cases} selectedId={selectedId} onSelect={setSelectedId} hospitalId={hospitalId} sort={sort} onSort={setSort} />
           {selected ? (
             <CaseView key={selected.id} hospitalId={hospitalId} caseData={selected} onChange={upsert} onGone={(id) => { remove(id); setSelectedId(null); }} />
           ) : (

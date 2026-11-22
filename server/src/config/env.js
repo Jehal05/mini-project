@@ -20,5 +20,9 @@ export const env = {
   // Ambulance simulation (Phase 10)
   ambulanceSpeedKmh: Number(process.env.AMBULANCE_SPEED_KMH) || 60,
   ambulanceTickSeconds: Number(process.env.AMBULANCE_TICK_SECONDS) || 2,
+  // Emergency prioritization (Phase 12). Order: risk,wait,distance. Normalised, so 5,3,2 works too.
+  priorityWeights: process.env.PRIORITY_WEIGHTS || '0.5,0.3,0.2',
+  priorityWaitCapMin: Number(process.env.PRIORITY_WAIT_CAP_MIN) || 30,
+  priorityDistanceCapKm: Number(process.env.PRIORITY_DISTANCE_CAP_KM) || 20,
   sweepIntervalSeconds: Number(process.env.NO_ANSWER_SWEEP_SECONDS) || 5,
 };

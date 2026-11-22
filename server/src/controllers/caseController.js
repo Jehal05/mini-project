@@ -10,7 +10,7 @@ const hid = (req) => req.staff.hospitalId;
 
 export const hospitalQueue = asyncHandler(async (req, res) => {
   if (req.params.id !== hid(req)) throw httpError(403, 'You can only view your own hospital queue');
-  res.json(await cases.listQueue(hid(req)));
+  res.json(await cases.listQueue(hid(req), { sort: req.query.sort || 'priority' }));
 });
 
 export const hospitalDoctors = asyncHandler(async (req, res) => {

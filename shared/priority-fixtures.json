@@ -1,0 +1,112 @@
+{
+ "now": "2026-11-23T10:00:00.000Z",
+ "origin": {
+  "lat": 18.52,
+  "lng": 73.86
+ },
+ "config": {
+  "weights": {
+   "risk": 0.5,
+   "wait": 0.3,
+   "distance": 0.2
+  },
+  "waitCapMin": 30,
+  "distanceCapKm": 20
+ },
+ "cases": [
+  {
+   "id": "c1",
+   "severity": "critical",
+   "riskScore": 40,
+   "detectedAt": "2026-11-23T09:58:00.000Z",
+   "location": {
+    "lat": 18.53,
+    "lng": 73.87
+   }
+  },
+  {
+   "id": "c2",
+   "severity": "high",
+   "riskScore": 99,
+   "detectedAt": "2026-11-23T09:20:00.000Z",
+   "location": {
+    "lat": 18.53,
+    "lng": 73.87
+   }
+  },
+  {
+   "id": "c3",
+   "severity": "critical"
+  },
+  {
+   "id": "c4",
+   "severity": "critical",
+   "riskScore": 40,
+   "detectedAt": "2026-11-23T09:58:00.000Z",
+   "location": {
+    "lat": 18.53,
+    "lng": 73.87
+   }
+  },
+  {
+   "id": "c5",
+   "severity": "moderate",
+   "riskScore": 10,
+   "detectedAt": "2026-11-23T09:55:00.000Z",
+   "location": {
+    "lat": 18.53,
+    "lng": 73.87
+   }
+  },
+  {
+   "id": "c6",
+   "severity": "critical",
+   "riskScore": 80,
+   "detectedAt": "2026-11-23T09:59:00.000Z",
+   "location": {
+    "lat": 18.79,
+    "lng": 73.86
+   }
+  },
+  {
+   "id": "c7",
+   "severity": "low",
+   "riskScore": 100,
+   "detectedAt": "2026-11-23T08:30:00.000Z",
+   "location": {
+    "lat": 18.53,
+    "lng": 73.87
+   }
+  },
+  {
+   "id": "c8",
+   "severity": "high",
+   "riskScore": 60,
+   "detectedAt": "2026-11-23T09:50:00.000Z",
+   "location": {
+    "lat": 18.53,
+    "lng": 73.87
+   }
+  }
+ ],
+ "expectedOrder": [
+  "c6",
+  "c1",
+  "c4",
+  "c3",
+  "c2",
+  "c8",
+  "c5",
+  "c7"
+ ],
+ "expectedScores": {
+  "c6": 41,
+  "c1": 40.47,
+  "c4": 40.47,
+  "c3": 0,
+  "c2": 97.97,
+  "c8": 58.47,
+  "c5": 28.47,
+  "c7": 98.47
+ }
+}

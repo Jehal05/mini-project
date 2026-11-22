@@ -3,7 +3,8 @@ import { env } from '../config/env.js';
 import { EVENTS } from '../sockets/events.js';
 import { emitToHospital, emitToCase, emitToPatient, emitToDoctor } from '../sockets/index.js';
 import * as repo from './caseRepo.js';
-import { sortCases, PREP_ITEMS } from './caseView.js';
+import { PREP_ITEMS } from './caseView.js';
+import { prioritizeCases, sortNewest, configFromEnv, SORT_MODES } from './priority.js';
 import { computeGoldenHour } from './goldenHour.js';
 import { buildCasePayload, advanceToNextHospital, safeEmit } from './notifications.js';
 import { httpError } from '../utils/httpError.js';
@@ -38,10 +39,20 @@ export async function broadcastCase(caseId, hospitalId) {
 }
 
 // Feature 62
-export async function listQueue(hospitalId) {
-  const cases = sortCases(await repo.listForHospital(hospitalId));
-  const results = await Promise.all(cases.map((c) => buildCasePayload(c, hospitalId)));
-  return { count: results.length, results };
+export async function listQueue(hospitalId, { sort = 'priority', now = Date.now() } = {}) {
+  if (!SORT_MODES.includes(sort)) throw httpError(400, `sort must be one of: ${SORT_MODES.join(', ')}`);
+  const [open, hospital] = await Promise.all([repo.listForHospital(hospitalId), repo.getHospital(hospitalId)]);
+  const config = configFromEnv(env.priorityWeights, { waitCapMin: env.priorityWaitCapMin, distanceCapKm: env.priorityDistanceCapKm });
+  const origin = hospital?.location?.coordinates ? { lat: hospital.location.coordinates[1], lng: hospital.location.coordinates[0] } : null;
+
+  // Priority is always computed, so the screen can explain the order even when sorted by newest.
+  const prioritized = prioritizeCases(open, { origin, now, config });
+  const scored = new Map(prioritized.map((x) => [sid(x.case._id), x.priority]));
+  const ordered = sort === 'newest' ? sortNewest(open) : prioritized.map((x) => x.case);
+  const results = await Promise.all(
+    ordered.map(async (c) => ({ ...(await buildCasePayload(c, hospitalId)), priority: { ...scored.get(sid(c._id)), config } })),
+  );
+  return { count: results.length, sort, results };
 }
 
 export async function getCaseDetail(caseId, hospitalId) {

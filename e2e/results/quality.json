@@ -1,0 +1,226 @@
+{
+  "summary": {
+    "states": 24,
+    "statesMissingSimulatedLabel": [],
+    "horizontalScroll": [],
+    "axeTotal": 0,
+    "axeSeriousOrCritical": [],
+    "consoleAndPageErrors": [
+      "mobile-390: http 404 http://127.0.0.1:46269/api/emergency/status/11111111111111111111111111111111",
+      "mobile-390: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "mobile-390: http 404 http://127.0.0.1:46269/api/emergency/status/11111111111111111111111111111111",
+      "mobile-390: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "mobile-390: http 404 http://127.0.0.1:46269/api/emergency/status/11111111111111111111111111111111",
+      "mobile-390: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
+      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
+      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
+      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "desktop-1366: http 404 http://127.0.0.1:40265/api/emergency/status/11111111111111111111111111111111",
+      "desktop-1366: console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  "keyboard": {
+    "tabsToSosButton": 24,
+    "focusMovedIntoDialog": true,
+    "tabsToSendInsideDialog": 3,
+    "caseOpened": true,
+    "problems": []
+  },
+  "out": [
+    {
+      "state": "01-dashboard-idle",
+      "viewport": "mobile-390",
+      "screenshot": "01-dashboard-idle-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "02-sos-dialog",
+      "viewport": "mobile-390",
+      "screenshot": "02-sos-dialog-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "03-level-alert",
+      "viewport": "mobile-390",
+      "screenshot": "03-level-alert-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "04-are-you-okay-countdown",
+      "viewport": "mobile-390",
+      "screenshot": "04-are-you-okay-countdown-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "05-searching",
+      "viewport": "mobile-390",
+      "screenshot": "05-searching-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "06-cancel-dialog",
+      "viewport": "mobile-390",
+      "screenshot": "06-cancel-dialog-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "07-hospital-accepted",
+      "viewport": "mobile-390",
+      "screenshot": "07-hospital-accepted-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "08-family-status",
+      "viewport": "mobile-390",
+      "screenshot": "08-family-status-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "09-family-invalid-link",
+      "viewport": "mobile-390",
+      "screenshot": "09-family-invalid-link-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "10-cancelled",
+      "viewport": "mobile-390",
+      "screenshot": "10-cancelled-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "11-presenter-panel",
+      "viewport": "mobile-390",
+      "screenshot": "11-presenter-panel-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "12-unresolved",
+      "viewport": "mobile-390",
+      "screenshot": "12-unresolved-mobile-390.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "01-dashboard-idle",
+      "viewport": "desktop-1366",
+      "screenshot": "01-dashboard-idle-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "02-sos-dialog",
+      "viewport": "desktop-1366",
+      "screenshot": "02-sos-dialog-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "03-level-alert",
+      "viewport": "desktop-1366",
+      "screenshot": "03-level-alert-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "04-are-you-okay-countdown",
+      "viewport": "desktop-1366",
+      "screenshot": "04-are-you-okay-countdown-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "05-searching",
+      "viewport": "desktop-1366",
+      "screenshot": "05-searching-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "06-cancel-dialog",
+      "viewport": "desktop-1366",
+      "screenshot": "06-cancel-dialog-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "07-hospital-accepted",
+      "viewport": "desktop-1366",
+      "screenshot": "07-hospital-accepted-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "08-family-status",
+      "viewport": "desktop-1366",
+      "screenshot": "08-family-status-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "09-family-invalid-link",
+      "viewport": "desktop-1366",
+      "screenshot": "09-family-invalid-link-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "10-cancelled",
+      "viewport": "desktop-1366",
+      "screenshot": "10-cancelled-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "11-presenter-panel",
+      "viewport": "desktop-1366",
+      "screenshot": "11-presenter-panel-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    },
+    {
+      "state": "12-unresolved",
+      "viewport": "desktop-1366",
+      "screenshot": "12-unresolved-desktop-1366.png",
+      "simulatedLabel": true,
+      "axeViolations": [],
+      "horizontalScroll": false
+    }
+  ]
+}

@@ -16,6 +16,9 @@ export async function openPage(browser, viewport = DESKTOP, { context: ctxOpts =
   page.on('console', (m) => {
     if (m.type() === 'error') page.problems.push(`console.error: ${m.text()}`)
   })
+  page.on('response', (r) => {
+    if (r.status() >= 400) page.problems.push(`http ${r.status()} ${r.url()}`)
+  })
   page.on('pageerror', (e) => page.problems.push(`pageerror: ${e.message}`))
   return page
 }

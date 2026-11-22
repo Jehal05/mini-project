@@ -542,6 +542,19 @@ describe('family status page (feature 48)', () => {
     expect(await screen.findByRole('button', { name: 'You marked this as seen' })).toBeDisabled()
   })
 
+  it('an invalid link is asked about once, not every 10 seconds forever (each miss is a console error)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      api.publicStatus.mockRejectedValue(Object.assign(new Error('x'), { status: 404 }))
+      open('bad')
+      expect(await screen.findByText('This status link is not valid.')).toBeInTheDocument()
+      await act(async () => vi.advanceTimersByTime(35_000))
+      expect(api.publicStatus).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('an unknown link says it is not valid, and a closed case says it is no longer open', async () => {
     api.publicStatus.mockRejectedValue(Object.assign(new Error('x'), { status: 404 }))
     const { unmount } = open('bad')

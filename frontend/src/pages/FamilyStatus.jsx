@@ -14,11 +14,15 @@ export default function FamilyStatus() {
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(() => emergencyApi.publicStatus(token).then((d) => (setData(d), setError(null))).catch((e) => setError(e)), [token])
+  const invalid = error?.status === 404 // a wrong link stays wrong: stop asking
   useEffect(() => {
     load()
+  }, [load])
+  useEffect(() => {
+    if (invalid) return undefined
     const t = setInterval(load, 10_000)
     return () => clearInterval(t)
-  }, [load])
+  }, [load, invalid])
 
   async function seen() {
     setBusy(true)

@@ -47,6 +47,7 @@ export const monitoringApi = {
   getPatient: (idOrCode) => request(`/patients/${encodeURIComponent(idOrCode)}`),
   latest: (id) => request(`/patients/${id}/vitals/latest`),
   history: (id, range) => request(`/patients/${id}/vitals/history?range=${range}`),
+  trends: (id) => request(`/patients/${id}/trends`),
   timeline: (id, range) => request(`/patients/${id}/timeline?range=${range}`),
   scenarios: () => request('/scenarios'),
   setScenario: (id, scenario) => {

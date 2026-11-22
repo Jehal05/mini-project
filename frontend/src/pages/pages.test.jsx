@@ -13,6 +13,7 @@ const api = vi.hoisted(() => ({
   listPatients: vi.fn(),
   getPatient: vi.fn(),
   history: vi.fn(),
+  trends: vi.fn(),
   timeline: vi.fn(),
   scenarios: vi.fn(),
   setScenario: vi.fn(),
@@ -95,6 +96,7 @@ beforeEach(() => {
   liveState.live = null
   api.getPatient.mockResolvedValue(RAHUL)
   api.listPatients.mockResolvedValue([RAHUL])
+  api.trends.mockResolvedValue({ simulated: true, last24h: {}, last7d: {}, restingHr: { state: 'not_enough_data', days: [] }, drift: {} })
   api.history.mockResolvedValue({ points: [{ at: STABLE.at, ...STABLE.vitals, status: 'normal' }] })
   api.timeline.mockResolvedValue({
     from: '2026-11-17T08:00:00.000Z',
@@ -153,6 +155,17 @@ describe('Patient dashboard', () => {
     expect(await screen.findByText('Scenario changed: Stable → Cardiac event')).toBeInTheDocument()
     await userEvent.click(screen.getAllByRole('button', { name: '7 days' })[0])
     await waitFor(() => expect(api.history).toHaveBeenCalledWith('id1', '7d'))
+  })
+
+  it('shows the Digital Twin with the patient\'s own baseline next to the live reading', async () => {
+    api.getPatient.mockResolvedValue({ ...RAHUL, live: { ...STABLE, baseline: { hr: 70, sys: 124, dia: 76, spo2: 98, temp: 36.8, rr: 15 } } })
+    renderAt('/patient/HT-2026-0001', <PatientDashboard />)
+    const twin = await screen.findByRole('region', { name: 'Digital Twin' })
+    const row = within(twin).getByRole('row', { name: /Heart rate/ })
+    expect(row).toHaveTextContent('70 BPM') // the baseline (usual)
+    expect(row).toHaveTextContent('78 BPM') // now
+    expect(within(twin).getByText('Heart rate is 11% above your usual (70 BPM).')).toBeInTheDocument()
+    await waitFor(() => expect(api.trends).toHaveBeenCalledWith('id1'))
   })
 
   it('has a skip link that moves focus straight to the SOS button (keyboard users otherwise tab 16+ times)', async () => {

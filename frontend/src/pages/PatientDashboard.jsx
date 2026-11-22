@@ -20,6 +20,7 @@ const DetectionHistorySection = lazy(() => import('../features/detection/index.j
 
 // The SOS flow is its own chunk too (loaded after the first screen; the SOS dialog only when opened).
 const EmergencySection = lazy(() => import('../features/emergency/index.jsx').then((m) => ({ default: m.EmergencySection })))
+const TwinSection = lazy(() => import('../features/twin/index.jsx').then((m) => ({ default: m.TwinSection })))
 const EmergencyHistorySection = lazy(() => import('../features/emergency/index.jsx').then((m) => ({ default: m.EmergencyHistorySection })))
 const SosDialog = lazy(() => import('../features/emergency/index.jsx').then((m) => ({ default: m.SosDialog })))
 
@@ -190,6 +191,10 @@ export default function PatientDashboard() {
 
                 <Suspense fallback={<DetectionLoading />}>
                   <DetectionSection patientId={patient.id} />
+                </Suspense>
+
+                <Suspense fallback={null}>
+                  <TwinSection patientId={patient.id} live={live} baseline={patient.live?.baseline} />
                 </Suspense>
 
                 <Card

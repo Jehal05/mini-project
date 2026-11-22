@@ -5,6 +5,7 @@
 //                                       MongoDB kept in backend/.data (survives restarts)
 //   MONGO_URI=mongodb://... npm run dev
 //   PRESENTER_KEY=some-secret npm run dev   protects scenario switching (required when NODE_ENV=production)
+//   EMERGENCY_ROUND_SECONDS=15 npm run dev  shortens the 60 s hospital-search round for demos
 //
 // Then open the frontend (cd ../frontend && npm run dev).
 
@@ -18,6 +19,7 @@ import mongoose from 'mongoose'
 import { Server } from 'socket.io'
 import { attachSimulation } from '../simulation/index.js'
 import { attachDetection } from '../detection/index.js'
+import { attachEmergency } from '../emergency/index.js'
 import { seedPatients, backfillHistory } from './seed.js'
 
 const PORT = Number(process.env.PORT ?? 4000)
@@ -61,10 +63,14 @@ async function main() {
   const engine = await attachSimulation({ app, io })
   const detection = await attachDetection({ app, io, engine })
   detection.onCaseCreated((c) => console.log(`[dev] emergency case ${c.caseId} opened for ${c.patientCode} (awaiting confirmation)`))
+  // No hospital discovery yet (Puneet): events still fire. EMERGENCY_ROUND_SECONDS shortens the 60 s search
+  // round so escalation can be shown on stage without a long wait (demo only).
+  const roundSeconds = Number(process.env.EMERGENCY_ROUND_SECONDS)
+  const emergency = await attachEmergency({ app, io, detection, ...(roundSeconds > 0 && { roundTimeoutMs: roundSeconds * 1000 }) })
 
   server.listen(PORT, () => {
     console.log(`[dev] HealthTwin monitoring on http://localhost:${PORT}  (db: ${db.where})`)
-    console.log(`[dev] monitoring ${engine.list().length} fictional patients; REST under /api/sim and /api/detection`)
+    console.log(`[dev] monitoring ${engine.list().length} fictional patients; REST under /api/sim, /api/detection and /api/emergency`)
     console.log(
       process.env.PRESENTER_KEY
         ? '[dev] presenter controls need the PRESENTER_KEY (x-presenter-key header)'
@@ -73,6 +79,7 @@ async function main() {
   })
 
   const shutdown = async () => {
+    emergency.stop()
     detection.stop()
     engine.stop()
     io.close()

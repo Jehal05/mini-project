@@ -170,6 +170,7 @@ export class AmbulanceService {
       if (!next) continue
       this.io?.to(patientRoom(c.patient)).emit(EV.AMBULANCE_POSITION, this.payload(c, next))
       if (c.acceptedHospital) this.io?.to(hospitalRoom(c.acceptedHospital)).emit(EV.AMBULANCE_POSITION, this.payload(c, next))
+      this.io?.to(ADMIN_ROOM).emit(EV.AMBULANCE_POSITION, this.payload(c, next))
       if (arrived) await this.advance(c._id, a.trip.stage === 'en_route' ? 'at_patient' : 'at_hospital', { role: 'system' }, { fromSimulation: true })
     }
   }

@@ -5,6 +5,7 @@
 //   PUT  /config                        { thresholds?, baselineLimits?, riskWeights? }   admin (guarded)
 //   GET  /status                        live detection state of every monitored patient
 //   GET  /patients/:id/status           live detection state: level, rules, risk gauge, case
+//   GET  /patients/:id/thresholds       this patient's override, effective and global thresholds   doctor/admin (guarded)
 //   PUT  /patients/:id/thresholds       { thresholds } per-patient overrides              doctor/admin (guarded)
 //   GET  /patients/:id/detections       history, newest first. ?from=&to=&severity=&outcome=&page=&limit=
 //
@@ -99,6 +100,10 @@ export function createDetectionRouter(service, { guard = allow, presenterGuard =
     const status = service.status(req.patientId)
     if (!status) return res.status(409).json({ error: 'Patient is not being monitored' })
     res.json(status)
+  })
+
+  router.get('/patients/:id/thresholds', thresholdsGuard, resolvePatient, (req, res) => {
+    res.json({ patientId: req.patientId, override: service.getConfig().overrides.patientThresholds?.[req.patientId] ?? {}, effective: service.configFor(req.patientId).thresholds, globalThresholds: service.getConfig().effective.thresholds })
   })
 
   router.put('/patients/:id/thresholds', thresholdsGuard, resolvePatient, async (req, res, next) => {

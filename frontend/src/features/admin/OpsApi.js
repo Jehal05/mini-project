@@ -2,6 +2,7 @@ import { api, post } from '../../api/http.js'
 
 export const adminOps = {
   queue: () => api('/admin/emergencies'),
+  map: () => api('/admin/map'),
   analytics: (days) => api(`/admin/analytics?days=${days}`),
   backup: () => api('/admin/backup'),
   checkBackup: (file) => post('/admin/backup/check', { file }),

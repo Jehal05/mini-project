@@ -7,6 +7,8 @@ import HospitalsPage from './HospitalsPage.jsx';
 import EmergenciesPage from './EmergenciesPage.jsx';
 import BackupPage from './BackupPage.jsx';
 
+const DetectionSettingsPage = lazy(() => import('./DetectionSettingsPage.jsx'));
+const CommandMapPage = lazy(() => import('./CommandMapPage.jsx'));
 const AnalyticsPage = lazy(() => import('./AnalyticsPage.jsx')); // charts load only when opened
 import '../profile/profile.css';
 
@@ -17,16 +19,20 @@ export default function AdminLayout() {
       <UnresolvedAlerts />
       <nav aria-label="Admin sections" className="tabs">
         <NavLink to="/admin/hospitals" className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>Hospitals</NavLink>
+        <NavLink to="/admin/map" className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>Command map</NavLink>
         <NavLink to="/admin/emergencies" className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>Emergencies</NavLink>
         <NavLink to="/admin/analytics" className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>Analytics</NavLink>
+        <NavLink to="/admin/detection" className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>Detection settings</NavLink>
         <NavLink to="/admin/audit" className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>Audit log</NavLink>
         <NavLink to="/admin/backup" className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>Backup</NavLink>
       </nav>
       <Routes>
         <Route index element={<Navigate to="hospitals" replace />} />
         <Route path="hospitals" element={<HospitalsPage />} />
+        <Route path="map" element={<Suspense fallback={<p role="status">Loading map…</p>}><CommandMapPage /></Suspense>} />
         <Route path="emergencies" element={<EmergenciesPage />} />
         <Route path="analytics" element={<Suspense fallback={<p role="status">Loading charts…</p>}><AnalyticsPage /></Suspense>} />
+        <Route path="detection" element={<Suspense fallback={<p role="status">Loading settings…</p>}><DetectionSettingsPage /></Suspense>} />
         <Route path="audit" element={<AuditLogViewer />} />
         <Route path="backup" element={<BackupPage />} />
         <Route path="*" element={<Navigate to="hospitals" replace />} />

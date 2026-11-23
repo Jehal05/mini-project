@@ -17,6 +17,7 @@ const TABS = [
   ['/hospital/ambulances', 'Ambulances', false, null],
   ['/hospital/crew', 'Crew view', false, null],
   ['/hospital/doctors', 'Doctors', false, null],
+  ['/hospital/thresholds', 'Patient thresholds', false, null],
   ['/hospital/history', 'Emergency history', false, null],
 ];
 

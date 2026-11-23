@@ -29,6 +29,7 @@ const AmbulancesPage = lazy(() => import('./features/response/pages/AmbulancesPa
 const TrackPage = lazy(() => import('./features/response/pages/TrackPage.jsx'))
 const HospitalFinderPage = lazy(() => import('./features/response/pages/HospitalFinderPage.jsx'))
 const EdPage = lazy(() => import('./features/hospital/pages/EdPage.jsx'))
+const PatientThresholdsPage = lazy(() => import('./features/hospital/pages/PatientThresholdsPage.jsx'))
 const HistoryPage = lazy(() => import('./features/hospital/pages/HistoryPage.jsx'))
 import './features/hospital/hospital.css'
 import './styles/auth.css'
@@ -130,6 +131,7 @@ export default function App() {
               <Route path="beds" element={<BedsPage />} />
               <Route path="ed" element={<EdPage />} />
               <Route path="doctors" element={<DoctorsPage />} />
+              <Route path="thresholds" element={<PatientThresholdsPage />} />
               <Route path="history" element={<HistoryPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>

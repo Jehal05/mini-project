@@ -52,7 +52,7 @@ export const makeRequest = (base) => async function request(path, { headers, ...
       }
     }
     const message = typeof body.error === 'string' ? body.error : body.error?.message
-    throw Object.assign(new Error(message ?? `Request failed (${res.status})`), { status: res.status, code })
+    throw Object.assign(new Error(message ?? `Request failed (${res.status})`), { status: res.status, code, errors: body.errors })
   }
   return body
 }

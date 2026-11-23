@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { pathToFileURL } from 'node:url';
 import { connectDb, disconnectDb } from '../config/db.js';
 import { config } from '../config/env.js';
-import { Bed, Counter, Doctor, Document, EdBay, Hospital, HospitalCase, Patient, User } from '../models/index.js';
+import { Ambulance, Bed, Counter, Doctor, Document, EdBay, Hospital, HospitalCase, Patient, User } from '../models/index.js';
 import { randomToken } from '../utils/crypto.js';
 import { deleteFile, saveFile } from '../utils/storage.js';
 
@@ -122,6 +122,13 @@ export async function seedHospitals(demoHospital, log = console.log) {
     if (!(await EdBay.exists({ hospital: h._id }))) {
       await EdBay.insertMany(['ED-1', 'ED-2', 'ED-3', 'ED-4'].map((label) => ({ hospital: h._id, label })));
       await Counter.updateOne({ _id: `edbays:${h._id}` }, { $max: { seq: 4 } }, { upsert: true });
+    }
+    if (!(await Ambulance.exists({ hospital: h._id }))) {
+      const tag = String(h._id).slice(-4).toUpperCase();
+      await Ambulance.insertMany([
+        { hospital: h._id, vehicleNumber: `MH12-${tag}-A1`, type: 'ALS', position: h.location, crew: [{ name: 'Driver (fictional)', role: 'Driver', phone: '+912000000010' }, { name: 'Paramedic (fictional)', role: 'Paramedic', phone: '+912000000011' }], equipment: ['Defibrillator', 'ECG monitor', 'Oxygen'] },
+        { hospital: h._id, vehicleNumber: `MH12-${tag}-B1`, type: 'BLS', position: h.location, crew: [{ name: 'Driver (fictional)', role: 'Driver', phone: '+912000000012' }], equipment: ['Oxygen', 'First aid kit'] },
+      ]);
     }
     if (!(await Doctor.exists({ hospital: h._id }))) {
       const first = h._id.equals(demoHospital._id) ? await User.findOne({ email: 'doctor@healthtwin.example' }) : null;

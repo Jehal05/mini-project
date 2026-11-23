@@ -1,7 +1,7 @@
 // Feature 47: the real channels behind the contact alerts. Email goes through the same mailer as password resets
 // (Resend when MAIL_PROVIDER=resend), push through Web Push when VAPID keys are set. Anything not configured falls
 // back to the dev notifier, so a demo never sends a real message by accident.
-import webpush from 'web-push';
+import * as webpush from 'web-push';
 import { config } from '../config/env.js';
 import { sendMail } from '../utils/mailer.js';
 import { createDevNotifier } from './notifier.js';

@@ -11,12 +11,12 @@ import { attachEmergency } from './emergency/index.js'
 import { attachSimulation } from './simulation/index.js'
 
 /** Creates the router to pass to createApp({ extraApi }) and starts the modules. `discovery` is Puneet's hospital search. */
-export async function createMonitoring({ io, discovery, notifier, audit = auditDetectionChange, logger = console, autoStart = true, emergencyOptions = {} } = {}) {
+export async function createMonitoring({ io, discovery, notifier, audit = auditDetectionChange, logger = console, autoStart = true, simulationOptions = {}, emergencyOptions = {} } = {}) {
   const extraApi = express.Router()
   const rules = monitoringAccess()
   if (io) io.use(socketAuth)
 
-  const engine = await attachSimulation({ app: extraApi, io, basePath: '/sim', logger, autoStart, ...rules })
+  const engine = await attachSimulation({ app: extraApi, io, basePath: '/sim', logger, autoStart, ...rules, ...simulationOptions })
   const detection = await attachDetection({ app: extraApi, io, engine, basePath: '/detection', logger, autoStart, audit, ...rules })
   const emergency = await attachEmergency({ app: extraApi, io, detection, discovery, notifier, basePath: '/emergency', logger, guard: rules.guard, access: rules.access, ...emergencyOptions })
 

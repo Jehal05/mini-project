@@ -1,0 +1,36 @@
+{
+  "name": "healthtwin-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HealthTwin AI backend foundation (Express, MongoDB, Socket.IO). Simulated data only. Not a medical device.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/seed/seed.js",
+    "seed:demo-history": "node src/seed/demoHistory.js",
+    "backup": "node scripts/backup.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed:users": "node src/seed/authUsers.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "mongoose": "^8.9.0",
+    "socket.io": "^4.8.1",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.0.0",
+    "vitest": "^2.1.8"
+  }
+}

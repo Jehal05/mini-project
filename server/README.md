@@ -241,7 +241,7 @@ rejection and no-answer reasons, per-hospital acceptance and response time, ambu
 - Groups of 1 or 2 (reasons, hospitals, ambulances, timing stats, the two counts) come back as `masked: true, label: "fewer than 3"`. The per-day series is not masked.
 - Golden-hour "first contact within 60 min" = share of cases whose `firstMedicalContactAt` is within 60 minutes of detection. The stage targets are the Phase 9 ones (30, 10, 90 min).
 - "Not on a trip" is shown instead of "available", because maintenance history is not recorded.
-- Demo data: `npm run seed:demo-history` (after `npm run seed`) writes about 60 simulated closed cases over 30 days, marked `simulatedHistory`. Re-running replaces them, it never touches real cases.
+- Demo data: `npm run seed:demo-history` (after `npm run seed`) writes about 60 simulated closed cases over 30 days, spread over 12 made-up patients with realistic names and HT ids, marked `simulatedHistory`. Re-running replaces them, it never touches real cases.
 
 ### 99 Backup, export, restore
 Node only (no mongodump). One file per backup in `BACKUP_DIR` (default `server/backups`, git-ignored): a JSON manifest line (schema version, app version, time, per-collection counts, SHA-256) then gzip of Extended JSON, optionally AES-256-GCM encrypted.

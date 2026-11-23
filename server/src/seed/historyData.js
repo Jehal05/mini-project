@@ -20,13 +20,14 @@ const between = (r, lo, hi) => lo + r() * (hi - lo);
 const REASONS = ['no_beds', 'no_cardiologist', 'cath_lab_busy', 'other'];
 
 // hospitals: [{ _id, coords }], ambulances: [{ _id, homeHospital }]. Ids are passed through untouched.
-export function buildHistory({ hospitals, ambulances, patientId, now = Date.now(), count = 60, days = 30, seed = 20261123, newId }) {
+export function buildHistory({ hospitals, ambulances, patientId, patientIds, now = Date.now(), count = 60, days = 30, seed = 20261123, newId }) {
   const r = rng(seed);
   const cases = [];
   const trips = [];
 
   for (let i = 0; i < count; i += 1) {
     const caseId = newId();
+    const patient = patientIds?.length ? patientIds[i % patientIds.length] : patientId; // spread over several patients when given
     const detected = now - days * DAY + Math.floor(((i + r()) / count) * days * DAY);
     const sevRoll = r();
     const severity = sevRoll < 0.35 ? 'critical' : sevRoll < 0.7 ? 'high' : sevRoll < 0.9 ? 'moderate' : 'low';
@@ -66,7 +67,7 @@ export function buildHistory({ hospitals, ambulances, patientId, now = Date.now(
     }
 
     const c = {
-      _id: caseId, patient: patientId, status: 'closed', severity, riskScore,
+      _id: caseId, patient, status: 'closed', severity, riskScore,
       location: { type: 'Point', coordinates: [73.8 + r() * 0.15, 18.45 + r() * 0.18] },
       detectedAt: new Date(detected), alertedAt: new Date(detected + 5000), notifiedHospitals, rejectedHospitals, timedOutHospitals,
       candidateHospitals: ranked.map((h) => h._id), timeline, allHospitalsBusy: false, simulatedHistory: true,
@@ -114,7 +115,7 @@ export function buildHistory({ hospitals, ambulances, patientId, now = Date.now(
     cases.push(c);
 
     trips.push({
-      emergencyCase: caseId, patient: patientId, ambulance: amb._id, hospital: accepter._id, stage: 'at_hospital',
+      emergencyCase: caseId, patient, ambulance: amb._id, hospital: accepter._id, stage: 'at_hospital',
       stageTimes: {
         en_route: new Date(dispatch), at_patient: new Date(atPatient), patient_on_board: new Date(onBoard),
         en_route_to_hospital: new Date(onBoard + 1000), at_hospital: new Date(atHospital),

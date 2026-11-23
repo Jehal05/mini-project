@@ -28,7 +28,7 @@ export default function History() {
               { key: 'alertedAt', label: 'Alerted', render: (r) => (r.alertedAt ? new Date(r.alertedAt).toLocaleString() : '–') },
               { key: 'severity', label: 'Severity', render: (r) => (r.severity ? <SeverityBadge severity={r.severity} /> : '–') },
               { key: 'outcome', label: 'For us', render: (r) => <Badge tone={OUTCOMES[r.outcome]?.tone}>{OUTCOMES[r.outcome]?.label ?? r.outcome}</Badge> },
-              { key: 'patient', label: 'Patient', render: (r) => (r.patientName ? `${r.patientName} (${r.patientId})` : 'Not shown') },
+              { key: 'patient', label: 'Patient', render: (r) => (r.patientName ? (r.patientId ? `${r.patientName} (${r.patientId})` : r.patientName) : 'Not shown') },
               { key: 'resp', label: 'We answered in', render: (r) => formatSeconds(r.respondedAfterSeconds) },
             ]} />
           <div className="flex items-center gap-3 text-sm">

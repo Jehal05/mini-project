@@ -1,6 +1,13 @@
 node_modules/
-.env
-*.log
 dist/
+.env
+.env.*
+!.env.example
+*.log
 coverage/
 .DS_Store
+.data/
+
+# Uploaded photos and documents (never commit these)
+backend/uploads/
+backend/.test-uploads/

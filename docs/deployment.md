@@ -1,5 +1,16 @@
 # Deployment
 
+## Run everything locally (Docker Compose)
+
+```
+docker compose up -d --build
+docker compose --profile seed run --rm seed      # once: fictional demo data, password Demo@12345
+```
+
+Open http://localhost:5000/login. Stop with `docker compose down` (add `-v` to wipe the data). This is for local demos only
+(`NODE_ENV=development` so cookies work over plain http). Set `AMBULANCE_SPEED_KMH=2000` for a fast demo ambulance.
+
+
 One container serves the API, Socket.IO and the built frontend on a single origin, so there is no CORS and the
 refresh cookie is first-party.
 

@@ -65,3 +65,20 @@ cd e2e && npm run build:frontend && npm test
 - Puneet: pass your hospital search as `discovery` to `createMonitoring({ io, discovery })`, and write `HospitalCase` rows (`recordHospitalCase`) when a hospital is told about a case, so accepted hospitals get access.
 
 - **Socket sessions:** a connected socket is re-checked every 60 s (`SOCKET_RECHECK_MS`); after logout, password reset or deactivation it receives `auth:ended` and is closed.
+
+## Hospital response and ambulance (features 51-80, 95, 103, 105, 107): built
+
+Code: `backend/src/response/` (discovery, ranking, response service, ambulance service and simulator, routes), `shared/response.js`
+(events, trip stages, golden-hour clocks, prioritisation), `frontend/src/features/response/` (screens).
+
+- **Wiring:** `createMonitoring` builds the discovery itself unless one is passed in. A case that is sent notifies the top 3 hospitals
+  by score (distance 40 + capability 40 + load 20, breakdown returned). A wider round notifies the next 3. A rejection notifies the next one.
+- **Accept:** the first hospital to call `POST /api/response/cases/:id/accept` wins through `EmergencyCase.acceptIfPending`. The others get
+  `Accepted by another hospital`. Accepting writes the `HospitalCase` row that opens live vitals to that hospital, and dispatches the
+  nearest available ambulance (ALS first).
+- **Ambulance:** moves every 2 s along a straight line (times a road factor) and says so (`simulated: true`). `AMBULANCE_SPEED_KMH` changes the speed.
+  There is no routing service in the demo; `routeFor` is the one place to plug a Directions API in.
+- **Screens:** hospital portal tabs Incoming (queue, countdown, red takeover with alarm), Ambulances, Crew view; case page with
+  handover, doctor, preparation and golden-hour clocks. Patient: `/patient/emergency` (tracker) and `/patient/hospitals` (finder).
+- **Not built:** web push to closed tabs (the notifier is still a console stub), a real Directions API, admission opening itself on
+  arrival (staff use Admissions), prioritised admin queue and analytics (see the next section when they land).

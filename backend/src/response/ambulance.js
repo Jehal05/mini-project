@@ -18,7 +18,7 @@ const entry = (type, message, data, actor = {}) => ({ type, at: new Date(), acto
 const fail = (status, message) => Object.assign(new Error(message), { status })
 
 export class AmbulanceService {
-  constructor({ io, logger = console, now = () => Date.now(), speedKmh = 60, tickMs = TICK_MS } = {}) {
+  constructor({ io, logger = console, now = () => Date.now(), speedKmh = Number(process.env.AMBULANCE_SPEED_KMH) || 60, tickMs = TICK_MS } = {}) {
     Object.assign(this, { io, logger, now, speedKmh, tickMs })
     this.timer = null
   }

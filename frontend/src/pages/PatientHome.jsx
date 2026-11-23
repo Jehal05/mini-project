@@ -20,6 +20,12 @@ export default function PatientHome() {
         <p className="subtitle">Simulated vitals, emergency detection, SOS and your digital twin.</p>
         <Link className="btn btn-primary" to="/patient/monitor">Open my dashboard</Link>
       </section>
+      <section className="glass-card" aria-labelledby="resp">
+        <h2 id="resp">Emergency help</h2>
+        <p className="subtitle">Follow an emergency in progress, or see which hospitals are near you.</p>
+        <Link className="btn btn-primary" to="/patient/emergency">Follow my emergency</Link>{' '}
+        <Link className="btn btn-secondary" to="/patient/hospitals">Hospitals near me</Link>
+      </section>
       <section className="glass-card" aria-labelledby="health">
         <h2 id="health">Your health profile</h2>
         <p className="subtitle">Medical history, emergency contacts, documents and your QR passport.</p>

@@ -27,22 +27,22 @@ cd e2e && npm run build:frontend && npm test
 
 | Hook (where) | Today | When Jehal's code lands | Tests to re-run |
 |---|---|---|---|
-| `guard` on every emergency route (`emergency/routes.js` TODO) | Routes are open. Anyone who knows a case id can read or cancel it (**known gap**, see S-notes below) | Pass the real `guard`; patient routes limited to that patient, family link for acknowledge | `emergency.api.test.js`; e2e `security.test.mjs` (**add** ownership tests: patient A cannot read or cancel patient B's case) |
-| Presenter key (`simulation/access.js`, `PresenterPanel.jsx`, `monitoring/api.js`) | Interim `PRESENTER_KEY` header | Replace with `central_admin` role. Remove the key prompt from the page | `access.test.js`; F7; journey a (the presenter panel step in `npm run dry-run`) |
-| Socket `vitals:subscribe` check (`simulation/index.js` TODO) | Interim `defaultAuthorizeSubscribe` | Real check: patient, family link or hospital staff on the case | `simulation.api.test.js`; journeys **a, f, g** (they rely on the subscribe) |
-| Patient model (`models/Patient.js`) | Placeholder model; `allergies`/`medications` stay `undefined` unless known | Keep `[]` meaning "known none", missing meaning "unknown". The aspirin rule depends on it | `shared/firstaid.test.js`; F8 (missing record hides aspirin, `[]` shows it); `models.test.js` |
-| Emergency contacts (`contactsFor`, `patientRecordFor` hooks) | Read from the placeholder Patient | Point both hooks at Jehal's records | `emergency.service.test.js` (group "47: contact alerts"); journeys **d, h** |
+| `guard` on every emergency route (`emergency/routes.js` TODO) | **Done** (`jehal-integration`). Was: routes are open. Anyone who knows a case id can read or cancel it (**known gap**, see S-notes below) | Pass the real `guard`; patient routes limited to that patient, family link for acknowledge | `emergency.api.test.js`; e2e `security.test.mjs` (**add** ownership tests: patient A cannot read or cancel patient B's case) |
+| Presenter key (`simulation/access.js`, `PresenterPanel.jsx`, `monitoring/api.js`) | **Done** (`jehal-integration`). Backend: `central_admin` role. The stand-alone `npm run dev` server still uses the key; the frontend must log in before it can use the integrated server. Was: interim `PRESENTER_KEY` header | Replace with `central_admin` role. Remove the key prompt from the page | `access.test.js`; F7; journey a (the presenter panel step in `npm run dry-run`) |
+| Socket `vitals:subscribe` check (`simulation/index.js` TODO) | **Done** (`jehal-integration`). Handshake takes the access token. Was: interim `defaultAuthorizeSubscribe` | Real check: patient, family link or hospital staff on the case | `simulation.api.test.js`; journeys **a, f, g** (they rely on the subscribe) |
+| Patient model (`models/Patient.js`) | **Done** (`jehal-integration`). Real model. `Patient.listsConfirmed` is what makes `[]` mean "known none". Was: placeholder model; `allergies`/`medications` stay `undefined` unless known | Keep `[]` meaning "known none", missing meaning "unknown". The aspirin rule depends on it | `shared/firstaid.test.js`; F8 (missing record hides aspirin, `[]` shows it); `models.test.js` |
+| Emergency contacts (`contactsFor`, `patientRecordFor` hooks) | **Done** (`jehal-integration`). Read the patient's own contacts by priority through `toTwinRecord`. Was: placeholder Patient | Point both hooks at Jehal's records | `emergency.service.test.js` (group "47: contact alerts"); journeys **d, h** |
 | Admin room `central-admin` for `emergency:unresolved` (`service.js` line ~299, `shared/emergency.js`) | Event emitted; no admin portal listening | Agree the room name; admin portal must show the unresolved alert | `emergency.service.test.js` (group "45", unresolved); journey **e** (a socket client in `central-admin` receives it) |
-| Detection audit log (`detection/service.js` `audit` option) | Not forwarded | Forward config changes to Jehal's audit log (feature 106 area) | `detection.service.test.js` |
-| Detection role checks (`detection/routes.js` TODO) | Interim presenter key | config -> central_admin, thresholds -> doctor, history -> patient or their doctor | `detection.api.test.js` |
+| Detection audit log (`detection/service.js` `audit` option) | **Done** (`jehal-integration`). Entries are `threshold.update`. Was: not forwarded | Forward config changes to Jehal's audit log (feature 106 area) | `detection.service.test.js` |
+| Detection role checks (`detection/routes.js` TODO) | **Done** (`jehal-integration`). Was: interim presenter key | config -> central_admin, thresholds -> doctor, history -> patient or their doctor | `detection.api.test.js` |
 | Real notifier (email, web push) (`notifier` option) | Dev notifier logs only. Only the WhatsApp link is real | Provide `{ email, push }` with real providers and env vars | `emergency.service.test.js` (group "47"), **new** test per provider |
 
 ## Detection + Patient portal: twin (Phase 4)
 
 | Hook | Today | When it lands | Tests |
 |---|---|---|---|
-| Feature 93, full risk score on the twin (`TODO(Jehal)`, blocked on feature 18) | Not built. Twin shows detection status only | Jehal's risk model supplies the score; show it in `features/twin/TwinCard.jsx` | **new test needed** |
-| Trends route ownership (`GET /api/sim/patients/:id/trends`) | Open like the other sim routes | Same `guard` as history: patient, family link, doctor | `trends.api.test.js` (**add** ownership tests) |
+| Feature 93, full risk score on the twin | **Done** (`jehal-integration`). Backend scores the real profile live; `TwinCard` shows the score with profile and readings parts. Was: not built. Twin shows detection status only | Jehal's risk model supplies the score; show it in `features/twin/TwinCard.jsx` | **new test needed** |
+| Trends route ownership (`GET /api/sim/patients/:id/trends`) | **Done** (`jehal-integration`). Was: open like the other sim routes | Same `guard` as history: patient, family link, doctor | `trends.api.test.js` (**add** ownership tests) |
 
 ## What was run in Phase 12 (the ticked part)
 
@@ -53,5 +53,13 @@ cd e2e && npm run build:frontend && npm test
 - [x] Family link leaks nothing beyond name, status, location (S1), tokens are 128-bit and wrong ones are 404 (S3).
 - [x] Injection and bad input are 4xx, never a 500 or a stack trace (S4, S5).
 - [x] A cancelled case cannot be revived or re-searched by replay (S6).
-- [ ] Ownership checks: **not testable until Jehal's auth lands.** Today any caller with a case id can read or cancel it.
+- [x] Ownership checks (on `jehal-integration`, `backend/test/identity/monitoring.test.js`): patient B cannot read, cancel, confirm or change patient A's case; strangers get the same 404 as unknown ids.
 - [ ] Everything in the two tables above that says "new test needed" or "when it lands".
+
+## Jehal integration (branch `jehal-integration`)
+
+- Run the full server with `cd backend && npm run seed && npm run dev:api` (port 5000). Daksh's stand-alone `npm run dev` is unchanged.
+- Rules live in `backend/src/access/monitoringAccess.js`: patient = own data (id from the token); hospital staff = a patient their hospital accepted or admitted (each view is a `record.view` audit entry, at most one per five minutes); `central_admin` = detection settings and presenter controls; `doctor` = one patient's thresholds.
+- Sockets: connect with `io(url, { auth: { token } })`. Rooms are joined for you: `patient:<id>` (own), `hospital:<id>`, `central-admin`.
+- **Still to do on the frontend:** it has no login yet, so it cannot call the integrated server. Merge `client/` (login, portals) into `frontend/` and send the access token on every request and in the socket `auth`.
+- Puneet: pass your hospital search as `discovery` to `createMonitoring({ io, discovery })`, and write `HospitalCase` rows (`recordHospitalCase`) when a hospital is told about a case, so accepted hospitals get access.

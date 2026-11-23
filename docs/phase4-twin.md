@@ -36,10 +36,9 @@ when the heart is shown; the 2D fallback needs none of it.
 - The socket payload has no baseline; the twin takes it from the REST patient (`patient.live.baseline`).
 - Ownership/auth on the trends route follows the same open-route gap as the other routes (see phase12-integration).
 
-## Feature 93 (full risk score): NOT built
+## Feature 93 (full risk score): built on `jehal-integration`
 
-Blocked on Jehal's feature 18. `TODO(Jehal)` is in the integration checklist. The twin shows detection's status
-only; it does not compute a risk score.
+The score comes from detection (`detection/risk.js`) and now reads the real profile, including family history (feature 18). The twin shows the score and splits it into profile points and reading points. Profile edits reach the score at once (`patient:profile_changed`).
 
 ## Tests
 

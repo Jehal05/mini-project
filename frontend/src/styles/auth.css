@@ -1,0 +1,100 @@
+/* Phase 1 styles use the plan's colour tokens as CSS variables so Daksh's design system can replace them. */
+.ht-legacy {
+  --bg-from: #050b18;
+  --bg-to: #0b1a33;
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-border: rgba(255, 255, 255, 0.12);
+  --primary: #00c2ff;
+  --accent: #7c5cff;
+  --normal: #22c55e;
+  --warning: #f59e0b;
+  --critical: #ef4444;
+  --critical-strong: #b91c1c; /* white text on this passes WCAG AA; on --critical it does not */
+  --text: #e6edf7;
+  --text-2: #94a3b8;
+  --font-ui: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: dark;
+}
+
+.ht-legacy * { box-sizing: border-box; }
+.ht-legacy { margin: 0; font-family: var(--font-ui); color: var(--text); background: var(--bg-from); line-height: 1.5; }
+.ht-legacy h1 { font-size: 1.6rem; margin: 0.2rem 0 0.25rem; }
+.ht-legacy h2 { font-size: 1.15rem; margin: 0 0 0.75rem; }
+.ht-legacy a { color: var(--primary); }
+.ht-legacy .mono { font-family: var(--font-mono); }
+.ht-legacy .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.ht-legacy :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+.ht-legacy .auth-bg, .ht-legacy .portal-bg, .ht-legacy .center-screen { min-height: 100vh; background: radial-gradient(1200px 600px at 20% -10%, #12306a55, transparent), linear-gradient(160deg, var(--bg-from), var(--bg-to)); }
+.ht-legacy .auth-bg { display: grid; place-items: center; padding: 1.5rem; }
+.ht-legacy .center-screen { display: grid; place-items: center; color: var(--text-2); }
+
+.ht-legacy .glass-card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(14px); }
+.ht-legacy .auth-card { width: min(100%, 440px); }
+.ht-legacy .auth-card.wide { width: min(100%, 600px); }
+.ht-legacy .brand { font-weight: 700; letter-spacing: 0.02em; margin: 0 0 0.5rem; }
+.ht-legacy .brand span { color: var(--primary); }
+.ht-legacy .subtitle { color: var(--text-2); margin: 0 0 1rem; }
+.ht-legacy .auth-footer { margin-top: 1.25rem; text-align: center; color: var(--text-2); }
+.ht-legacy .auth-footer .btn { display: inline-block; }
+
+.ht-legacy .field { margin-bottom: 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.ht-legacy label { font-size: 0.9rem; color: var(--text); }
+.ht-legacy input:not([type='checkbox']), .ht-legacy select { width: 100%; padding: 0.65rem 0.75rem; border-radius: 10px; border: 1px solid var(--surface-border); background: rgba(5, 11, 24, 0.6); color: var(--text); font: inherit; }
+.ht-legacy input[aria-invalid='true'] { border-color: var(--critical); }
+.ht-legacy .hint { color: var(--text-2); font-size: 0.85rem; margin: 0.25rem 0; }
+.ht-legacy .field-error { color: #ff8a8a; font-size: 0.85rem; margin: 0; }
+.ht-legacy .form-error { background: rgba(239, 68, 68, 0.12); border: 1px solid var(--critical); border-radius: 10px; padding: 0.6rem 0.75rem; margin: 0 0 1rem; }
+.ht-legacy .notice { background: rgba(0, 194, 255, 0.1); border: 1px solid var(--primary); border-radius: 10px; padding: 0.6rem 0.75rem; margin: 0 0 1rem; }
+
+.ht-legacy .password-row { display: flex; gap: 0.5rem; align-items: center; }
+.ht-legacy .link-btn { background: none; border: 0; color: var(--primary); cursor: pointer; font: inherit; padding: 0.25rem; text-decoration: underline; }
+.ht-legacy .row-between { display: flex; justify-content: space-between; margin: 0 0 1rem; }
+.ht-legacy .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+@media (max-width: 560px) { .ht-legacy .grid-2 { grid-template-columns: 1fr; } }
+
+.ht-legacy .rules { list-style: none; padding: 0; margin: -0.3rem 0 0.9rem; display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-2); }
+.ht-legacy .rules .met { color: var(--normal); }
+.ht-legacy .consents { border: 1px solid var(--surface-border); border-radius: 12px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
+.ht-legacy .consents legend { padding: 0 0.4rem; color: var(--text-2); font-size: 0.85rem; }
+.ht-legacy .check { display: flex; gap: 0.6rem; align-items: flex-start; margin: 0.4rem 0; }
+.ht-legacy .check input { margin-top: 0.3rem; width: 1.1rem; height: 1.1rem; accent-color: var(--primary); }
+.ht-legacy .check em { color: var(--text-2); font-style: normal; }
+
+.ht-legacy .tabs { display: flex; gap: 0.25rem; margin: 0 0 1.25rem; background: rgba(5, 11, 24, 0.5); padding: 0.25rem; border-radius: 12px; }
+.ht-legacy .tab { flex: 1; padding: 0.5rem 0.25rem; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.ht-legacy .tab.active { background: var(--primary); color: #021018; font-weight: 600; }
+
+.ht-legacy .btn { border: 1px solid transparent; border-radius: 10px; padding: 0.65rem 1.1rem; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
+.ht-legacy .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.ht-legacy .btn-primary { background: var(--primary); color: #021018; }
+.ht-legacy .btn-secondary { background: transparent; color: var(--text); border-color: var(--surface-border); }
+.ht-legacy .btn.full { width: 100%; display: block; }
+.ht-legacy .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+
+.ht-legacy .portal-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--surface-border); flex-wrap: wrap; }
+.ht-legacy .portal-header .brand { margin: 0; }
+.ht-legacy .portal-user { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.ht-legacy .role-badge { background: rgba(124, 92, 255, 0.2); border: 1px solid var(--accent); border-radius: 999px; padding: 0.1rem 0.7rem; font-size: 0.8rem; }
+.ht-legacy .portal-main { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+.ht-legacy .facts { display: grid; gap: 0.75rem; margin: 0; }
+.ht-legacy .facts dt { color: var(--text-2); font-size: 0.85rem; }
+.ht-legacy .facts dd { margin: 0; }
+.ht-legacy .idle-banner { display: flex; justify-content: center; align-items: center; gap: 1rem; background: rgba(245, 158, 11, 0.15); border-bottom: 1px solid var(--warning); padding: 0.6rem 1rem; flex-wrap: wrap; }
+.ht-legacy .idle-banner p { margin: 0; }
+
+.ht-legacy .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0 1rem; align-items: end; margin-bottom: 1rem; }
+.ht-legacy .filters .actions { margin: 0 0 0.9rem; }
+.ht-legacy .table-wrap { overflow-x: auto; }
+.ht-legacy table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.ht-legacy th, .ht-legacy td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--surface-border); vertical-align: top; }
+.ht-legacy th { color: var(--text-2); font-weight: 600; }
+.ht-legacy .pill { padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.78rem; border: 1px solid currentColor; }
+.ht-legacy .pill.success { color: var(--normal); }
+.ht-legacy .pill.failure { color: var(--warning); }
+.ht-legacy .pill.denied { color: var(--critical); }
+.ht-legacy .pager { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; }
+
+@media (prefers-reduced-motion: reduce) { .ht-legacy * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

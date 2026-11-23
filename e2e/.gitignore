@@ -1,0 +1,4 @@
+node_modules
+dist
+results/*.png
+results/shots

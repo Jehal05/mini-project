@@ -1,0 +1,19 @@
+{
+  "name": "healthtwin-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "End-to-end journeys, failure modes, accessibility and demo rehearsal for the Daksh track (Phase 12). Runs a real backend on an in-memory MongoDB and a real browser.",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 --test-timeout=240000 journeys/*.test.mjs",
+    "a11y": "node a11y/audit.mjs",
+    "flaky": "node tools/flaky.mjs",
+    "dry-run": "node tools/dry-run.mjs",
+    "build:frontend": "cd ../frontend && VITE_API_URL= npx vite build --outDir ../e2e/dist --emptyOutDir",
+    "demo": "node tools/demo.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "^4.10.0",
+    "playwright-core": "1.63.0"
+  }
+}

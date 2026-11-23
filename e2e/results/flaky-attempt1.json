@@ -1,0 +1,148 @@
+{
+  "runs": 10,
+  "secondsPerRun": [
+    163,
+    160,
+    163,
+    162,
+    167,
+    165,
+    162,
+    165,
+    167,
+    165
+  ],
+  "tests": [
+    {
+      "name": "a. cardiac event: detected, patient confirms, hospital search starts, hospital accepts, family sees it",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "b. manual SOS: patient taps SOS and the search starts at once, with a location",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "c. \"I'm okay\" inside the countdown: needs a reason, cancels, nobody is notified",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "d. nobody answers: help is sent automatically after the countdown and contacts are alerted",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "e. nobody accepts: the search widens 10 -> 20 -> 30 km, then the case is unresolved and admin is told",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "f. reload in the middle of the countdown: the server clock decides, the countdown continues",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "g. server restarts during the countdown: the case is resumed and still sent on time, no duplicate",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "h. two tabs press \"Send help now\" together: one case, one hospital search, one alert per contact",
+      "runs": 10,
+      "pass": 9,
+      "fail": 1,
+      "passRate": "90%",
+      "failedInRuns": [
+        2
+      ]
+    },
+    {
+      "name": "F1. a Level 3 alert arrives while nobody has touched the page: no console errors, banner still shows",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "F2. the backend goes away during the countdown: the page stays usable, 112 stays visible, and it recovers",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "F3. \"Send help now\" fails with a server error: the patient sees an error and can still call 112",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "F4. a second SOS while one is open does not open a second case",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "F5. a family link that is wrong or made up shows \"not valid\" and leaks nothing",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "F6. hospital accepts and the patient cancels at the same moment: exactly one final state, consistent everywhere",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "F7. presenter key is enforced when set: no key means no scenario change",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    },
+    {
+      "name": "F8. the patient has no allergy record: first aid never suggests aspirin (missing means hidden)",
+      "runs": 10,
+      "pass": 10,
+      "fail": 0,
+      "passRate": "100%",
+      "failedInRuns": []
+    }
+  ],
+  "allGreen": false
+}

@@ -4,6 +4,10 @@ import { fetchHospitals } from '../lib/portalApi.js';
 import { cell, dateInput, hasData, MASK_TEXT } from '../lib/analyticsView.js';
 import { CasesPerDay, HospitalComparison, RejectionReasons, ResponseTimes, Utilisation } from './Charts.jsx';
 import BackupsPanel from './BackupsPanel.jsx';
+import AuditPanel from './AuditPanel.jsx';
+import ThresholdsPanel from './ThresholdsPanel.jsx';
+import RegisterHospital from './RegisterHospital.jsx';
+import CommandMap from './CommandMap.jsx';
 import Button from '../ui/Button.jsx';
 import { Card, StatTile } from '../ui/Surface.jsx';
 import { Field, Input, Select } from '../ui/Form.jsx';
@@ -95,6 +99,10 @@ export default function AdminApp({ view = 'analytics', account = null }) {
         </>
       )}
       {token && view === 'backups' && <BackupsPanel token={token} />}
+      {token && view === 'audit' && <AuditPanel token={token} />}
+      {token && view === 'thresholds' && <ThresholdsPanel token={token} />}
+      {token && view === 'hospitals' && <RegisterHospital token={token} />}
+      {token && view === 'map' && <CommandMap token={token} />}
     </div>
   );
 }

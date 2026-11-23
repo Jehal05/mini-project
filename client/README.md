@@ -166,3 +166,7 @@ Made in the browser by a small dependency-free writer (`src/lib/pdf.js`); builde
 - Emergency incident report: each incident in Emergency history (feature 97)
 
 Every report carries "Simulated data for demonstration. Not a medical device." Tests: `src/reports/reports.test.js`.
+
+## Admin screens (Phase 19)
+
+Sign in as admin@healthtwin.demo: **Command map** (hospitals, ambulances, live emergencies, refreshes every 15 s), **Audit log**, **Thresholds** (all patients, or one patient by ID), **Register hospital**.

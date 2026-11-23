@@ -29,6 +29,10 @@ const NAV = {
   crew: [{ id: 'trip', label: 'My trip', icon: 'ambulance', title: 'Your trip' }],
   admin: [
     { id: 'analytics', label: 'Analytics', icon: 'chart', title: 'Analytics' },
+    { id: 'map', label: 'Command map', icon: 'ambulance', title: 'Command centre map' },
+    { id: 'audit', label: 'Audit log', icon: 'info', title: 'Audit log' },
+    { id: 'thresholds', label: 'Thresholds', icon: 'heart-pulse', title: 'Detection thresholds' },
+    { id: 'hospitals', label: 'Register hospital', icon: 'info', title: 'Register a hospital' },
     { id: 'backups', label: 'Backups', icon: 'database', title: 'Backups' },
     { id: 'monitoring', label: 'Monitoring', icon: 'heart-pulse', title: 'Monitoring simulator' },
   ],

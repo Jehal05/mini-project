@@ -386,3 +386,12 @@ Tests: `tests/hospitalmgmt.test.js` (fake repo; scoping, bay transitions, duty-t
 Not ported: doctor login invitations (doctors here are roster entries with no login), Jehal's separate `HospitalCase` model (history reads our `EmergencyCase`), live push of bay changes.
 
 **Seed data.** 12 fictional Pune-area hospitals, 31 doctors with a duty roster (a hospital's "cardiologist on duty" flag follows it), ICU, CCU and general beds, emergency department bays, and 20 ambulances. Ambulance number plates use the real Indian format (state, RTO code, series, number; `MH12` is Pune, `MH14` Pimpri-Chinchwad) but are made up and match no real vehicle. Re-running `npm run seed` renames rows from the earlier seed (`MH12-DEMO-0101`, `Dr. Demo Cardiologist A`) instead of duplicating them, and resets the fleet to available.
+
+## Admin tools (Phase 19)
+
+All need a signed-in central admin.
+
+- `GET /api/admin/audit?q=&from=&to=&page=&limit=` audit log, newest first (feature 98). Threshold changes are written to it too.
+- `POST /api/admin/hospitals` registers a hospital and its first `hospital_admin` account (feature 81). If the account cannot be made the hospital is removed again.
+- `GET /api/admin/overview` hospitals, ambulances and live cases that have a location, for the command map.
+- Thresholds (feature 36) use the existing `GET/PUT /api/detection/config` and `PUT /api/detection/patients/:id/thresholds`.

@@ -1,0 +1,44 @@
+# Run the whole project locally: MongoDB + the app (API, sockets and built frontend) on http://localhost:5000
+#   docker compose up -d --build
+#   docker compose --profile seed run --rm seed        (once: loads the fictional demo data)
+#   docker compose down                                 (stop; add -v to also wipe the data)
+# For local demos only: NODE_ENV=development keeps cookies working over plain http.
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes: [mongo-data:/data/db]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app: &app
+    build: .
+    image: healthtwin
+    restart: unless-stopped
+    depends_on:
+      mongo: { condition: service_healthy }
+    ports: ["5000:5000"]
+    environment: &env
+      NODE_ENV: development
+      MONGO_URI: mongodb://mongo:27017/healthtwin
+      CLIENT_ORIGIN: http://localhost:5000
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-local-demo-only-secret-0123456789abcdef}
+      MAIL_PROVIDER: console
+      AMBULANCE_SPEED_KMH: ${AMBULANCE_SPEED_KMH:-60}
+    volumes: [uploads:/app/backend/uploads]
+
+  seed:
+    image: healthtwin
+    profiles: [seed]
+    depends_on:
+      mongo: { condition: service_healthy }
+    environment: *env
+    volumes: [uploads:/app/backend/uploads]
+    command: ["node", "src/seed/seed.js"]
+
+volumes:
+  mongo-data:
+  uploads:

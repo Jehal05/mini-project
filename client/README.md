@@ -135,3 +135,17 @@ Not run or seen: none of these screens have been rendered or used against MongoD
 - Admin sidebar has a **Monitoring** panel (`admin/ScenarioPanel.jsx`) to set a patient's scenario.
 
 Manual checklist: sign in as admin, open Monitoring, set Rahul to Cardiac event; sign in as Rahul and watch the badge go Watch, Urgent, Critical; sign in as hospital and see the new case in the queue.
+
+## SOS and Digital Twin (Phase 7 + 4)
+
+Patient home, signed in (`emergency/EmergencyArea.jsx`, lazy):
+- Level 2 and 3 banner with an optional sound (plays on a rise only, after the first tap, can be muted on this device).
+- "Are you okay?" with the four warning signs and a 10 s countdown read from the server's deadline. The browser never sends help by itself. "I'm okay" only opens the cancel dialog, which needs a reason.
+- Live case card: search round and radius, contacts alerted and who has seen it, timeline, 112 and 108 buttons, location sharing (GPS with a manual fallback), first aid, past incidents.
+- A red **SOS** button that asks once, then sends.
+- `/status/<token>` is the public page for an emergency contact (no sign-in).
+- **Digital Twin** card (`twin/`) compares each live vital with the patient's own usual, plus 24 h and 7 day trends and drift. Shown only while the server stream is on.
+
+`emergency/constants.js` and `twin/constants.js` copy values from the root `shared/` folder; their tests fail if they drift.
+
+Manual checklist: sign in as admin, set Rahul to Cardiac event; as Rahul, wait for "Are you okay?"; try "Send help now", the countdown running out, and cancelling with a reason; check the hospital queue only gets the case after it is sent; open a contact's `/status/<token>` link (shown in the dev server log or the WhatsApp link) and tap "I have seen this".

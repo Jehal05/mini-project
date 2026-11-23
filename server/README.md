@@ -331,3 +331,38 @@ Not ported yet: hospital profile, doctor management, dashboard (81 to 83), the E
 - Output is simulated and never a diagnosis. Not a medical device.
 
 Known gaps: the `patient:<id>` room join (emergency status) is still unauthenticated; no unique index prevents duplicate live cases across several server processes; hospital scoping of clinicians is role-level only; countdown and confirmation arrive with the SOS phase.
+
+## SOS and emergency flow (Phase 7, ported from Daksh's emergency module)
+
+`attachEmergency` (`src/emergency/`) is started by `attachMonitoring`. REST under `/api/emergency`:
+
+| Method and path | Purpose |
+|---|---|
+| `POST /sos` `{ patient, location? }` | 201 new case, 200 joined the open one |
+| `GET /active?patient=` | The live case (restores the screen after a reload), with `serverNow` |
+| `GET /mine?patient=&page=&limit=` | Incident history (limit 1-50) |
+| `GET /first-aid?patient=` | First-aid steps and 112/108 |
+| `GET /:caseId` | One case with its timeline |
+| `PUT /:caseId/symptoms`, `POST /:caseId/confirm` | Symptom ticks, "Send help now" (idempotent) |
+| `POST /:caseId/cancel` `{ reason, note? }` | Reason from `CANCEL_REASONS`; 409 once the patient has arrived |
+| `PUT /:caseId/location` | Live cases only |
+| `POST /:caseId/ack` | Record "Seen" |
+| `GET /status/:token`, `POST /status/:token/seen` | Family link, no sign-in: the 128-bit token is the credential |
+
+Access: a patient reaches only their own patient and cases; doctors, hospital staff and the central admin reach any (same rule as monitoring). Dev mode (`DEV_AUTH`) allows no-token calls.
+
+**Flow.** A Level 3 detection opens a case in `awaiting_confirmation` with a 10 s server-side deadline. "Send now" or the deadline moves it to `pending` (round 1, 10 km) and calls hospital discovery. If nobody accepts in 60 s the search widens to 20 km, then 30 km (`widenSearch` alerts up to 3 hospitals not yet tried). After round 3 the case becomes `unresolved`, the central admin room is told and the patient sees "Call 112 now". Cancel works from `awaiting_confirmation` up to `en_route`. A cancel after acceptance tells the hospital room, ends the trip and frees the ambulance. Every transition is one atomic conditional update, so the deadline racing "send now", cancel racing accept, and the round timer racing accept each have one winner. On start-up every case still in `awaiting_confirmation` or `pending` gets its timer re-armed.
+
+**Status mapping.** Daksh's `searching` is our `pending`; his `patient_on_board` is our `en_route`. The shared constants are unchanged.
+
+**Events** (room `patient:<id>`): `emergency:created|confirmed|sent|escalated|unresolved|cancelled|location|contacts|ack`. `emergency:unresolved` also goes to room `central-admin`, joined with the socket event `admin:subscribe` (central admin token in the handshake). A cancel after acceptance also goes to `hospital:<id>` with `ambulanceId`.
+
+**Contacts.** Once per case, when it is sent: an email through the notifier and a pre-filled `wa.me` link the patient taps. The default notifier only logs ("nothing sent"); no real email or push provider is wired. Contacts follow the patient's email and WhatsApp choices.
+
+**First aid and aspirin.** The aspirin step appears only when the record explicitly says no aspirin allergy and no blood thinner. Our Patient stores allergies and medications as arrays that default to empty, so "none" cannot be told apart from "never asked": the record is passed as unknown and aspirin is never shown. A "medical history reviewed" flag on the Patient would switch it on.
+
+**Config.** `PUBLIC_APP_URL` (base of family links, default `http://localhost:5173`), `EMERGENCY_ROUND_SECONDS` is NOT wired yet (the round is 60 s).
+
+**Database.** A partial unique index (`one_live_case_per_patient`) allows one live automatic or SOS case per patient; demo cases (`source: 'demo'`) are excluded. It uses `$in` in a partial filter, which needs **MongoDB 6.0 or newer**. If the index cannot be built the app still starts and the single-process atomic upsert still holds.
+
+**Known gaps.** Two server processes would each arm timers (updates stay atomic, but alerts could repeat). Ambulance release after a cancel is best effort. `emergency:unresolved` has no admin screen yet. Joining `patient:<id>` is still unauthenticated.

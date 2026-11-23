@@ -4,10 +4,13 @@ import { Trip, EmergencyCase, Admission } from '../models/index.js';
 const MOVING = ['en_route', 'patient_on_board', 'en_route_to_hospital'];
 
 export const createTrip = async (doc) => (await Trip.create(doc)).toObject();
+// Phase 7: the patient cancelled after a hospital accepted. Stops the trip. Returns the trip once, or null.
+export const endTripIfOpen = (caseId, now) =>
+  Trip.findOneAndUpdate({ emergencyCase: caseId, endedAt: null, stage: { $ne: 'at_hospital' } }, { $set: { endedAt: now } }, { new: true }).lean();
 export const getTripByCase = (caseId) => Trip.findOne({ emergencyCase: caseId }).lean();
 export const getActiveTripForAmbulance = (ambulanceId) =>
   Trip.findOne({ ambulance: ambulanceId, stage: { $ne: 'at_hospital' } }).lean();
-export const listMovingTrips = () => Trip.find({ stage: { $in: MOVING } }).lean();
+export const listMovingTrips = () => Trip.find({ stage: { $in: MOVING }, endedAt: null }).lean(); // a cancelled trip has endedAt set and stops moving
 
 // Simulator step. Applies only if nobody else ticked or changed the stage since we read it,
 // so two ticks (or a tick and a crew button) can never both apply (feature 75).

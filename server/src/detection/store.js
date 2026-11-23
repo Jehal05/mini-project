@@ -70,11 +70,12 @@ export const mongoDetectionStore = {
       source: 'auto_detection',
       severity: 'critical',
       riskScore: doc.detection?.riskScore,
-      status: 'pending',
+      status: 'awaiting_confirmation', // the patient is asked "Are you okay?" first; hospitals are searched after the countdown (Phase 7)
+      escalation: doc.escalation,
       detectionRef: doc.detectionRef,
       location: { type: 'Point', coordinates: simCaseLocation() },
       detectedAt,
-      timeline: [{ event: 'detected', at: detectedAt, detail: doc.timeline?.[0]?.message }],
+      timeline: [{ event: 'detected', at: detectedAt, actorRole: 'system', detail: doc.timeline?.[0]?.message, data: doc.timeline?.[0]?.data }],
     }
     try {
       const res = await EmergencyCase.findOneAndUpdate(filter, { $setOnInsert: mine }, { upsert: true, new: true, includeResultMetadata: true })

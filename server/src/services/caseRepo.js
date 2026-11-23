@@ -81,6 +81,9 @@ export async function addTimedOut(caseId, hospitalId, now) {
   return r.modifiedCount === 1;
 }
 
+// Phase 7: a wider search round starts, so the case is no longer "all busy".
+export const clearAllBusy = (caseId) => EmergencyCase.updateOne({ _id: caseId, status: 'pending', allHospitalsBusy: true }, { $set: { allHospitalsBusy: false } });
+
 export async function markAllBusy(caseId, now) {
   const r = await EmergencyCase.updateOne(
     { _id: caseId, status: 'pending', allHospitalsBusy: { $ne: true } },
@@ -137,6 +140,7 @@ export async function createDemoEmergency({ lat, lng, severity = 'critical' }) {
   });
   const doc = await EmergencyCase.create({
     patient: patient._id,
+    source: 'demo', // not counted by the one-live-case index, so the demo button can be pressed again
     severity,
     riskScore: 87,
     location: { type: 'Point', coordinates: [lng, lat] },

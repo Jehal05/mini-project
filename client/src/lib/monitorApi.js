@@ -11,3 +11,5 @@ async function call(method, path, body) {
 export const fetchScenarios = () => call('GET', '/scenarios');
 export const fetchMonitored = () => call('GET', '/patients');
 export const setScenario = (patientId, scenario) => call('POST', `/patients/${patientId}/scenario`, { scenario });
+export const fetchMonitoredPatient = (patientId) => call('GET', `/patients/${patientId}`);
+export const fetchTrends = (patientId) => call('GET', `/patients/${patientId}/trends`);

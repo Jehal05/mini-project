@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import HeartHero from '../ui/HeartHero.jsx';
 import GaugeArc from '../ui/GaugeArc.jsx';
 import EcgLine from '../ui/EcgLine.jsx';
@@ -12,6 +12,9 @@ import useLiveVitals from './useLiveVitals.js';
 import { LEVEL_WORD, levelOf, sourceNote, uiStatus } from '../lib/liveVitals.js';
 import { rrInterval, signalQuality } from '../lib/vitalsSim.js';
 import Icon from '../ui/icons.jsx';
+
+const TwinSection = lazy(() => import('../twin/TwinSection.jsx'));
+const EmergencyArea = lazy(() => import('../emergency/EmergencyArea.jsx'));
 
 const status = (bpm) => (rangeState(bpm, 60, 100) === 'in' ? 'normal' : 'warning');
 const moodLabel = (id) => MOODS.find((m) => m[0] === id)?.[1] ?? id;
@@ -44,6 +47,8 @@ export default function HeartDashboard({ mode = 'calm', signedIn = false, patien
         <VitalTile label="R-R interval" value={rr} unit="ms" status="normal" values={v.history.map((b) => rrInterval(b))} simulated />
         <VitalTile label="Signal quality" value={signalQuality(v.bpm, () => 0.5)} unit="%" status="normal" simulated />
       </div>
+      {signedIn && patientId && v.source === 'server' && v.vitals && <Suspense fallback={null}><TwinSection patientId={patientId} vitals={v.vitals} detection={v.detection} /></Suspense>}
+      {signedIn && patientId && <Suspense fallback={null}><EmergencyArea patientId={patientId} detection={v.source === 'server' ? v.detection : null} /></Suspense>}
       {signedIn && <MoodCheckIn />}
     </div>
   );

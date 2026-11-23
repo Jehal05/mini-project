@@ -8,6 +8,7 @@ import * as repo from './caseRepo.js';
 import { pushToHospital } from './push.js';
 import { serializeCase } from './caseView.js';
 import { findNewTimeouts } from './noAnswer.js';
+import { pickNextHospital } from './pickNext.js';
 
 const timeoutMs = () => env.noAnswerTimeoutSeconds * 1000;
 
@@ -54,12 +55,12 @@ function emitAllBusy(c) {
 }
 
 // Feature 61: rank hospitals for the case and alert the top 3.
-export async function notifyHospitals(caseId) {
+export async function notifyHospitals(caseId, { radiusKm } = {}) {
   const c = await repo.getCase(caseId);
   if (!c) throw Object.assign(new Error('Emergency case not found'), { status: 404 });
   if (!c.timeline?.length) await repo.pushTimeline(caseId, { event: 'detected', at: c.detectedAt || new Date() });
 
-  const ranked = await prepareCandidates(caseId);
+  const ranked = await prepareCandidates(caseId, radiusKm ? { radiusKm } : undefined);
   const top = ranked.filter((r) => r.notifyFirst);
 
   if (!top.length) {
@@ -68,6 +69,31 @@ export async function notifyHospitals(caseId) {
   }
   for (const h of top) await notifyOne(caseId, h.id);
   return { notified: top.map((h) => h.id), allHospitalsBusy: false };
+}
+
+// Phase 7 (feature 45): nobody accepted in the last round, so look again in a wider circle and alert up to 3 hospitals
+// that were not tried yet. Hospitals that already rejected or were notified are skipped. Safe to call again for the same round.
+export async function widenSearch(caseId, { radiusKm, limit = 3 } = {}) {
+  let c = await repo.getCase(caseId);
+  if (!c) throw Object.assign(new Error('Emergency case not found'), { status: 404 });
+  if (c.status !== 'pending') return { notified: [], skipped: `case is ${c.status}` };
+  await repo.clearAllBusy(caseId);
+  await prepareCandidates(caseId, { radiusKm });
+  const notified = [];
+  for (let i = 0; i < limit; i += 1) {
+    c = await repo.getCase(caseId);
+    if (!c || c.status !== 'pending') break;
+    const { next } = pickNextHospital({ candidates: c.candidateHospitals, rejected: c.rejectedHospitals, notified: c.notifiedHospitals, timeoutMs: timeoutMs() });
+    if (!next) break;
+    await notifyOne(caseId, next);
+    notified.push(String(next));
+  }
+  if (!notified.length) {
+    c = await repo.getCase(caseId);
+    const waiting = (c?.notifiedHospitals ?? []).some((n) => !(c.rejectedHospitals ?? []).some((r) => String(r) === String(n.hospital)));
+    if (c?.status === 'pending' && !waiting && (await repo.markAllBusy(caseId, new Date()))) emitAllBusy(await repo.getCase(caseId));
+  }
+  return { notified };
 }
 
 // Moves a case to its next hospital (after a rejection or a no-answer). Safe to call repeatedly.

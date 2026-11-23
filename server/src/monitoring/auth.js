@@ -51,3 +51,17 @@ export function socketAuthorizer({ patientExists = async () => true } = {}) {
     } catch { return false; }
   };
 }
+
+/** For the admin:subscribe socket event: only a signed-in central admin joins the central-admin room. */
+export function adminSocketAuthorizer() {
+  return async function authorizeAdmin(socket) {
+    const token = socket.handshake?.auth?.token;
+    if (!token) return false;
+    try {
+      assertSecretIsSafe();
+      const p = verifyJwt(token, { secret: env.jwtSecret, now: Date.now() });
+      if (!p.sub || !p.fam || !(await authRepo.familyIsLive(p.fam)) || !(await authRepo.userIsActive(p.sub))) return false;
+      return p.role === 'central_admin';
+    } catch { return false; }
+  };
+}

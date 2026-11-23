@@ -70,6 +70,33 @@ describe('personal information', () => {
   });
 });
 
+describe('unknown or none: allergies and medicines', () => {
+  it('asks the patient to add entries or confirm there are none, and remembers the answer', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderProfile('/patient/profile/medical');
+    const allergies = await screen.findByRole('region', { name: 'Allergies' });
+    expect(within(allergies).getByText(/first aid will not suggest aspirin/)).toBeInTheDocument();
+    await user.click(within(allergies).getByRole('button', { name: 'I have no known allergies' }));
+    expect(await within(await screen.findByRole('region', { name: 'Allergies' })).findByText('You confirmed: no known allergies.')).toBeInTheDocument();
+    expect(sent('PUT', '/patients/me/allergies/confirm-none')).toHaveLength(1);
+    expect(within(screen.getByRole('region', { name: 'Medications' })).getByText(/Not filled in yet/)).toBeInTheDocument(); // medicines are separate
+    unmount();
+    renderProfile('/patient/profile/medical'); // reload: the server remembered
+    expect(await within(await screen.findByRole('region', { name: 'Allergies' })).findByText('You confirmed: no known allergies.')).toBeInTheDocument();
+  });
+
+  it('counts an added entry as filled in', async () => {
+    const user = userEvent.setup();
+    renderProfile('/patient/profile/medical');
+    const meds = await screen.findByRole('region', { name: 'Medications' });
+    await user.click(within(meds).getByRole('button', { name: 'Add' }));
+    await user.type(within(meds).getByLabelText('Drug'), 'Atorvastatin');
+    await user.click(within(meds).getByRole('button', { name: /save/i }));
+    await waitFor(() => expect(server.state.patient.listsConfirmed.medications).toBe(true));
+    expect(within(await screen.findByRole('region', { name: 'Medications' })).queryByText(/Not filled in yet/)).toBeNull();
+  });
+});
+
 describe('medical profile', () => {
   it('adds, edits and deletes an allergy, with the red banner for severe ones on every tab', async () => {
     const user = userEvent.setup();

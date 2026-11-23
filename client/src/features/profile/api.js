@@ -12,6 +12,7 @@ export const profileApi = {
 
   addItem: (section, body) => post(`${ME}/${section}`, body),
   updateItem: (section, id, body) => patch(`${ME}/${section}/${id}`, body),
+  confirmNone: (section) => put(`${ME}/${section}/confirm-none`),
   deleteItem: (section, id) => del(`${ME}/${section}/${id}`),
 
   addContact: (body) => post(`${ME}/contacts`, body),

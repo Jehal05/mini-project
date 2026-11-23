@@ -12,7 +12,7 @@ const fromItem = (fields, item) => Object.fromEntries(fields.map((f) => {
 }));
 
 /** One medical list (allergies, medications, ...): add, edit and delete, always showing what the server saved. */
-export default function CrudSection({ section, title, fields, describe, badge, note }) {
+export default function CrudSection({ section, title, fields, describe, badge, note, noneLabel }) {
   const { patient, apply } = useProfile();
   const items = patient[section] ?? [];
   const [editing, setEditing] = useState(null); // null | 'new' | item id
@@ -36,6 +36,8 @@ export default function CrudSection({ section, title, fields, describe, badge, n
     if (res) setEditing(null);
   };
 
+  const confirmed = patient.listsConfirmed?.[section] === true;
+  const confirmNone = () => save.run(async () => apply(await profileApi.confirmNone(section)));
   const remove = (item) => save.run(async () => apply(await profileApi.deleteItem(section, item._id)));
 
   return (
@@ -45,7 +47,16 @@ export default function CrudSection({ section, title, fields, describe, badge, n
         {editing === null && <button type="button" className="btn btn-secondary" onClick={() => open(null)}>Add</button>}
       </div>
       {note && <p className="hint">{note}</p>}
-      {items.length === 0 && editing === null && <p className="hint">Nothing added yet.</p>}
+      {items.length === 0 && editing === null && !noneLabel && <p className="hint">Nothing added yet.</p>}
+      {items.length === 0 && editing === null && noneLabel && (confirmed
+        ? <p className="hint" role="status">You confirmed: {noneLabel}.</p>
+        : (
+          <div className="notice" role="status">
+            <p>Not filled in yet. Until you add something or confirm there is none, first aid will not suggest aspirin for you.</p>
+            <button type="button" className="btn btn-secondary" onClick={confirmNone} disabled={save.busy}>I have {noneLabel}</button>
+          </div>
+        ))}
+      {save.error && items.length === 0 && <p className="form-error" role="alert">{save.error}</p>}
       <ul className="item-list">
         {items.map((item) => (
           <li key={item._id}>

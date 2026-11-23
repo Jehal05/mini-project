@@ -16,7 +16,7 @@ export function fakeServer(initial = {}) {
   const state = {
     patient: {
       patientId: 'HT-2026-0001', fullName: 'Rahul Sharma', hasPhoto: false, photoUrl: null, age: 44,
-      allergies: [], cardiacConditions: [], medicalConditions: [], medications: [], hospitalizations: [], familyHistory: [], emergencyContacts: [],
+      listsConfirmed: { allergies: false, medications: false }, allergies: [], cardiacConditions: [], medicalConditions: [], medications: [], hospitalizations: [], familyHistory: [], emergencyContacts: [],
       notificationPreferences: { email: true, webPush: true, whatsapp: true }, consent: { location: false, dataUse: true },
       ...initial.patient,
     },
@@ -45,12 +45,19 @@ export function fakeServer(initial = {}) {
       if (locationConsent !== undefined) p.consent.location = locationConsent;
       return ok();
     }
+    const none = path.match(/^\/patients\/me\/(allergies|medications)\/confirm-none$/);
+    if (none && method === 'PUT') {
+      if (p[none[1]].length) return err(409, 'LIST_NOT_EMPTY', 'Remove the entries first, or keep them as they are');
+      p.listsConfirmed[none[1]] = true;
+      return ok();
+    }
     for (const section of SECTIONS) {
       const base = `/patients/me/${section}`;
       if (path === base && method === 'POST') {
         const item = { _id: id(), ...body };
         if (section === 'medications') item.isBloodThinner = Boolean(body.isBloodThinner) || /warfarin|clopidogrel/i.test(body.drug);
         p[section].push(item);
+        if (p.listsConfirmed && section in p.listsConfirmed) p.listsConfirmed[section] = true;
         return json(201, { patient: structuredClone(p) });
       }
       if (path.startsWith(`${base}/`)) {

@@ -18,11 +18,11 @@ export default function MedicalPage() {
       <CrudSection section="medicalConditions" title="Existing conditions"
         fields={[{ name: 'name', label: 'Condition' }, { name: 'notes', label: 'Notes' }]}
         describe={(c) => c.name} />
-      <CrudSection section="allergies" title="Allergies"
+      <CrudSection section="allergies" title="Allergies" noneLabel="no known allergies"
         fields={[{ name: 'allergen', label: 'Allergen' }, { name: 'reaction', label: 'Reaction' }, { name: 'severity', label: 'Severity', type: 'select', options: SEVERITY }]}
         describe={(a) => `${a.allergen}${a.reaction ? ` — ${a.reaction}` : ''} (${a.severity})`}
         badge={(a) => a.severity === 'severe' && <span className="pill pill-red">Severe</span>} />
-      <CrudSection section="medications" title="Medications"
+      <CrudSection section="medications" title="Medications" noneLabel="no regular medicines"
         note="Common blood thinners are flagged automatically. You can also flag one yourself."
         fields={[{ name: 'drug', label: 'Drug' }, { name: 'dose', label: 'Dose' }, { name: 'frequency', label: 'Frequency' }, { name: 'isBloodThinner', label: 'This is a blood thinner', type: 'checkbox' }]}
         describe={(m) => `${m.drug}${m.dose ? ` ${m.dose}` : ''}${m.frequency ? `, ${m.frequency}` : ''}`}

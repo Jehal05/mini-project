@@ -281,3 +281,27 @@ Mirrors the design of Jehal's `jehal` branch (access JWT + rotating refresh cook
 - Demo accounts: `npm run seed:users` (refuses to run in production).
 
 **For Jehal:** to swap in the full `jehal` auth, re-point the four `require*` exports in `src/middleware/`; the routes read `req.staff`, `req.doctor`, `req.crew`, `req.admin` and do not change. Not ported: register, forgot-password, invites, his patient/hospital/admin portals. Socket.IO rooms are still unauthenticated.
+
+## Phase 15: patient records (features 1, 8-20, 106; ported from Jehal's `jehal` branch)
+
+Same features and rules as Jehal's phase 2 and 3, rewritten for this server (Express 4, Mongoose 8) with no new packages. Code: `src/patients/` (`service.js` rules, `validate.js` input checks, `patientRepo.js` database), routes `src/routes/patients.js` and `passport.js`.
+
+| Endpoint | Who | What |
+|---|---|---|
+| `POST /api/auth/register` | anyone | Patient sign-up (needs consent). Issues `HT-YYYY-NNNN` and a QR token |
+| `GET /api/patients/me`, `PATCH /personal`, `PUT /preferences` | patient | Own record, personal details, alert and location settings |
+| `POST/PATCH/DELETE /api/patients/me/<section>[/:id]` | patient | `cardiacConditions`, `medicalConditions`, `allergies`, `medications`, `hospitalizations`, `familyHistory` (max 50 each) |
+| `POST/PATCH/DELETE /api/patients/me/contacts`, `PUT /contacts/order`, `POST /contacts/:id/test-alert` | patient | Up to 3 contacts in priority order. Test alert returns a WhatsApp link (no email service connected) |
+| `PUT/GET/DELETE /api/patients/me/photo`, `GET/POST /documents`, `GET /documents/:id/file` | patient | Files are sent as JSON `{ type, name, data: base64 }` (no multer). Type is decided from the real bytes, image metadata is removed, 2 MB photo, 5 MB document, 50 documents |
+| `GET /api/patients/me/qr`, `POST /qr/regenerate` | patient | QR link. A new code kills the old link at once |
+| `GET /api/passport/:token`, `/photo` | public | Emergency tier only: patient id, blood group, severe allergies, heart history, first contact |
+| `POST /api/passport/:token/report` | public | Bystander report (feature 106): 5 per device per hour, 3 per patient per hour |
+| `GET /api/passport/:token/full`, `/full/documents/:id/file` | doctor, hospital staff | Full record. Written to the audit log first |
+
+Notes
+- Validation failures answer `400` with `{ code: 'VALIDATION_ERROR', fields: { name: 'message' } }`.
+- Records use an "only if unchanged" save: two edits at once give the second one `409 CHANGED`.
+- The SOS phase subscribes to `patientEvents` (`src/patients/events.js`, event `emergency:bystander_report`). The report stays `pending` until it does.
+- Files are kept on disk in `UPLOADS_DIR` (default `server/uploads/`, git-ignored). Back this folder up with the database.
+- Not ported: forgot-password email, the discharge-summary download for patients, PDF reports.
+- `npm run seed:users` now also gives the first demo patient an HT id, a QR token and a sample profile.

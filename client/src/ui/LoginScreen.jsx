@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import Button from './Button.jsx';
 import { Card } from './Surface.jsx';
-import { Field, Input } from './Form.jsx';
+import { Checkbox, Field, Input } from './Form.jsx';
 import EcgTrace from './EcgTrace.jsx';
 import { LOGIN_PORTALS, loginMessage } from '../lib/authHeaders.js';
-import { signIn } from '../lib/session.js';
+import { register, signIn } from '../lib/session.js';
 
 // Real sign-in. The tab picks which portal to try; the server still decides the account's role.
 export default function LoginScreen() {
@@ -13,14 +13,23 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [agree, setAgree] = useState(false);
+  const [location, setLocation] = useState(false);
+  const [fields, setFields] = useState({});
   const current = LOGIN_PORTALS.find((p) => p.id === portal);
 
   async function submit(e) {
     e.preventDefault();
-    setBusy(true); setError('');
-    try { await signIn(portal, email.trim(), password); }
-    catch (err) { setError(loginMessage(err.status, err.message)); setPassword(''); }
-    finally { setBusy(false); }
+    setBusy(true); setError(''); setFields({});
+    try {
+      if (creating) await register({ name: name.trim(), email: email.trim(), password, consentDataUse: agree, consentLocation: location });
+      else await signIn(portal, email.trim(), password);
+    } catch (err) {
+      if (creating) { setFields(err.fields ?? {}); setError(Object.keys(err.fields ?? {}).length ? '' : err.message); }
+      else { setError(loginMessage(err.status, err.message)); setPassword(''); }
+    } finally { setBusy(false); }
   }
 
   return (
@@ -33,15 +42,28 @@ export default function LoginScreen() {
         <Card className="space-y-4 p-4">
           <div role="tablist" aria-label="Sign in as" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {LOGIN_PORTALS.map((p) => (
-              <button key={p.id} type="button" role="tab" aria-selected={portal === p.id} onClick={() => { setPortal(p.id); setError(''); }}
+              <button key={p.id} type="button" role="tab" aria-selected={portal === p.id} onClick={() => { setPortal(p.id); setError(''); setFields({}); if (p.id !== 'patient') setCreating(false); }}
                 className={`min-h-touch rounded-ui border px-2 text-sm font-semibold ${portal === p.id ? 'border-accent bg-accent/10 text-accent' : 'border-line bg-surface text-muted hover:bg-raised'}`}>{p.label}</button>
             ))}
           </div>
-          <p className="text-sm text-muted">{current.hint}</p>
+          <p className="text-sm text-muted">{creating ? 'Create your patient account' : current.hint}</p>
           <form onSubmit={submit} className="space-y-3" noValidate>
-            <Field label="Email">{(p) => <Input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} {...p} />}</Field>
-            <Field label="Password" error={error}>{(p) => <Input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} {...p} />}</Field>
-            <Button type="submit" size="lg" busy={busy} disabled={!email || !password} className="w-full">Sign in</Button>
+            {creating && <Field label="Full name" error={fields.name}>{(p) => <Input autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} {...p} />}</Field>}
+            <Field label="Email" error={fields.email}>{(p) => <Input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} {...p} />}</Field>
+            <Field label="Password" hint={creating ? 'At least 10 characters, with upper and lower case letters and a number' : undefined} error={error || fields.password}>{(p) => <Input type="password" autoComplete={creating ? 'new-password' : 'current-password'} required value={password} onChange={(e) => setPassword(e.target.value)} {...p} />}</Field>
+            {creating && (
+              <div className="space-y-1">
+                <Checkbox label="I agree to HealthTwin using my health data to respond to my emergencies" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+                {fields.consentDataUse && <p role="alert" className="text-xs font-semibold text-critical">{fields.consentDataUse}</p>}
+                <Checkbox label="Allow my location during an emergency" checked={location} onChange={(e) => setLocation(e.target.checked)} />
+              </div>
+            )}
+            <Button type="submit" size="lg" busy={busy} disabled={!email || !password || (creating && !name)} className="w-full">{creating ? 'Create account' : 'Sign in'}</Button>
+            {portal === 'patient' && (
+              <button type="button" onClick={() => { setCreating((c) => !c); setError(''); setFields({}); }} className="min-h-touch w-full text-sm font-semibold text-accent underline">
+                {creating ? 'I already have an account' : 'New here? Create a patient account'}
+              </button>
+            )}
           </form>
         </Card>
         <p className="text-center text-xs text-muted">Simulated data for demonstration. Not a medical device.</p>

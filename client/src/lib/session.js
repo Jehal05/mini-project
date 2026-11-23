@@ -29,6 +29,16 @@ export async function signIn(portal, email, password) {
   return data.user;
 }
 
+// Feature 1: a patient creates their own account, then is signed in. Throws an error with .fields for the form.
+export async function register({ name, email, password, consentDataUse, consentLocation }) {
+  let res;
+  try { res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password, consentDataUse, consentLocation }) }); }
+  catch { throw Object.assign(new Error('Cannot reach the server. Check your connection and try again.'), { status: 0, fields: {} }); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status, code: data.code, fields: data.fields ?? {} });
+  return signIn('patient', email, password);
+}
+
 // Called once at start: the cookie (if any) gets a new access token without asking for a password.
 export async function restore() {
   try {

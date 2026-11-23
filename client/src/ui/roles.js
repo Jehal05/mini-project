@@ -12,11 +12,14 @@ const NAV = {
   patient: [
     { id: 'status', label: 'My emergency', icon: 'heart-pulse', title: 'Your emergency' },
     { id: 'find', label: 'Find hospitals', icon: 'map-pin', title: 'Find a hospital' },
+    { id: 'profile', label: 'My profile', icon: 'user', title: 'Your health profile' },
+    { id: 'passport', label: 'QR passport', icon: 'info', title: 'Your QR medical passport' },
   ],
   doctor: [{ id: 'cases', label: 'My cases', icon: 'stethoscope', title: 'Your assigned cases' }],
   hospital: [
     { id: 'queue', label: 'Emergency queue', icon: 'siren', title: 'Emergency queue' },
     { id: 'fleet', label: 'Ambulances', icon: 'ambulance', title: 'Ambulance fleet' },
+    { id: 'passport', label: 'Patient passport', icon: 'user', title: 'Open a patient passport' },
   ],
   crew: [{ id: 'trip', label: 'My trip', icon: 'ambulance', title: 'Your trip' }],
   admin: [

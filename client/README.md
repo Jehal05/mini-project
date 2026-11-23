@@ -51,6 +51,16 @@ The access token lives in memory only. The browser keeps a refresh cookie (httpO
 Old demo mode: set `VITE_DEV_AUTH=true` in the client and `DEV_AUTH=true` on the server to bring back the Demo login switcher and pickers.
 Code: `src/lib/session.js` (token, refresh), `src/lib/authHeaders.js` (pure helpers, tested), `src/ui/LoginScreen.jsx`.
 
+## Patient records (Phase 15)
+
+Signed-in patients get two more tabs. **My profile** has About me (details, photo, alert settings), Contacts (up to 3, ordered, test alert), Medical (heart conditions, conditions, allergies, medicines, hospital stays, family history) and Documents (PDF, JPG, PNG up to 5 MB).
+**QR passport** shows the QR code, a print button, a "make a new code" button, and exactly what a stranger sees.
+Scanning the code opens `/p/<token>`: a public page with Call 112 / 108 first, the emergency details, and "Send my location for this person" (bystander report).
+Hospital staff have a **Patient passport** tab: paste the scanned link to open the full record (logged on the server).
+New patients can create an account from the sign-in screen (Patient tab).
+Needs `npm install` (adds `qrcode.react`). Code: `src/patient/*`, `src/passport/*`, `src/portal/PassportLookup.jsx`, `src/lib/patientApi.js`, `passportApi.js`, `patientRecord.js` (pure, tested).
+Not built: scanning with the camera (paste the link instead), PDF patient report.
+
 ## Design system and role screens (Phase 13)
 
 One medical look, five different interfaces. In demo mode use **Demo login** (top bar) to switch role; add `?role=doctor` to the URL to start as a role.

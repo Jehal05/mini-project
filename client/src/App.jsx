@@ -16,6 +16,9 @@ import { screenForRole } from './lib/authHeaders.js';
 // Heavy screens (maps, charts) load only when opened.
 const FindHospitals = lazy(() => import('./patient/FindHospitals.jsx'));
 const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
+const ProfileApp = lazy(() => import('./patient/ProfileApp.jsx'));
+const PassportPanel = lazy(() => import('./patient/PassportPanel.jsx'));
+const PassportLookup = lazy(() => import('./portal/PassportLookup.jsx'));
 
 const ROLE_KEY = 'ht.role';
 function initialRole() {
@@ -50,8 +53,12 @@ function Signed({ account }) {
   const current = isValidView(role, view) ? view : defaultView(role);
 
   let screen = null;
-  if (role === 'patient') screen = current === 'find' ? <FindHospitals /> : <PatientStatus account={account} />;
-  else if (role === 'hospital') screen = <PortalApp view={current} account={account} />;
+  if (role === 'patient') {
+    if (current === 'find') screen = <FindHospitals />;
+    else if (current === 'profile') screen = account ? <ProfileApp /> : <DemoNeedsLogin what="your profile" />;
+    else if (current === 'passport') screen = account ? <PassportPanel /> : <DemoNeedsLogin what="your QR passport" />;
+    else screen = <PatientStatus account={account} />;
+  } else if (role === 'hospital') screen = current === 'passport' ? <PassportLookup /> : <PortalApp view={current} account={account} />;
   else if (role === 'crew') screen = <CrewApp account={account} />;
   else if (role === 'admin') screen = <AdminApp view={current} account={account} />;
   else screen = <DoctorApp account={account} />;
@@ -61,4 +68,9 @@ function Signed({ account }) {
       <Suspense fallback={<div className="space-y-3" aria-busy="true"><Skeleton className="h-8 w-1/3" /><Skeleton className="h-40" /></div>}>{screen}</Suspense>
     </AppShell>
   );
+}
+
+// Profile and passport belong to a signed-in patient. Demo mode has no account to show.
+function DemoNeedsLogin({ what }) {
+  return <p className="rounded-ui border border-line bg-surface p-4 text-sm text-muted">Sign in as a patient to see {what}. Demo mode has no patient account.</p>;
 }

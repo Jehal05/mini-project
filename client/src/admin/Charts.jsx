@@ -166,7 +166,7 @@ export function Utilisation({ summary, loading, error }) {
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} {...common}>
           <CartesianGrid {...L.grid} />
-          <XAxis dataKey="name" {...L.axis} interval={0} tickFormatter={(n) => n.replace('MH12-DEMO-', '')} />
+          <XAxis dataKey="name" {...L.axis} interval={0} tickFormatter={(n) => n.slice(-7)} />
           <YAxis domain={[0, 100]} {...L.axis} unit="%" />
           <Tooltip {...L.tip} />
           <Bar dataKey="onTripPercent" name="On a trip" fill={c.accent} />

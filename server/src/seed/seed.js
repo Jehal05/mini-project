@@ -2,7 +2,7 @@ import { pathToFileURL } from 'node:url';
 // Idempotent: safe to run repeatedly. Records are upserted by a natural key, never duplicated.
 // Usage: npm run seed
 import { connectDB, disconnectDB } from '../config/db.js';
-import { Hospital, Doctor, Bed, Ambulance } from '../models/index.js';
+import { Hospital, Doctor, Bed, Ambulance, EdBay } from '../models/index.js';
 import { hospitals, doctors, ambulances } from './data.js';
 
 export async function seed() {
@@ -15,6 +15,7 @@ export async function seed() {
         $set: {
           name: h.name,
           area: h.area,
+          phone: h.phone,
           address: `${h.area}, Pune (simulated)`,
           location: { type: 'Point', coordinates: h.coords },
           capabilities: { cathLab: h.cathLab, cardiologistOnDuty: h.cardiologist },
@@ -30,6 +31,7 @@ export async function seed() {
     const beds = [
       ...Array.from({ length: spec.icu }, (_, i) => ({ ward: 'ICU', label: `ICU-${i + 1}` })),
       ...Array.from({ length: spec.ccu }, (_, i) => ({ ward: 'CCU', label: `CCU-${i + 1}` })),
+      ...Array.from({ length: spec.general }, (_, i) => ({ ward: 'GENERAL', label: `G-${i + 1}` })),
     ];
     for (const b of beds) {
       // $setOnInsert keeps a bed's status if it was changed after the first seed.
@@ -41,11 +43,18 @@ export async function seed() {
     }
   }
 
+  // Emergency department bays (feature 86). Their status is kept if it was changed after the first seed.
+  for (const { doc, spec } of Object.values(byCode)) {
+    for (let i = 1; i <= spec.edBays; i++) {
+      await EdBay.updateOne({ hospital: doc._id, label: `ED-${i}` }, { $setOnInsert: { status: 'vacant' } }, { upsert: true });
+    }
+  }
+
   for (const d of doctors) {
     const hospital = byCode[d.hospitalCode].doc;
     await Doctor.updateOne(
-      { hospital: hospital._id, name: d.name },
-      { $set: { specialty: d.specialty, onDuty: d.onDuty, simulated: true } },
+      { hospital: hospital._id, name: { $in: [d.name, d.legacyName].filter(Boolean) } },
+      { $set: { name: d.name, specialty: d.specialty, onDuty: d.onDuty, phone: d.phone, isActive: true, simulated: true } },
       { upsert: true },
     );
   }
@@ -53,15 +62,16 @@ export async function seed() {
   for (const a of ambulances) {
     const hospital = byCode[a.hospitalCode].doc;
     await Ambulance.updateOne(
-      { vehicleNumber: a.vehicleNumber },
+      { vehicleNumber: { $in: [a.vehicleNumber, a.legacyNumber].filter(Boolean) } },
       {
         $set: {
+          vehicleNumber: a.vehicleNumber,
           type: a.type,
           homeHospital: hospital._id,
           location: hospital.location,
           crew: [
-            { name: 'Demo Paramedic', role: 'paramedic' },
-            { name: 'Demo Driver', role: 'driver' },
+            { name: 'Paramedic (simulated)', role: 'paramedic' },
+            { name: 'Driver (simulated)', role: 'driver' },
           ],
           equipment: a.type === 'ALS' ? ['defibrillator', 'ECG monitor', 'oxygen'] : ['oxygen', 'first aid kit'],
           simulated: true,
@@ -77,6 +87,7 @@ export async function seed() {
   return {
     hospitals: await Hospital.countDocuments(),
     beds: await Bed.countDocuments(),
+    edBays: await EdBay.countDocuments(),
     doctors: await Doctor.countDocuments(),
     ambulances: await Ambulance.countDocuments(),
   };

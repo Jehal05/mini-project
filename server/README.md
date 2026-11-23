@@ -8,7 +8,7 @@ Express + MongoDB (Mongoose) + Socket.IO. All data is simulated. Not a medical d
 cd server
 npm install
 cp .env.example .env      # then edit MONGO_URI / JWT_SECRET if needed
-npm run seed              # simulated hospitals, beds, doctors, ambulances (safe to re-run)
+npm run seed              # simulated hospitals (12), beds, ED bays, doctors (31), ambulances (20); safe to re-run
 npm run dev               # http://localhost:5000, check GET /api/health
 npm test                  # Vitest + Supertest, no database needed
 ```
@@ -384,3 +384,5 @@ Visit files: `POST /api/inpatient/admissions/:id/records/file` stores an ECG or 
 Tests: `tests/hospitalmgmt.test.js` (fake repo; scoping, bay transitions, duty-to-flag sync, response time, history privacy).
 
 Not ported: doctor login invitations (doctors here are roster entries with no login), Jehal's separate `HospitalCase` model (history reads our `EmergencyCase`), live push of bay changes.
+
+**Seed data.** 12 fictional Pune-area hospitals, 31 doctors with a duty roster (a hospital's "cardiologist on duty" flag follows it), ICU, CCU and general beds, emergency department bays, and 20 ambulances. Ambulance number plates use the real Indian format (state, RTO code, series, number; `MH12` is Pune, `MH14` Pimpri-Chinchwad) but are made up and match no real vehicle. Re-running `npm run seed` renames rows from the earlier seed (`MH12-DEMO-0101`, `Dr. Demo Cardiologist A`) instead of duplicating them, and resets the fleet to available.

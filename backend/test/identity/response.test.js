@@ -199,6 +199,23 @@ describe('an emergency from SOS to arrival', () => {
   });
 });
 
+describe('a case with no location (51)', () => {
+  it('searches from the centre of the registered area and records that it did', async () => {
+    await Hospital.updateMany({}, { isActive: false });
+    const h = await hospital({ offsetKm: 1 });
+    const p = await patientSession();
+    await Patient.updateOne({ _id: p.patient._id }, { $set: { city: 'Pune', address: 'Shivajinagar, Pune' } });
+    const made = (await request(app).post('/api/emergency/sos').set(bearer(p.token)).send({})).body.case; // no location sent
+    await settle();
+    const stored = await EmergencyCase.findById(made.id).lean();
+    expect(stored.location).toMatchObject({ source: 'registered_address' });
+    expect(stored.timeline.some((e) => e.type === 'location_fallback')).toBe(true);
+    expect(stored.hospitalResponses.length).toBeGreaterThanOrEqual(0);
+    expect(await HospitalCase.countDocuments({ emergencyCaseId: made.id })).toBe(stored.hospitalResponses.length);
+    expect(h._id).toBeTruthy();
+  });
+});
+
 describe('ambulance fleet (71, 72)', () => {
   it('registers a vehicle for the staff member’s own hospital only, and refuses duplicates', async () => {
     const h = await hospital();

@@ -7,7 +7,9 @@ import { EmergencyCase } from '../models/EmergencyCase.js'
 import { recordHospitalCase } from '../services/hospitalCases.js'
 import { CASE_STATUS, ESCALATION, HOSPITAL_RESPONSE, SEVERITY, hospitalRoom } from '../../../shared/emergency.js'
 import { RESPONSE_EVENTS } from '../../../shared/response.js'
+import { Patient } from '../models/Patient.js'
 import { capabilityCard } from './capability.js'
+import { centreFor } from './cityCentres.js'
 import { distanceKm } from './geo.js'
 import { isCardiacCapable, rankScore } from './ranking.js'
 
@@ -87,13 +89,29 @@ export function createDiscovery({ io, logger = console, now = () => Date.now(), 
   }
 
   /** The cardiac filter is on in an emergency; if it leaves nobody, fall back to all hospitals rather than strand the patient. */
-  async function candidates(c, radiusKm) {
+  /** A case with no location yet searches from the centre of the patient's registered area, and says so (feature 51). */
+  async function ensureLocation(c) {
+    if (c.location?.point?.coordinates) return c
+    const patient = await Patient.findById(c.patient, { address: 1, city: 1 }).lean()
+    const centre = centreFor(patient ?? {})
+    if (!centre) return c
+    const location = { point: { type: 'Point', coordinates: centre.point }, source: 'registered_address', address: `${centre.label} (registered area)`, updatedAt: new Date(now()) }
+    const updated = await EmergencyCase.findOneAndUpdate(
+      { _id: c._id, status: CASE_STATUS.SEARCHING, location: { $exists: false } },
+      { $set: { location }, $push: { timeline: entry('location_fallback', `No live location: searching around ${centre.label} from the registered address`) } },
+      { returnDocument: 'after' },
+    ).lean()
+    return updated ?? (await EmergencyCase.findById(c._id).lean())
+  }
+
+  async function candidates(c0, radiusKm) {
+    const c = await ensureLocation(c0)
     const point = c.location?.point?.coordinates
-    if (!point) return { list: [], relaxed: false }
+    if (!point) return { list: [], relaxed: false, c }
     const told = new Set((c.hospitalResponses ?? []).map((r) => String(r.hospital)))
     const all = (await nearby({ lng: point[0], lat: point[1], radiusKm, limit: 50 })).filter((h) => !told.has(h.id))
     const cardiac = all.filter((h) => h.cardiacCapable)
-    return cardiac.length ? { list: cardiac, relaxed: false } : { list: all, relaxed: all.length > 0 }
+    return cardiac.length ? { list: cardiac, relaxed: false, c } : { list: all, relaxed: all.length > 0, c }
   }
 
   return {
@@ -104,17 +122,17 @@ export function createDiscovery({ io, logger = console, now = () => Date.now(), 
     async notify({ caseId, round = 1, radiusKm }) {
       const c = await EmergencyCase.findById(caseId).lean()
       if (!c || c.status !== CASE_STATUS.SEARCHING) return []
-      const { list, relaxed } = await candidates(c, radiusKm ?? c.escalation?.radiusKm ?? 10)
+      const { list, relaxed, c: withLocation } = await candidates(c, radiusKm ?? c.escalation?.radiusKm ?? 10)
       if (relaxed) await EmergencyCase.updateOne({ _id: c._id }, { $push: { timeline: entry('filter_relaxed', 'No cardiac-capable hospital in range: notifying the nearest hospitals instead') } })
-      return notifyHospitals(c, list.slice(0, FIRST_ROUND_HOSPITALS), round || 1)
+      return notifyHospitals(withLocation ?? c, list.slice(0, FIRST_ROUND_HOSPITALS), round || 1)
     },
 
     /** Feature 60: a hospital rejected, so tell the next best one in the current radius. */
     async notifyNext(caseId, count = 1) {
       const c = await EmergencyCase.findById(caseId).lean()
       if (!c || c.status !== CASE_STATUS.SEARCHING) return []
-      const { list } = await candidates(c, c.escalation?.radiusKm ?? 10)
-      return notifyHospitals(c, list.slice(0, count), c.escalation?.round || 1)
+      const { list, c: withLocation } = await candidates(c, c.escalation?.radiusKm ?? 10)
+      return notifyHospitals(withLocation ?? c, list.slice(0, count), c.escalation?.round || 1)
     },
   }
 }

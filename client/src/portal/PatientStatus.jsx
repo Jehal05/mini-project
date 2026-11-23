@@ -9,6 +9,7 @@ import Icon from '../ui/icons.jsx';
 import { Card, Panel } from '../ui/Surface.jsx';
 import { EmptyState } from '../ui/Feedback.jsx';
 import TrackingMap from './TrackingMap.jsx';
+import HeartDashboard from '../patient/HeartDashboard.jsx';
 
 // Feature 67: what the patient (or family) sees. Joins the patient room and shows live status.
 export default function PatientStatus({ account = null }) {
@@ -53,6 +54,7 @@ export default function PatientStatus({ account = null }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
+      <HeartDashboard mode={status.kind === 'accepted' ? 'emergency' : 'calm'} signedIn={Boolean(account)} />
       {!patientId ? (
         <Card><EmptyState icon="heart-pulse" title="No emergency in progress">
           When an alert is raised for you, its progress shows here. For this demo, ask the hospital screen to create a demo emergency.

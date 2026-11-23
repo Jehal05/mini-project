@@ -81,7 +81,7 @@ export default function AdminApp({ view = 'analytics', account = null }) {
           {gh && (
             <ul className="flex flex-wrap gap-2 text-sm" aria-label="Golden-hour targets met">
               {gh.stages.map((s) => (
-                <li key={s.key} className="rounded-ui border border-line bg-surface px-3 py-1 text-ink">{s.label} (target {s.targetMin} min): <strong className="tnum">{cell(s.percent, s.masked, '%')}</strong> met</li>
+                <li key={s.key} className="glass rounded-ui border border-line px-3 py-1 text-ink">{s.label} (target {s.targetMin} min): <strong className="tnum">{cell(s.percent, s.masked, '%')}</strong> met</li>
               ))}
             </ul>
           )}

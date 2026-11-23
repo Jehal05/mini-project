@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { authenticate } from '../auth/guard.js';
 import * as svc from '../patients/service.js';
-import { SECTIONS, isObjectIdString, validateContact, validateContactOrder, validatePersonal, validatePreferences, validateSection } from '../patients/validate.js';
+import { SECTIONS, isObjectIdString, validateMood, validateContact, validateContactOrder, validatePersonal, validatePreferences, validateSection } from '../patients/validate.js';
 import { sendFile } from './fileResponse.js';
 
 // Everything here acts on the signed-in patient's own record. The record id comes from the token, never from the URL,
@@ -44,6 +44,9 @@ router.get('/documents', asyncHandler(async (req, res) => res.json({ documents: 
 router.post('/documents', asyncHandler(async (req, res) => res.status(201).json({ document: await svc.uploadDocument(req.user, req.body) })));
 router.get('/documents/:docId/file', asyncHandler(async (req, res) => sendFile(res, await svc.getDocument(req.user, req.params.docId))));
 router.delete('/documents/:docId', asyncHandler(async (req, res) => res.json(await svc.deleteDocument(req.user, req.params.docId))));
+
+router.get('/mood', asyncHandler(async (req, res) => res.json({ moods: await svc.listMoods(req.user) })));
+router.post('/mood', asyncHandler(async (req, res) => res.status(201).json({ mood: await svc.addMood(req.user, validateMood(req.body)) })));
 
 router.get('/qr', asyncHandler(async (req, res) => res.json(await svc.getQr(req.user))));
 router.post('/qr/regenerate', asyncHandler(async (req, res) => res.json(await svc.regenerateQr(req.user))));

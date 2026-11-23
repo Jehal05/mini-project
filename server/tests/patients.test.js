@@ -9,7 +9,7 @@ import path from 'node:path';
 import { env } from '../src/config/env.js';
 import * as svc from '../src/patients/service.js';
 import { PATIENT_EVENTS, patientEvents } from '../src/patients/events.js';
-import { validatePersonal, validateSection, validateContact, validateBystanderReport } from '../src/patients/validate.js';
+import { validatePersonal, validateSection, validateContact, validateBystanderReport, validateMood } from '../src/patients/validate.js';
 import { resetQuotas } from '../src/utils/quota.js';
 import { resetAuth } from './helpers/fakeAuthRepo.js';
 import { resetPatients, db } from './helpers/fakePatientRepo.js';
@@ -224,5 +224,28 @@ describe('QR passport and bystander report (features 20, 106)', () => {
     const entry = db.audit.find((a) => a.action === 'record.view');
     expect(entry.actor).toBe('staff1');
     expect(JSON.stringify(entry).includes(token)).toBe(false);
+  });
+});
+
+describe('mood check-ins', () => {
+  it('stores a mood note, lists newest first, and keeps it out of the record and the passport', async () => {
+    const { user, patient } = await signUp('m@x.test');
+    await svc.addMood(user, validateMood({ mood: 'tired', note: ' slept badly ' }));
+    await new Promise((r) => setTimeout(r, 5));
+    await svc.addMood(user, validateMood({ mood: 'calm' }));
+    const list = await svc.listMoods(user);
+    expect(list).toHaveLength(2);
+    expect(list[0].mood).toBe('calm');
+    expect(list[1].note).toBe('slept badly');
+    expect(JSON.stringify(await svc.getOwn(user))).not.toMatch(/slept badly/);
+    expect(JSON.stringify(await svc.scan(patient.qrToken))).not.toMatch(/slept badly/);
+  });
+  it('rejects an unknown mood or a long note, and keeps only the newest 60', async () => {
+    const { user } = await signUp('n@x.test');
+    expect(() => validateMood({ mood: 'furious' })).toThrow();
+    expect(() => validateMood({ mood: 'calm', note: 'x'.repeat(201) })).toThrow();
+    expect(() => validateMood({ mood: 'calm', extra: 1 })).toThrow();
+    for (let i = 0; i < 62; i += 1) await svc.addMood(user, { mood: 'calm' });
+    expect(db.patients.get(String(user.patientId)).moodNotes).toHaveLength(60);
   });
 });

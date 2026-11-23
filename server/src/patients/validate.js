@@ -1,6 +1,6 @@
 // Input checks for patient records. Hand-written so no extra package is needed. Every check is strict:
 // unknown keys (qrToken, consent, user, _id ...) are rejected, not ignored. Failures return { fields } for the form.
-import { BLOOD_GROUPS, CARDIAC_TYPES, DOCUMENT_TYPES } from './constants.js';
+import { BLOOD_GROUPS, CARDIAC_TYPES, DOCUMENT_TYPES, MOODS } from './constants.js';
 import { normalizePhone } from '../utils/phone.js';
 import { httpError } from '../utils/httpError.js';
 
@@ -140,3 +140,5 @@ export function validateBystanderReport(b) {
 }
 
 export const isObjectIdString = (v) => /^[a-f\d]{24}$/i.test(String(v));
+
+export const validateMood = (b) => run(b, { mood: oneOf('Mood', MOODS, { required: true }), note: text('Note', 200) }, { partial: false });

@@ -2,7 +2,7 @@ import Icon from './icons.jsx';
 import { severityMeta, toneClasses } from './tokens.js';
 
 export function Card({ as: Tag = 'section', className = '', children, ...rest }) {
-  return <Tag className={`rounded-ui bg-surface border border-line shadow-panel ${className}`} {...rest}>{children}</Tag>;
+  return <Tag className={`glass rounded-ui border border-line shadow-panel ${className}`} {...rest}>{children}</Tag>;
 }
 
 export function Panel({ title, action, children, className = '' }) {
@@ -23,7 +23,7 @@ export function Panel({ title, action, children, className = '' }) {
 export function StatTile({ label, value, unit, tone = 'neutral', note, children }) {
   const t = toneClasses(tone);
   return (
-    <div className="rounded-ui border border-line bg-surface p-3">
+    <div className="glass rounded-ui border border-line p-3">
       <p className="text-xs text-muted">{label}</p>
       <p className={`tnum mt-1 text-2xl font-semibold ${tone === 'neutral' ? 'text-ink' : t.text}`}>
         {value ?? '–'}{value != null && unit ? <span className="ml-1 text-xs font-normal text-muted">{unit}</span> : null}

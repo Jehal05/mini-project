@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { portalFetch } from '../lib/portalApi.js';
 import SeverityBadge from './SeverityBadge.jsx';
-import Vitals from './Vitals.jsx';
+import ClinicalBoard from '../ui/ClinicalBoard.jsx';
 import GoldenHourClock from './GoldenHourClock.jsx';
 import Timeline from './Timeline.jsx';
 import CountdownRing from './CountdownRing.jsx';
@@ -76,7 +76,7 @@ export default function CaseView({ hospitalId, caseData, onChange, onGone }) {
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-ui border border-line bg-surface p-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 glass rounded-ui border border-line p-4">
         <div>
           <h2 className="font-title text-2xl font-semibold text-ink">{caseData.patient?.fullName || 'Patient'}</h2>
           <SeverityBadge severity={caseData.severity} riskScore={caseData.riskScore} solid />
@@ -87,7 +87,7 @@ export default function CaseView({ hospitalId, caseData, onChange, onGone }) {
       {error && <ErrorState title="That did not go through">{error}</ErrorState>}
       {caseData.allHospitalsBusy && <p className="rounded-ui border border-moderate bg-moderate-soft p-2 text-sm text-ink">All hospitals have been tried for this case.</p>}
 
-      <Panel title="Latest vitals"><Vitals vitals={caseData.latestVitals} /></Panel>
+      <ClinicalBoard vitals={caseData.latestVitals} right={<Panel title="What has happened"><Timeline entries={timeline} /></Panel>} />
 
       {pending && (
         <Panel title="Your response">
@@ -147,7 +147,6 @@ export default function CaseView({ hospitalId, caseData, onChange, onGone }) {
       )}
 
       <Panel title="Golden-hour timer"><GoldenHourClock stages={caseData.goldenHour || []} /></Panel>
-      <Panel title="What has happened"><Timeline entries={timeline} /></Panel>
     </div>
   );
 }

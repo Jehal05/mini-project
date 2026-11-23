@@ -40,6 +40,9 @@ const patientSchema = new Schema(
     hospitalizations: [{ hospital: String, admittedOn: Date, dischargedOn: Date, reason: String, dischargeSummaryId: Schema.Types.ObjectId }],
     familyHistory: [{ relative: { type: String, trim: true }, condition: { type: String, trim: true }, ageAtDiagnosis: Number }],
 
+    // Mood check-ins: the patient's own simple notes. Not a diagnosis, never shown on the QR passport or to hospitals.
+    moodNotes: [{ mood: { type: String }, note: { type: String, maxlength: 200 }, at: { type: Date, default: Date.now } }],
+
     // Feature 20: the QR holds only a URL with this random token, never medical data.
     qrToken: { type: String, unique: true, sparse: true },
     qrRotatedAt: Date,

@@ -15,7 +15,7 @@ export default {
         high: c('high'), 'high-soft': c('high-soft'),
         moderate: c('moderate'), 'moderate-soft': c('moderate-soft'),
         low: c('low'), 'low-soft': c('low-soft'),
-        info: c('info'), 'info-soft': c('info-soft'),
+        info: c('info'), 'info-soft': c('info-soft'), glow: c('glow'),
       },
       fontFamily: {
         sans: ['"Segoe UI"', 'system-ui', '-apple-system', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],

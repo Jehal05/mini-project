@@ -13,7 +13,7 @@ export default function GoldenHourClock({ stages }) {
         const overdue = elapsed > s.targetMin;
         const pct = Math.min(100, (elapsed / s.targetMin) * 100);
         return (
-          <div key={s.key} className={`rounded-ui border p-2 text-sm ${overdue ? 'border-critical bg-critical-soft' : 'border-line bg-surface'}`}>
+          <div key={s.key} className={`rounded-ui border p-2 text-sm ${overdue ? 'border-critical bg-critical-soft' : 'glass border-line'}`}>
             <div className="flex justify-between gap-2">
               <span className="font-semibold text-ink">{s.label}</span>
               <span className={`tnum ${overdue ? 'font-bold text-critical' : 'text-ink'}`}>

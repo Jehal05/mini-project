@@ -45,3 +45,5 @@ export function readAsBase64(file) {
     r.readAsDataURL(file);
   });
 }
+export const fetchMoods = () => call('GET', '/mood').then((d) => d.moods);
+export const saveMood = (mood, note) => call('POST', '/mood', { mood, ...(note ? { note } : {}) }).then((d) => d.mood);

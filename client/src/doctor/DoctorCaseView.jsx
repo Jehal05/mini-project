@@ -5,9 +5,9 @@ import { Panel } from '../ui/Surface.jsx';
 import { ErrorState } from '../ui/Feedback.jsx';
 import { Checkbox } from '../ui/Form.jsx';
 import SeverityBadge from '../portal/SeverityBadge.jsx';
-import Vitals from '../portal/Vitals.jsx';
 import GoldenHourClock from '../portal/GoldenHourClock.jsx';
 import Timeline from '../portal/Timeline.jsx';
+import ClinicalBoard from '../ui/ClinicalBoard.jsx';
 
 const CHECKLIST = [
   ['edBayReady', 'ED bay ready'],
@@ -42,19 +42,31 @@ export default function DoctorCaseView({ hospitalId, caseData, history, onChange
   const milestone = (name) => run(async () => onChange(await portalFetch(hospitalId, `/cases/${id}/milestones`, { method: 'POST', body: { name } })));
   const loadPatient = () => run(async () => setPatient(await portalFetch(hospitalId, `/cases/${id}/patient`)));
 
+  const header = (
+    <header className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 className="font-title text-2xl font-semibold text-ink">{caseData.patient?.fullName || 'Patient'}</h2>
+        <SeverityBadge severity={caseData.severity} riskScore={caseData.riskScore} solid />
+      </div>
+    </header>
+  );
+  const right = (
+    <>
+      <Panel title="What has happened"><Timeline entries={timeline} /></Panel>
+      <Panel title="Patient record">
+        {!patient ? (
+          <>
+            <Button variant="secondary" disabled={busy} onClick={loadPatient}>Open patient record</Button>
+            <p className="mt-2 text-xs text-muted">Opening the record is logged.</p>
+          </>
+        ) : <PatientRecord record={patient} />}
+      </Panel>
+    </>
+  );
+
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-title text-2xl font-semibold text-ink">{caseData.patient?.fullName || 'Patient'}</h2>
-          <SeverityBadge severity={caseData.severity} riskScore={caseData.riskScore} solid />
-        </div>
-      </header>
-
+    <ClinicalBoard vitals={caseData.latestVitals} history={history} header={header} right={right}>
       {error && <ErrorState title="That did not go through">{error}</ErrorState>}
-
-      <Panel title="Vitals"><Vitals vitals={caseData.latestVitals} history={history} /></Panel>
-
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Golden-hour timer">
           <GoldenHourClock stages={caseData.goldenHour || []} />
@@ -78,18 +90,7 @@ export default function DoctorCaseView({ hospitalId, caseData, history, onChange
           </ul>
         </Panel>
       </div>
-
-      <Panel title="Patient record">
-        {!patient ? (
-          <>
-            <Button variant="secondary" disabled={busy} onClick={loadPatient}>Open patient record</Button>
-            <p className="mt-2 text-xs text-muted">Opening the record is logged.</p>
-          </>
-        ) : <PatientRecord record={patient} />}
-      </Panel>
-
-      <Panel title="What has happened"><Timeline entries={timeline} /></Panel>
-    </div>
+    </ClinicalBoard>
   );
 }
 

@@ -1,5 +1,6 @@
 import Icon from './icons.jsx';
 import EcgTrace from './EcgTrace.jsx';
+import PillNav from './PillNav.jsx';
 import { ROLES, navFor, pageTitle, showsCallBar, roleLabel } from './roles.js';
 import { CONNECTION_HELP, CONNECTION_LABEL } from '../lib/connection.js';
 
@@ -9,12 +10,10 @@ import { CONNECTION_HELP, CONNECTION_LABEL } from '../lib/connection.js';
 export default function AppShell({ role, onRole, account = null, onSignOut, view, onView, theme, onToggleTheme, connection, children }) {
   const nav = navFor(role);
   const calls = showsCallBar(role);
-  const navButtons = (bottom) => nav.map((n) => (
+  const navButtons = () => nav.map((n) => (
     <button key={n.id} type="button" onClick={() => onView(n.id)} aria-current={view === n.id ? 'page' : undefined}
-      className={bottom
-        ? `flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-semibold ${view === n.id ? 'text-accent' : 'text-muted'}`
-        : `flex min-h-touch w-full items-center gap-3 rounded-ui px-3 text-sm font-semibold ${view === n.id ? 'bg-accent/10 text-accent' : 'text-muted hover:bg-raised hover:text-ink'}`}>
-      <Icon name={n.icon} size={bottom ? 22 : 20} />{n.label}
+      className={`flex min-h-touch w-full items-center gap-3 rounded-ui px-3 text-sm font-semibold ${view === n.id ? 'bg-accent/10 text-accent' : 'text-muted hover:bg-raised hover:text-ink'}`}>
+      <Icon name={n.icon} size={20} />{n.label}
     </button>
   ));
 
@@ -63,18 +62,16 @@ export default function AppShell({ role, onRole, account = null, onSignOut, view
 
       <div className="flex flex-1">
         {nav.length > 1 && (
-          <nav aria-label="Sections" className="sticky top-[3.75rem] hidden h-fit w-56 shrink-0 space-y-1 p-3 md:block">{navButtons(false)}</nav>
+          <nav aria-label="Sections" className="sticky top-[3.75rem] hidden h-fit w-56 shrink-0 space-y-1 p-3 md:block">{navButtons()}</nav>
         )}
-        <main id="main" tabIndex={-1} className={`min-w-0 flex-1 px-4 py-4 ${nav.length > 1 ? 'pb-24 md:pb-6' : 'pb-6'}`}>
+        <main id="main" key={`${role}-${view}`} tabIndex={-1} className={`screen-enter min-w-0 flex-1 px-4 py-4 ${nav.length > 1 ? 'pb-24 md:pb-6' : 'pb-6'}`}>
           <h1 className="font-title mb-4 text-2xl font-semibold sm:text-3xl">{pageTitle(role, view)}</h1>
           {children}
         </main>
       </div>
 
-      {nav.length > 1 && (
-        <nav aria-label="Sections" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface md:hidden">{navButtons(true)}</nav>
-      )}
-      <footer className={`border-t border-line bg-surface/90 px-4 py-2 text-center text-xs text-muted ${nav.length > 1 ? 'mb-14 md:mb-0' : ''}`}>
+      {nav.length > 1 && <PillNav items={nav} value={view} onChange={onView} />}
+      <footer className={`border-t border-line bg-surface/90 px-4 py-2 text-center text-xs text-muted ${nav.length > 1 ? 'mb-20 md:mb-0' : ''}`}>
         Simulated data for demonstration. Not a medical device.
       </footer>
     </div>

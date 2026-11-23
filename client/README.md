@@ -90,3 +90,34 @@ patient status and form messages; dialogs trap focus and close on Escape; animat
 
 **For Jehal:** the role switcher, doctor picker, hospital picker, ambulance picker and admin token box are all temporary demo logins. Real login should set the role
 (and the doctor, hospital or ambulance id) and replace them. Server: `middleware/requireDoctor.js` is a dev stub like the others, and `GET /api/doctors/dev-options` is dev-only (404 in production).
+
+## Visual redesign (Phase 16)
+
+A layer on top of the Phase 13 design system: near-black glass in dark theme (a soft role-coloured glow behind the panels), a beating heart, a heart-rate gauge, an ECG line, a floating pill nav on phones, and a three-column clinician board. The five role accents and radii are unchanged. Every simulated thing is labelled "simulated", and the footer "Simulated data for demonstration. Not a medical device." is on every screen.
+
+- **Heart** (`ui/HeartHero.jsx`): a flat SVG heart by default. A procedural three.js heart (`Heart3D.jsx`, loaded only when needed) is used on capable devices that allow motion. It is capped at 30 fps, pauses on a hidden tab or when scrolled away, and falls back to the flat heart on low-power devices, without WebGL, with reduced motion, or on any error. To use a finished model see `src/assets/models/README.md`.
+- **Patient home**: heart, gauge (60 to 100), ECG line, R-R interval and signal quality (all simulated in the browser by `lib/vitalsSim.js` until server monitoring exists) and a mood check-in saved by the server as a plain note (`GET/POST /api/patients/me/mood`; never on the QR passport, never shown to hospitals).
+- **Clinician board** (`ui/ClinicalBoard.jsx`, used by the doctor case and hospital case screens): real vitals on the left, a hologram heart with callouts for out-of-range readings (ranges are simulated, see `ui/vitals.js`), and the timeline, patient record and a "Simulated analysis" card on the right. The analysis only restates which readings are outside the demo ranges. It gives no score and no diagnosis.
+- **Theme**: `ui/theme.css`. `ui/contrast.test.js` reads that file and checks 4.5:1 contrast for text, severity colours and accents in both themes, including text on glass.
+- **New dependency**: `three` (not yet installed here; run `npm install`).
+
+Run the helper tests: `lib/visual.test.js`, `ui/contrast.test.js`.
+
+### Manual checklist (not yet done by anyone)
+
+Open `/?ui-kit` and each role screen, in dark and light, at 360, 768 and 1440 px:
+
+- [ ] Patient home: heart beats at the gauge's rate; the gauge marker moves smoothly; the mood check-in saves and shows "Saved".
+- [ ] Phone (360 px): the pill nav floats above the footer, every item has a name for screen readers, targets are at least 44 px, Call 112/108 stays visible at the top.
+- [ ] Doctor and hospital case: the three columns appear at 1280 px and wider, and stack below it. Callouts show only for out-of-range readings, with a word and a shape as well as a colour.
+- [ ] Take-over screen is still full red; the crew screen is still high contrast with one main action.
+- [ ] Reduced motion (OS setting): no heartbeat, no scrolling ECG, no entrance slide; the flat heart is shown.
+- [ ] WebGL off (browser flag) or a low-power phone: the flat heart is shown and nothing errors.
+- [ ] Hidden tab: CPU drops to near zero (the 3D heart stops drawing).
+- [ ] Keyboard only: every control reachable, focus ring visible, no trap.
+- [ ] Screen reader: the gauge reads "Heart rate 88 bpm, within the range of 60 to 100"; the heart is announced as an illustration; moods are a radio group.
+- [ ] First screen is usable in under 3 seconds on a mid-range phone (the 3D chunk loads after it).
+
+### Not run or seen in Phase 16
+
+No screen has been rendered by me. Not run: the three.js heart, the CSS glass and animations, the new Supertest-free mood route against a real MongoDB, and `npm install` for `three`. Checked only by syntax, import resolution, and the unit tests above.

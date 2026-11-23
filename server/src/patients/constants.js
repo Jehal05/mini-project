@@ -2,3 +2,5 @@
 export const BLOOD_GROUPS = Object.freeze(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
 export const CARDIAC_TYPES = Object.freeze(['heart_attack', 'stent', 'bypass', 'arrhythmia', 'heart_failure', 'other']);
 export const DOCUMENT_TYPES = Object.freeze(['ecg', 'lab_report', 'prescription', 'discharge_summary', 'imaging', 'insurance', 'other']);
+export const MOODS = Object.freeze(['normal', 'calm', 'sad', 'tired', 'happy', 'stressed']);
+export const MOOD_KEEP = 60; // newest notes kept per patient

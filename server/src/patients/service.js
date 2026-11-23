@@ -11,6 +11,7 @@ import * as authRepo from '../auth/authRepo.js';
 import * as repo from './patientRepo.js';
 import { PATIENT_EVENTS, patientEvents } from './events.js';
 import { SECTION_LIMIT, invalid, validateUpload } from './validate.js';
+import { MOOD_KEEP } from './constants.js';
 
 const HOUR = 3600000;
 const err = (status, message, code) => Object.assign(httpError(status, message), { code });
@@ -39,7 +40,7 @@ const withIds = (list = []) => list.map((x) => ({ ...x, id: sid(x._id), _id: und
 
 /** The patient's own record, as sent to the patient: no internal ids, no QR token, blood thinners resolved. */
 export function presentPatient(p) {
-  const { user, qrToken, qrRotatedAt, photoFile, __v, _id, ...rest } = p;
+  const { user, qrToken, qrRotatedAt, photoFile, moodNotes, __v, _id, ...rest } = p;
   return {
     ...rest,
     id: sid(_id),
@@ -386,4 +387,17 @@ export async function fullRecordDocument(token, docId, actor) {
   if (!doc) throw err(404, 'Document not found', 'NOT_FOUND');
   await repo.writeAudit({ actor: actor.id, action: 'record.view', resourceType: 'document', resourceRef: p.patientId, meta: { documentId: sid(doc._id), role: actor.role } });
   return { mime: doc.mimeType, name: doc.originalName, data: await readStored('documents', doc.storedName) };
+}
+
+// Mood check-ins: a short list of the patient's own notes. Kept apart from the medical record (never on the passport).
+const presentMood = (m) => ({ mood: m.mood, note: m.note ?? '', at: m.at });
+export async function listMoods(user) {
+  const p = await load(user.patientId);
+  return [...(p.moodNotes ?? [])].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 14).map(presentMood);
+}
+export async function addMood(user, v) {
+  const p = await load(user.patientId);
+  const entry = { _id: newId(), mood: v.mood, ...(v.note ? { note: v.note } : {}), at: new Date() };
+  const next = await commit(p, { set: { moodNotes: [...(p.moodNotes ?? []), entry].slice(-MOOD_KEEP) } });
+  return presentMood(next.moodNotes[next.moodNotes.length - 1]);
 }

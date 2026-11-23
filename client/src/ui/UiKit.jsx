@@ -7,6 +7,13 @@ import { Skeleton, EmptyState, ErrorState, Toast } from './Feedback.jsx';
 import { Modal, Tooltip } from './Overlay.jsx';
 import { Table, ProgressRing, Timeline, Tabs } from './Data.jsx';
 import EcgTrace from './EcgTrace.jsx';
+import HeartHero from './HeartHero.jsx';
+import GaugeArc from './GaugeArc.jsx';
+import EcgLine from './EcgLine.jsx';
+import VitalTile from './VitalTile.jsx';
+import PillNav from './PillNav.jsx';
+import MoodChips from './MoodChips.jsx';
+import CalloutLabel from './CalloutLabel.jsx';
 import Sparkline from './Sparkline.jsx';
 import Icon, { ICON_NAMES } from './icons.jsx';
 import { ROLES } from './roles.js';
@@ -18,6 +25,9 @@ export default function UiKit() {
   const [role, setRole] = useState('patient');
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('a');
+  const [mood, setMood] = useState('');
+  const [nav, setNav] = useState('emergency');
+  const [bpm, setBpm] = useState(78);
   return (
     <div data-role={role} data-theme={dark ? 'dark' : 'light'} className="paper-bg min-h-screen p-4 text-ink sm:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -46,6 +56,29 @@ export default function UiKit() {
           </div>
           <div className="mt-3 flex items-center gap-4"><Sparkline values={[110, 114, 121, 119, 126, 124, 130]} /><ProgressRing fraction={0.6} tone="high" label="36 minutes left">36m</ProgressRing></div>
         </Panel>
+
+        <Panel title="Heart, gauge and live vitals (simulated)">
+          <div className="grid items-center gap-6 md:grid-cols-2">
+            <div className="mx-auto h-64 w-64"><HeartHero bpm={bpm} /></div>
+            <div className="space-y-3">
+              <GaugeArc value={bpm} />
+              <label className="flex items-center gap-3 text-sm">Heart rate<input type="range" min="40" max="160" value={bpm} onChange={(e) => setBpm(Number(e.target.value))} className="min-h-[44px] flex-1" /></label>
+              <EcgLine bpm={bpm} />
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <VitalTile label="Heart rate" value={bpm} unit="bpm" status={bpm > 100 || bpm < 60 ? 'warning' : 'normal'} values={[70, 74, 72, 80, 78, bpm]} simulated />
+            <VitalTile label="R-R interval" value={Math.round(60000 / bpm)} unit="ms" status="normal" simulated />
+            <VitalTile label="Signal quality" value="Good" status="normal" simulated />
+          </div>
+        </Panel>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Panel title="Mood check-in"><MoodChips value={mood} onChange={setMood} /></Panel>
+          <Panel title="Hologram with callout">
+            <div className="relative mx-auto h-64 w-full max-w-xs"><HeartHero bpm={bpm} variant="holo" /><CalloutLabel from={[40, 50]} side="left" top={8} tone="warning" title="Rate above range">Simulated example</CalloutLabel></div>
+          </Panel>
+        </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <Panel title="Form">
@@ -80,6 +113,7 @@ export default function UiKit() {
         </Modal>
 
         <Panel title="Icons"><div className="flex flex-wrap gap-4">{ICON_NAMES.map((n) => <span key={n} className="flex w-24 flex-col items-center gap-1 text-xs text-muted"><Icon name={n} size={24} className="text-ink" />{n}</span>)}</div></Panel>
+        <PillNav value={nav} onChange={setNav} items={[{ id: 'emergency', label: 'Emergency', icon: 'heart-pulse' }, { id: 'profile', label: 'Profile', icon: 'user' }, { id: 'passport', label: 'Passport', icon: 'info' }]} />
         <div className="flex gap-6 text-sm"><span className="flex items-center gap-2"><EcgTrace state="live" />Connected</span><span className="flex items-center gap-2"><EcgTrace state="connecting" />Reconnecting</span><span className="flex items-center gap-2"><EcgTrace state="offline" />Offline</span></div>
       </div>
     </div>

@@ -47,7 +47,7 @@ export function createPresenterKeyGuard({ env = process.env } = {}) {
  * attachSimulation({ authorizeSubscribe }), so live vitals are never public by accident.
  */
 export function defaultAuthorizeSubscribe({ env = process.env } = {}) {
-  // eslint-disable-next-line no-unused-vars
+   
   return async function authorizeSubscribe(_socket, _patientId) {
     return !isProduction(env)
   }

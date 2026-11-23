@@ -167,7 +167,7 @@ export function createDetectionRouter(service, { guard = allow, presenterGuard =
     }
   })
 
-  // eslint-disable-next-line no-unused-vars
+   
   router.use((err, _req, res, _next) => {
     res.status(err.status ?? 500).json({ error: err.status ? err.message : 'Internal error' })
     if (!err.status) console.error('[detection]', err)

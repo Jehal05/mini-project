@@ -89,7 +89,7 @@ export function createResponseRouter({ service, ambulances, discovery, access })
   router.use('/response', hospital)
 
   // Errors thrown here carry a status; send them in the same shape as the rest of the API.
-  // eslint-disable-next-line no-unused-vars
+   
   router.use((err, _req, res, next) => {
     if (err?.status && !err.expose && err.name !== 'ApiError') return res.status(err.status).json({ error: { code: err.code ?? (err.status === 404 ? 'NOT_FOUND' : 'ERROR'), message: err.message } })
     return next(err)

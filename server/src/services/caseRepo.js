@@ -96,6 +96,18 @@ export const listForHospital = (hospitalId) =>
     ],
   }).lean();
 
+// Doctor screen: the active cases assigned to one doctor.
+export const listForDoctor = (doctorId) =>
+  EmergencyCase.find({ doctor: doctorId, status: { $in: ACTIVE_STATUSES } }).lean();
+
+// Dev-only demo login picker: every doctor with their hospital's name.
+export async function listAllDoctors() {
+  const docs = await Doctor.find({}).sort({ name: 1 }).lean();
+  const hospitals = await Hospital.find({ _id: { $in: docs.map((d) => d.hospital) } }, { name: 1 }).lean();
+  const names = new Map(hospitals.map((h) => [String(h._id), h.name]));
+  return docs.map((d) => ({ ...d, hospitalName: names.get(String(d.hospital)) ?? null }));
+}
+
 export const listPendingForSweep = () =>
   EmergencyCase.find({ status: 'pending', allHospitalsBusy: { $ne: true }, 'notifiedHospitals.0': { $exists: true } }).lean();
 

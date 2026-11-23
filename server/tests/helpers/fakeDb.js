@@ -119,6 +119,11 @@ export const markAllBusy = async (id, now) => {
   return true;
 };
 
+export const listForDoctor = async (did) =>
+  [...db.cases.values()].filter((c) => c.doctor && sid(c.doctor) === sid(did) && ACTIVE_STATUSES.includes(c.status)).map(clone);
+export const listAllDoctors = async () =>
+  [...db.doctors.values()].map((d) => ({ ...clone(d), hospitalName: db.hospitals.get(sid(d.hospital))?.name ?? null }));
+
 export const listForHospital = async (hid) =>
   [...db.cases.values()]
     .filter(

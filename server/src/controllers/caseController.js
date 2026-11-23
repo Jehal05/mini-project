@@ -49,3 +49,13 @@ export const demoEmergency = asyncHandler(async (req, res) => {
   const result = await notifyHospitals(created.caseId);
   res.status(201).json({ ...created, ...result, simulated: true });
 });
+
+// ---- Doctor screen ----
+export const doctorCases = asyncHandler(async (req, res) => {
+  if (req.params.id !== req.doctor.doctorId) throw httpError(403, 'You can only view your own cases');
+  res.json(await cases.listDoctorCases(req.doctor.doctorId));
+});
+export const doctorLogins = asyncHandler(async (req, res) => {
+  if (env.nodeEnv === 'production') throw httpError(404, 'Not found');
+  res.json({ results: await cases.listDoctorLogins() });
+});

@@ -230,3 +230,29 @@ export async function listHospitalDoctors(hospitalId) {
 }
 
 export const noAnswerSeconds = () => env.noAnswerTimeoutSeconds;
+
+// Doctor screen: only the cases assigned to this doctor, most urgent first.
+export async function listDoctorCases(doctorId, { now = Date.now() } = {}) {
+  const doctor = await repo.getDoctor(doctorId);
+  if (!doctor) throw httpError(404, 'Doctor not found');
+  const open = await repo.listForDoctor(doctorId);
+  const hospital = await repo.getHospital(doctor.hospital);
+  const config = configFromEnv(env.priorityWeights, { waitCapMin: env.priorityWaitCapMin, distanceCapKm: env.priorityDistanceCapKm });
+  const origin = hospital?.location?.coordinates ? { lat: hospital.location.coordinates[1], lng: hospital.location.coordinates[0] } : null;
+  const prioritized = prioritizeCases(open, { origin, now, config });
+  const results = await Promise.all(prioritized.map(async (x) => ({
+    ...(await buildCasePayload(x.case, x.case.hospital)),
+    priority: { ...x.priority, config },
+  })));
+  return {
+    doctor: { id: sid(doctor._id), name: doctor.name, specialty: doctor.specialty, hospitalId: sid(doctor.hospital), hospitalName: hospital?.name ?? null },
+    count: results.length,
+    results,
+  };
+}
+
+// Dev-only: who can the demo login pick? (The route returns 404 in production.)
+export async function listDoctorLogins() {
+  const docs = await repo.listAllDoctors();
+  return docs.map((d) => ({ id: sid(d._id), name: d.name, specialty: d.specialty, hospitalId: sid(d.hospital), hospitalName: d.hospitalName }));
+}

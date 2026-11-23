@@ -1,4 +1,5 @@
 // Features 45, 47, 48, 49 on screen: where the search is, who was alerted and who has seen it, and cancel.
+import { Link, useInRouterContext } from 'react-router-dom'
 import { ESCALATION } from '@shared/emergency.js'
 import { Badge, Button, Card } from '../../design/index.js'
 import { CallLinks } from './CallLinks.jsx'
@@ -27,6 +28,8 @@ function Search({ c, offsetMs }) {
 }
 
 export function CaseStatus({ caseView: c, offsetMs = 0, onCancelRequest }) {
+  const inRouter = useInRouterContext()
+  const trackTo = `/patient/emergency/${c.id}`
   const tone = STATUS_TONE[c.status]
   const unresolved = c.status === 'unresolved'
   const searching = c.status === 'searching'
@@ -57,6 +60,7 @@ export function CaseStatus({ caseView: c, offsetMs = 0, onCancelRequest }) {
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <CallLinks size={unresolved ? 'lg' : 'md'} />
+        {inRouter ? <Link className="text-sm font-medium text-link underline" to={trackTo}>Follow the hospital response</Link> : <a className="text-sm font-medium text-link underline" href={trackTo}>Follow the hospital response</a>}
         <Button variant="secondary" className="ml-auto" onClick={onCancelRequest}>
           Cancel emergency…
         </Button>

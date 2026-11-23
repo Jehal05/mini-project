@@ -1,0 +1,37 @@
+.ht-legacy .mini-map { margin: 0.5rem 0; }
+.ht-legacy .mini-map-bg { fill: rgba(255, 255, 255, 0.04); stroke: var(--surface-border); }
+.ht-legacy .mini-map-label { fill: var(--text); font-size: 12px; paint-order: stroke; stroke: var(--bg-from); stroke-width: 3px; }
+.ht-legacy .golden { list-style: none; margin: 0.5rem 0; padding: 0; display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.ht-legacy .golden-item { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.1rem; }
+.ht-legacy .golden-over { border-color: var(--critical); background: rgba(239, 68, 68, 0.14); }
+.ht-legacy .golden-clock { font-size: 1.6rem; font-weight: 700; }
+.ht-legacy .golden-over .golden-clock { color: #fca5a5; }
+.ht-legacy .golden-label { color: var(--text-2); font-size: 0.85rem; }
+.ht-legacy .timeline { margin: 0.5rem 0; padding-left: 1.1rem; display: grid; gap: 0.25rem; }
+.ht-legacy .timeline time { color: var(--text-2); margin-right: 0.5rem; }
+.ht-legacy .queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.ht-legacy .queue-item { background: var(--surface); border: 1px solid var(--surface-border); border-left-width: 6px; border-radius: 12px; padding: 0.9rem 1rem; display: grid; gap: 0.5rem; }
+.ht-legacy .queue-critical { border-left-color: var(--critical); }
+.ht-legacy .queue-urgent { border-left-color: var(--warning); }
+.ht-legacy .queue-head { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+.ht-legacy .countdown { font-variant-numeric: tabular-nums; font-weight: 700; }
+.ht-legacy .countdown-late { color: #fca5a5; }
+.ht-legacy .takeover { position: fixed; inset: 0; z-index: 1000; background: #7f1d1d; color: #fff; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow: auto; }
+.ht-legacy .takeover-card { width: min(720px, 100%); display: grid; gap: 1rem; }
+.ht-legacy .takeover h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); margin: 0; }
+.ht-legacy .takeover .btn { font-size: 1.1rem; padding: 0.9rem 1.4rem; }
+.ht-legacy .takeover .btn-secondary { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.5); }
+.ht-legacy .takeover .btn-accept { background: #fff; color: #7f1d1d; font-weight: 700; }
+@media (prefers-reduced-motion: no-preference) { .ht-legacy .takeover { animation: takeover-pulse 1.4s ease-in-out infinite; } }
+@keyframes takeover-pulse { 0%, 100% { background: #7f1d1d; } 50% { background: #b91c1c; } }
+.ht-legacy .steps { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.35rem; }
+.ht-legacy .steps li { display: flex; gap: 0.6rem; align-items: center; color: var(--text-2); }
+.ht-legacy .steps .step-done { color: var(--normal); }
+.ht-legacy .steps .step-now { color: var(--text); font-weight: 700; }
+.ht-legacy .big-actions { display: grid; gap: 0.75rem; }
+.ht-legacy .big-actions .btn { font-size: 1.2rem; padding: 1.1rem; min-height: 64px; width: 100%; }
+.ht-legacy .emergency-calls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ht-legacy .call-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0.6rem 1.1rem; border-radius: 10px; background: var(--critical-strong); color: #fff; font-weight: 700; text-decoration: none; }
+.ht-legacy .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.25rem 0; }
+.ht-legacy .chip-ok { border-color: var(--normal); }
+.ht-legacy .chip-no { color: var(--text-2); }

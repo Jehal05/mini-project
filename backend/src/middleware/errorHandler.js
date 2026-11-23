@@ -5,7 +5,7 @@ export function notFound(req, _res, next) {
   next(ApiError.notFound(`No route for ${req.method} ${req.path}`));
 }
 
-// eslint-disable-next-line no-unused-vars
+ 
 export function errorHandler(err, _req, res, _next) {
   let e = err;
   if (err?.type === 'entity.parse.failed') e = ApiError.badRequest('Malformed JSON body');

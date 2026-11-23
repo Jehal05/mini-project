@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { VITAL_KEYS, formatVital } from '@shared/vitals.js'
 import { Badge, Button, Card, MedicalBackground, SimulatedNotice } from '../design/index.js'
 import { PortalNav } from '../components/PortalNav.jsx'
-import { monitoringApi, presenterKey } from '../features/monitoring/api.js'
+import { monitoringApi } from '../features/monitoring/api.js'
 import { detectionApi } from '../features/detection/api.js'
 import { RiskGauge } from '../features/detection/RiskGauge.jsx'
 import { LEVEL_TEXT, LEVEL_TONE } from '../features/detection/severity.js'
@@ -20,8 +20,6 @@ export default function PresenterPanel() {
   const [scenarios, setScenarios] = useState([])
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState(null)
-  const [needKey, setNeedKey] = useState(null) // { patient, scenario } waiting for a key
-  const [keyInput, setKeyInput] = useState('')
   const [detection, setDetection] = useState({}) // patientId -> detection status
 
   const refresh = useCallback(
@@ -52,13 +50,7 @@ export default function PresenterPanel() {
       const snap = await monitoringApi.setScenario(patient.id, scenario)
       setPatients((list) => list.map((p) => (p.id === patient.id ? { ...p, live: snap } : p)))
     } catch (e) {
-      if (e.code === 'PRESENTER_KEY_REQUIRED') {
-        presenterKey.set('') // a stored key was wrong or missing
-        setNeedKey({ patient, scenario })
-        setError(null)
-      } else {
-        setError(e.message)
-      }
+      setError(e.message) // access is by login now (central admin), so there is no key to ask for
     } finally {
       setBusy(null)
     }
@@ -80,39 +72,6 @@ export default function PresenterPanel() {
             <p className="text-sm">{error}</p>
           </Card>
         )}
-        {needKey && (
-          <Card status="info" className="mt-4" title="Presenter key required">
-            <form
-              className="flex flex-wrap items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault()
-                presenterKey.set(keyInput.trim())
-                const pending = needKey
-                setNeedKey(null)
-                setKeyInput('')
-                choose(pending.patient, pending.scenario)
-              }}
-            >
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-fg-muted">This server protects scenario switching. Enter the key from PRESENTER_KEY.</span>
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  className="h-10 w-64 rounded-xl border border-line bg-surface-strong px-3 text-fg"
-                  aria-label="Presenter key"
-                  required
-                />
-              </label>
-              <Button type="submit">Unlock and switch</Button>
-              <Button variant="ghost" onClick={() => setNeedKey(null)}>
-                Cancel
-              </Button>
-            </form>
-          </Card>
-        )}
-
         <div className="mt-6 space-y-4">
           {patients.map((p) => {
             const live = p.live

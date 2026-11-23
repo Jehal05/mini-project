@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAccessToken } from '../api/http.js';
 import { AuthContext } from '../auth/AuthContext.jsx';
+vi.mock('../features/response/useIncoming.js', () => ({ default: () => ({ items: [], loading: false, error: '', offsetMs: 0, reload: () => {} }) })); // the live queue has its own tests
 vi.mock('../features/admin/UnresolvedAlerts.jsx', () => ({ default: () => null })); // has its own test; keeps this file's fake API to the hospital routes
 import AdminLayout from '../features/admin/AdminLayout.jsx';
 import HospitalLayout from '../features/hospital/HospitalLayout.jsx';

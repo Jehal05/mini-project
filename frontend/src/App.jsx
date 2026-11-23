@@ -21,6 +21,12 @@ const AdmissionsPage = lazy(() => import('./features/hospital/pages/AdmissionsPa
 const BedsPage = lazy(() => import('./features/hospital/pages/BedsPage.jsx'))
 const DashboardPage = lazy(() => import('./features/hospital/pages/DashboardPage.jsx'))
 const DoctorsPage = lazy(() => import('./features/hospital/pages/DoctorsPage.jsx'))
+const IncomingPage = lazy(() => import('./features/response/pages/IncomingPage.jsx'))
+const CasePage = lazy(() => import('./features/response/pages/CasePage.jsx'))
+const CrewPage = lazy(() => import('./features/response/pages/CrewPage.jsx'))
+const AmbulancesPage = lazy(() => import('./features/response/pages/AmbulancesPage.jsx'))
+const TrackPage = lazy(() => import('./features/response/pages/TrackPage.jsx'))
+const HospitalFinderPage = lazy(() => import('./features/response/pages/HospitalFinderPage.jsx'))
 const EdPage = lazy(() => import('./features/hospital/pages/EdPage.jsx'))
 const HistoryPage = lazy(() => import('./features/hospital/pages/HistoryPage.jsx'))
 import './features/hospital/hospital.css'
@@ -97,6 +103,8 @@ export default function App() {
 
           <Route element={<RequireAuth roles={['patient']} />}>
             <Route path="/patient" element={<PatientHome />} />
+            <Route path="/patient/emergency/:caseId?" element={<TrackPage />} />
+            <Route path="/patient/hospitals" element={<HospitalFinderPage />} />
             <Route path="/patient/profile" element={<ProfileLayout />}>
               <Route index element={<Navigate to="personal" replace />} />
               <Route path="personal" element={<PersonalPage />} />
@@ -111,6 +119,10 @@ export default function App() {
             <Route path="/p/:token/full" element={<FullRecordPage />} />
             <Route path="/hospital" element={<HospitalLayout />}>
               <Route index element={<DashboardPage />} />
+              <Route path="incoming" element={<IncomingPage />} />
+              <Route path="emergencies/:id" element={<CasePage />} />
+              <Route path="ambulances" element={<AmbulancesPage />} />
+              <Route path="crew" element={<CrewPage />} />
               <Route path="admissions" element={<AdmissionsPage />} />
               <Route path="admissions/:id" element={<AdmissionPage />} />
               <Route path="beds" element={<BedsPage />} />

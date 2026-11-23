@@ -265,22 +265,13 @@ describe('Presenter detection summary (Phase 6)', () => {
   })
 })
 
-describe('Presenter key (review 3)', () => {
-  it('asks for the key when the server requires it, then retries the switch', async () => {
-    api.setScenario
-      .mockRejectedValueOnce(Object.assign(new Error('Presenter key required'), { status: 401, code: 'PRESENTER_KEY_REQUIRED' }))
-      .mockResolvedValueOnce({ ...CARDIAC })
+describe('Presenter panel access (central admin by login)', () => {
+  it('shows the error when a switch fails and never asks for a key', async () => {
+    api.setScenario.mockRejectedValueOnce(Object.assign(new Error('Admin access required'), { status: 403 }))
     renderAt('/presenter', <PresenterPanel />)
     const group = await screen.findByRole('group', { name: 'Scenario for Rahul Sharma' })
     await userEvent.click(within(group).getByRole('button', { name: 'Cardiac event' }))
-
-    const input = await screen.findByLabelText('Presenter key')
-    await userEvent.type(input, 'demo-key')
-    await userEvent.click(screen.getByRole('button', { name: 'Unlock and switch' }))
-
-    expect(keyStore.set).toHaveBeenLastCalledWith('demo-key')
-    await waitFor(() => expect(api.setScenario).toHaveBeenCalledTimes(2))
-    expect(api.setScenario).toHaveBeenLastCalledWith('id1', 'cardiac_event')
+    expect(await screen.findByText('Admin access required')).toBeInTheDocument()
     expect(screen.queryByLabelText('Presenter key')).not.toBeInTheDocument()
   })
 })

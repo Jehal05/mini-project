@@ -9,7 +9,8 @@
     "dev:api": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node src/seed/seed.js",
-    "test": "vitest run && vitest run -c vitest.identity.config.js"
+    "test": "vitest run && vitest run -c vitest.identity.config.js",
+    "lint": "eslint src test"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -23,9 +24,13 @@
     "mongoose": "^9.12.2",
     "multer": "^2.5.0",
     "socket.io": "^4.8.4",
+    "web-push": "^4.0.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
     "mongodb-memory-server": "^11.3.0",
     "socket.io-client": "^4.8.4",
     "supertest": "^7.3.2",

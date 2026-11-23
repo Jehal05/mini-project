@@ -3,11 +3,11 @@ export default function EmergencyBanner({ emergency, showDisclaimer = true }) {
   return (
     <div>
       {emergency && (
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-red-700 px-4 py-2 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-ui bg-critical px-4 py-2 text-white">
           <span className="font-semibold">Emergency mode: if someone needs help now, call immediately.</span>
           <div className="flex gap-2">
-            <a href="tel:112" className="rounded bg-white px-3 py-1 font-bold text-red-700">Call 112</a>
-            <a href="tel:108" className="rounded bg-white px-3 py-1 font-bold text-red-700">Call 108</a>
+            <a href="tel:112" className="inline-flex min-h-touch items-center rounded-ui bg-white px-3 font-bold text-[rgb(179_38_30)]">Call 112</a>
+            <a href="tel:108" className="inline-flex min-h-touch items-center rounded-ui bg-white px-3 font-bold text-[rgb(179_38_30)]">Call 108</a>
           </div>
         </div>
       )}

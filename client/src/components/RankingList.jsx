@@ -1,24 +1,20 @@
 import { useState } from 'react';
 import CapabilityCard from './CapabilityCard.jsx';
+import { Card } from '../ui/Surface.jsx';
+import { EmptyState } from '../ui/Feedback.jsx';
 
-const PARTS = [
-  ['distance', 'Distance'],
-  ['capability', 'Capability'],
-  ['load', 'Load'],
-];
+const PARTS = [['distance', 'Distance'], ['capability', 'Capability'], ['load', 'Load']];
 
 function Breakdown({ breakdown }) {
   return (
-    <div className="mt-2 space-y-1 text-xs">
+    <div className="mt-3 space-y-2 text-xs">
       {PARTS.map(([key, label]) => (
         <div key={key}>
-          <div className="flex justify-between">
-            <span>{label} (weight {Math.round(breakdown[key].weight * 100)}%)</span>
-            <span>{breakdown[key].score} → {breakdown[key].points} pts</span>
+          <div className="tnum flex justify-between text-muted">
+            <span>{label}, weighted {Math.round(breakdown[key].weight * 100)}%</span>
+            <span>{breakdown[key].score} of 100 gives {breakdown[key].points} pts</span>
           </div>
-          <div className="h-1.5 rounded bg-slate-200">
-            <div className="h-1.5 rounded bg-blue-600" style={{ width: `${breakdown[key].score}%` }} />
-          </div>
+          <div className="h-1.5 rounded-full bg-line"><div className="h-1.5 rounded-full bg-accent" style={{ width: `${breakdown[key].score}%` }} /></div>
         </div>
       ))}
     </div>
@@ -28,28 +24,22 @@ function Breakdown({ breakdown }) {
 function Item({ h, selected, onSelect }) {
   const [open, setOpen] = useState(false);
   return (
-    <li className={`rounded-lg bg-white p-3 shadow ${selected ? 'ring-2 ring-blue-500' : ''}`}>
-      <button className="w-full text-left" onClick={() => { onSelect(h.id); setOpen((o) => !o); }}>
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <div className="font-semibold">#{h.rank} {h.name}</div>
-            <div className="text-xs text-slate-600">
-              {h.area} · {h.distanceKm} km
-              {h.eta && ` · ~${Math.round(h.eta.durationMin)} min by road${h.eta.etaSource === 'estimate' ? ' (estimate)' : ''}`}
+    <li>
+      <Card as="div" className={`p-3 ${selected ? 'ring-2 ring-accent' : ''}`}>
+        <button type="button" aria-expanded={open} className="w-full min-h-touch text-left" onClick={() => { onSelect(h.id); setOpen((o) => !o); }}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold text-ink"><span className="tnum text-accent">{h.rank}.</span> {h.name}</p>
+              <p className="tnum text-xs text-muted">
+                {h.area}, {h.distanceKm} km away
+                {h.eta && `, about ${Math.round(h.eta.durationMin)} min by road${h.eta.etaSource === 'estimate' ? ' (estimate)' : ''}`}
+              </p>
             </div>
+            <p className="tnum text-right"><span className="block text-xl font-semibold text-ink">{h.score}</span><span className="text-xs text-muted">match score</span></p>
           </div>
-          <div className="text-right">
-            <div className="text-lg font-bold">{h.score}</div>
-            <div className="text-[10px] uppercase text-slate-500">score</div>
-          </div>
-        </div>
-      </button>
-      {open && (
-        <>
-          <Breakdown breakdown={h.breakdown} />
-          <CapabilityCard hospital={h} />
-        </>
-      )}
+        </button>
+        {open && (<><Breakdown breakdown={h.breakdown} /><CapabilityCard hospital={h} /></>)}
+      </Card>
     </li>
   );
 }
@@ -60,18 +50,19 @@ export default function RankingList({ results, selectedId, onSelect }) {
   const alternatives = results.filter((r) => !r.notifyFirst);
 
   if (!results.length) {
-    return <p className="rounded bg-white p-4 text-sm text-slate-600 shadow">No hospitals match. Try a larger radius or fewer filters.</p>;
+    return <Card><EmptyState icon="map-pin" title="No hospitals match">Try a larger radius or turn off some filters.</EmptyState></Card>;
   }
 
   return (
-    <div className="space-y-4">
-      <section>
-        <h3 className="mb-1 text-sm font-bold uppercase text-red-700">Notified first (top {top.length})</h3>
+    <div className="space-y-5">
+      <section aria-labelledby="notified-first">
+        <h3 id="notified-first" className="font-title mb-2 text-lg font-semibold text-critical">Alerted first ({top.length})</h3>
         <ul className="space-y-2">{top.map((h) => <Item key={h.id} h={h} selected={h.id === selectedId} onSelect={onSelect} />)}</ul>
       </section>
       {alternatives.length > 0 && (
-        <section>
-          <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Alternatives (next in line if a hospital rejects or does not answer)</h3>
+        <section aria-labelledby="alternatives">
+          <h3 id="alternatives" className="font-title mb-1 text-lg font-semibold text-ink">Next in line</h3>
+          <p className="mb-2 text-xs text-muted">These are alerted if a hospital says no or does not answer.</p>
           <ul className="space-y-2">{alternatives.map((h) => <Item key={h.id} h={h} selected={h.id === selectedId} onSelect={onSelect} />)}</ul>
         </section>
       )}

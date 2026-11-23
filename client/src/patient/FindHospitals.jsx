@@ -7,6 +7,7 @@ import ManualLocationPicker from '../components/ManualLocationPicker.jsx';
 import HospitalFilters from '../components/HospitalFilters.jsx';
 import HospitalMap from '../components/HospitalMap.jsx';
 import RankingList from '../components/RankingList.jsx';
+import { ErrorState } from '../ui/Feedback.jsx';
 
 const DEFAULT_FILTERS = { q: '', cathLab: false, cardiologist: false, minCcuBeds: '', radiusKm: 10, cardiacOnly: true };
 
@@ -76,18 +77,18 @@ export default function FindHospitals() {
     body = <LocationGate geo={geo} onUseGps={(p) => chooseLocation({ lat: p.lat, lng: p.lng, source: 'gps' })} onManual={() => setManual(true)} />;
   } else {
     body = (
-      <div className="grid gap-4 p-4 lg:grid-cols-[26rem_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[26rem_1fr]">
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-sm text-muted">
             <span>Location: {location.source === 'gps' ? 'your device' : 'chosen on map'}</span>
-            <button className="text-blue-700 underline" onClick={() => setManual(true)}>Change</button>
+            <button type="button" className="min-h-touch px-2 font-semibold text-accent underline" onClick={() => setManual(true)}>Change</button>
           </div>
           <HospitalFilters filters={filters} onChange={setFilters} emergency={emergency} onEmergencyChange={changeEmergency} />
-          {loading && <p className="text-sm text-slate-500">Updating…</p>}
-          {error && <p className="rounded bg-red-50 p-2 text-sm text-red-800">{error}</p>}
+          <p role="status" aria-live="polite" className="text-sm text-muted">{loading ? 'Updating the list' : ''}</p>
+          {error && <ErrorState title="Could not load hospitals">{error}</ErrorState>}
           <RankingList results={data.results} selectedId={selectedId} onSelect={setSelectedId} />
         </div>
-        <div className="h-[32rem] lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)]">
+        <div className="h-[32rem] lg:sticky lg:top-20 lg:h-[calc(100vh-9rem)]">
           <HospitalMap origin={location} results={data.results} selectedId={selectedId} onSelect={setSelectedId} radiusKm={Number(filters.radiusKm)} />
         </div>
       </div>
@@ -95,7 +96,7 @@ export default function FindHospitals() {
   }
 
   return (
-    <div>
+    <div className="space-y-3">
       <EmergencyBanner emergency={emergency} showDisclaimer={false} />
       {body}
     </div>

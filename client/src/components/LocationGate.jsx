@@ -1,4 +1,8 @@
 import { GEO_MESSAGES } from '../lib/geo.js';
+import Button from '../ui/Button.jsx';
+import { Card } from '../ui/Surface.jsx';
+import { ErrorState } from '../ui/Feedback.jsx';
+import Icon from '../ui/icons.jsx';
 
 // Feature 51. Explains why location is needed BEFORE the browser prompt, then handles every outcome.
 export default function LocationGate({ geo, onUseGps, onManual }) {
@@ -6,39 +10,34 @@ export default function LocationGate({ geo, onUseGps, onManual }) {
   const failed = ['denied', 'timeout', 'unavailable', 'unsupported'].includes(status);
 
   return (
-    <div className="mx-auto mt-10 max-w-lg rounded-lg bg-white p-6 shadow">
-      <h2 className="text-xl font-bold">Find hospitals near you</h2>
-      <p className="mt-2 text-sm text-slate-600">
+    <Card className="mx-auto mt-4 max-w-lg p-6">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-accent/10 text-accent"><Icon name="map-pin" size={24} /></span>
+      <h2 className="font-title mt-3 text-2xl font-semibold">Find hospitals near you</h2>
+      <p className="mt-2 text-sm text-muted">
         We use your location only to find the nearest hospitals that can treat a cardiac emergency and to
-        estimate how long help will take. It is not stored by this page.
+        estimate how long help will take. This page does not store it.
       </p>
 
       {status === 'granted' && inaccurate && (
-        <div className="mt-4 rounded bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="mt-4 rounded-ui border border-moderate bg-moderate-soft p-3 text-sm text-ink">
           {GEO_MESSAGES.inaccurate} (accuracy about {Math.round(position.accuracy / 1000)} km)
-          <div className="mt-2 flex gap-2">
-            <button className="rounded bg-slate-200 px-3 py-1" onClick={() => onUseGps(position)}>Use it anyway</button>
-            <button className="rounded bg-blue-600 px-3 py-1 text-white" onClick={onManual}>Drop a pin</button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => onUseGps(position)}>Use it anyway</Button>
+            <Button onClick={onManual}>Drop a pin</Button>
           </div>
         </div>
       )}
 
-      {failed && <p className="mt-4 rounded bg-red-50 p-3 text-sm text-red-800">{GEO_MESSAGES[status]}</p>}
+      {failed && <div className="mt-4"><ErrorState title="Location not available">{GEO_MESSAGES[status]}</ErrorState></div>}
 
       <div className="mt-5 flex flex-wrap gap-2">
         {status !== 'unsupported' && (
-          <button
-            className="rounded bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
-            disabled={status === 'requesting'}
-            onClick={request}
-          >
-            {status === 'requesting' ? 'Getting your location…' : failed ? 'Try again' : 'Share my location'}
-          </button>
+          <Button size="lg" busy={status === 'requesting'} onClick={request}>
+            {status === 'requesting' ? 'Getting your location' : failed ? 'Try again' : 'Share my location'}
+          </Button>
         )}
-        <button className="rounded border border-slate-300 px-4 py-2" onClick={onManual}>
-          Choose location manually
-        </button>
+        <Button size="lg" variant="secondary" onClick={onManual}>Choose location manually</Button>
       </div>
-    </div>
+    </Card>
   );
 }

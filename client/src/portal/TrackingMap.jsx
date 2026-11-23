@@ -23,13 +23,13 @@ export default function TrackingMap({ trip, height = 'h-72' }) {
   const done = trip.stage === 'at_hospital';
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-3 rounded bg-slate-900 px-3 py-2 text-white" role="status" aria-live="polite">
+      <div className="flex flex-wrap gap-3 rounded-ui bg-ink px-3 py-2 text-surface" role="status" aria-live="polite">
         <span className="text-lg font-bold">{done ? 'Arrived' : `Arriving in ${formatEta(trip.etaMinutes)}`}</span>
         {!done && <span className="text-sm opacity-80">{trip.remainingKm} km to {trip.activeLeg === 0 ? 'patient' : 'hospital'}</span>}
         {!done && trip.activeLeg === 0 && <span className="text-sm opacity-80">Hospital in about {formatEta(trip.etaHospitalMinutes)}</span>}
         {trip.legs[trip.activeLeg]?.etaSource === 'estimate' && <span className="text-xs opacity-70">Estimated, straight-line route</span>}
       </div>
-      <MapContainer center={ll(trip.legs[0].coordinates[0])} zoom={13} className={`${height} w-full rounded`}>
+      <MapContainer center={ll(trip.legs[0].coordinates[0])} zoom={13} className={`${height} w-full rounded-ui`}>
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Fit trip={trip} />
         {trip.legs.map((l, i) => (

@@ -3,7 +3,11 @@ import { getSocket, joinRoom } from '../lib/socket.js';
 import { EVENTS } from '../lib/events.js';
 import { fetchPublicTrip } from '../lib/crewApi.js';
 import { formatEta } from '../lib/stages.js';
-import StageTracker from './StageTracker.jsx';
+import PatientStepper from '../patient/PatientStepper.jsx';
+import { PATIENT_STEPS, patientStep } from '../lib/patientStages.js';
+import Icon from '../ui/icons.jsx';
+import { Card, Panel } from '../ui/Surface.jsx';
+import { EmptyState } from '../ui/Feedback.jsx';
 import TrackingMap from './TrackingMap.jsx';
 
 // Feature 67: what the patient (or family) sees. Joins the patient room and shows live status.
@@ -42,29 +46,46 @@ export default function PatientStatus() {
     };
   }, [patientId]);
 
-  const colors = { waiting: 'bg-amber-100 text-amber-900', accepted: 'bg-green-100 text-green-900', busy: 'bg-red-100 text-red-900' };
+  const step = patientStep({ caseStatus: status.kind === 'accepted' ? 'accepted' : 'pending', tripStage: trip?.stage });
+  const say = status.kind === 'busy' ? status.text : status.kind === 'accepted' && status.text ? status.text : PATIENT_STEPS[step].say;
+  const done = trip?.stage === 'at_hospital';
 
   return (
-    <div className="mx-auto mt-6 max-w-lg space-y-3 rounded-lg bg-white p-4 shadow">
-      <h2 className="text-lg font-bold">Emergency status</h2>
-      <label className="block text-sm">
-        Patient id (filled in by the demo emergency)
-        <input className="mt-1 w-full rounded border px-2 py-1 font-mono text-xs" value={patientId} onChange={(e) => setPatientId(e.target.value.trim())} />
-      </label>
-      {patientId && (
-        <div role="status" className={`rounded p-3 font-medium ${colors[status.kind]}`}>{status.text}</div>
+    <div className="mx-auto max-w-2xl space-y-4">
+      {!patientId ? (
+        <Card><EmptyState icon="heart-pulse" title="No emergency in progress">
+          When an alert is raised for you, its progress shows here. For this demo, ask the hospital screen to create a demo emergency.
+        </EmptyState></Card>
+      ) : (
+        <>
+          <Card className={`p-5 ${status.kind === 'busy' ? 'border-critical bg-critical-soft' : ''}`}>
+            <p role="status" aria-live="polite" className="font-title text-2xl leading-snug text-ink sm:text-3xl">{say}</p>
+            {trip && !done && (
+              <p className="tnum mt-4 flex items-baseline gap-2 text-ink">
+                <span className="text-4xl font-semibold text-accent">{formatEta(trip.etaMinutes)}</span>
+                <span className="text-sm text-muted">until the ambulance reaches {trip.activeLeg === 1 ? 'the hospital' : 'you'}</span>
+              </p>
+            )}
+            {trip && <p className="mt-1 text-sm text-muted">Ambulance {trip.ambulance?.vehicleNumber}{done ? ' has reached the hospital' : ''}</p>}
+          </Card>
+
+          <Panel title="Where things stand"><PatientStepper step={step} /></Panel>
+
+          {trip && <Panel title="Ambulance on the map"><TrackingMap trip={trip} /></Panel>}
+        </>
       )}
-      {trip && (
-        <div className="space-y-2">
-          <p className="font-semibold">Ambulance {trip.ambulance?.vehicleNumber}: {trip.stage === 'at_hospital' ? 'arrived at the hospital' : `arriving in ${formatEta(trip.etaMinutes)}`}</p>
-          <StageTracker stage={trip.stage} stageTimes={trip.stageTimes} />
-          <TrackingMap trip={trip} />
-        </div>
-      )}
-      <div className="flex gap-2">
-        <a href="tel:112" className="rounded bg-red-700 px-3 py-1 font-bold text-white">Call 112</a>
-        <a href="tel:108" className="rounded bg-red-700 px-3 py-1 font-bold text-white">Call 108</a>
+
+      <div className="grid grid-cols-2 gap-3">
+        <a href="tel:112" className="flex min-h-[3.5rem] items-center justify-center gap-2 rounded-ui bg-critical px-4 text-lg font-bold text-white"><Icon name="phone" size={20} />Call 112</a>
+        <a href="tel:108" className="flex min-h-[3.5rem] items-center justify-center gap-2 rounded-ui bg-critical px-4 text-lg font-bold text-white"><Icon name="phone" size={20} />Call 108</a>
       </div>
+
+      <details className="rounded-ui border border-line bg-surface p-3 text-sm">
+        <summary className="cursor-pointer font-semibold text-muted">Demo details</summary>
+        <label className="mt-2 block text-muted">Patient id (filled in by the demo emergency)
+          <input className="mt-1 min-h-touch w-full rounded-ui border border-line bg-surface px-2 text-xs text-ink" value={patientId} onChange={(e) => setPatientId(e.target.value.trim())} />
+        </label>
+      </details>
     </div>
   );
 }

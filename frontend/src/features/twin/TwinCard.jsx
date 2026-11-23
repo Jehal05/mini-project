@@ -8,7 +8,46 @@ import { TrendsPanel } from './TrendsPanel.jsx'
 import { VITAL_UNIT, compareAll, heartState, twinSummary } from './twinModel.js'
 import { formatVital } from '@shared/vitals.js'
 
-// TODO(Jehal): feature 93 (full risk score) is blocked on feature 18. Not built; see docs/phase4-twin.md.
+// Points that come from the current readings. Everything else in the breakdown comes from the health profile.
+const FROM_READINGS = /critical$|warning$|far from own baseline$|^Severity level/i
+
+/** Feature 93: the 0-100 score, split into what your profile adds and what your readings add. */
+export function RiskSummary({ risk }) {
+  if (!risk || typeof risk.score !== 'number') return null
+  const profile = risk.breakdown.filter((b) => !FROM_READINGS.test(b.factor))
+  const readings = risk.breakdown.filter((b) => FROM_READINGS.test(b.factor))
+  const total = (list) => list.reduce((n, b) => n + b.points, 0)
+  const group = (title, list) => (
+    <section aria-label={title}>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">{title} (+{Math.round(total(list))})</h3>
+      {list.length === 0 ? (
+        <p className="text-sm text-fg-muted">Nothing adds to the score here.</p>
+      ) : (
+        <ul className="mt-1 divide-y divide-line rounded-xl border border-line text-sm">
+          {list.map((b) => (
+            <li key={b.factor} className="flex justify-between gap-3 px-3 py-1.5">
+              <span>{b.factor}</span>
+              <span className="font-mono text-fg-muted">+{b.points}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+  return (
+    <div className="mt-4 space-y-3 border-t border-line pt-4" data-testid="twin-risk">
+      <h3 className="text-base font-semibold">
+        Cardiac risk score: <span className="font-mono">{risk.score}</span> out of 100 ({risk.label ?? risk.level})
+      </h3>
+      <div className="grid gap-3 md:grid-cols-2">
+        {group('From your health profile', profile)}
+        {group('From your readings now', readings)}
+      </div>
+      <p className="text-xs text-fg-muted">The gauge is in the detection panel. Add family history and conditions in your profile to make this more accurate. A demonstration, not a medical score.</p>
+    </div>
+  )
+}
+
 export function TwinCard({ patientId, live, baseline }) {
   const { status: detection } = useDetection(patientId)
   const rows = useMemo(() => compareAll(live, baseline), [live, baseline])
@@ -31,6 +70,8 @@ export function TwinCard({ patientId, live, baseline }) {
           <p className="mt-3 text-sm text-fg-muted">{summary.detection}</p>
         </div>
       </div>
+
+      <RiskSummary risk={detection?.risk} />
 
       <div className="mt-4 overflow-x-auto" role="region" tabIndex={0} aria-label="Usual and current readings">
         <table className="w-full min-w-[22rem] border-collapse text-sm">

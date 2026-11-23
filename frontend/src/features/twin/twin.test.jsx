@@ -37,6 +37,33 @@ beforeEach(() => {
   HTMLCanvasElement.prototype.getContext = () => null // no WebGL in the test browser: the 2D heart is used
 })
 
+describe('cardiac risk on the twin (feature 93)', () => {
+  const risk = { score: 41, level: 'moderate', label: 'Moderate', breakdown: [{ factor: 'Age 45', points: 5 }, { factor: 'Family cardiac history', points: 10 }, { factor: 'HR warning', points: 8 }, { factor: 'Severity level 1', points: 6 }] }
+
+  it('shows the score with what the profile adds and what the readings add', () => {
+    det.status = { level: 1, risk }
+    show({ live: steadyLive })
+    expect(screen.getByRole('heading', { name: /Cardiac risk score: 41 out of 100 \(Moderate\)/ })).toBeInTheDocument()
+    expect(screen.queryByRole('meter')).toBeNull() // one gauge on the page, in the detection panel
+    const profile = screen.getByRole('region', { name: 'From your health profile' })
+    expect(within(profile).getByText('Family cardiac history')).toBeInTheDocument()
+    expect(within(profile).getByText(/\(\+15\)/)).toBeInTheDocument()
+    expect(within(profile).queryByText('HR warning')).toBeNull()
+    const readings = screen.getByRole('region', { name: 'From your readings now' })
+    expect(within(readings).getByText('HR warning')).toBeInTheDocument()
+    expect(within(readings).getByText('Severity level 1')).toBeInTheDocument()
+  })
+
+  it('says so when the profile adds nothing, and shows nothing before a score exists', () => {
+    det.status = { level: 0, risk: { score: 0, level: 'low', label: 'Low', breakdown: [] } }
+    show({ live: steadyLive })
+    expect(within(screen.getByRole('region', { name: 'From your health profile' })).getByText('Nothing adds to the score here.')).toBeInTheDocument()
+    det.status = { level: 0 }
+    show({ live: steadyLive })
+    expect(screen.getAllByTestId('twin-risk')).toHaveLength(1) // the second card has none
+  })
+})
+
 describe('Digital Twin card (feature 91)', () => {
   it('shows usual vs now for all six vitals, in words, and the simulated label', async () => {
     show({ live: cardiacLive })

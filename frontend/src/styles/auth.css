@@ -28,7 +28,7 @@
 .ht-legacy :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 
 .ht-legacy .auth-bg, .ht-legacy .portal-bg, .ht-legacy .center-screen { min-height: 100vh; background: radial-gradient(1200px 600px at 20% -10%, #12306a55, transparent), linear-gradient(160deg, var(--bg-from), var(--bg-to)); }
-.ht-legacy .auth-bg { display: grid; place-items: center; padding: 1.5rem; }
+.ht-legacy .auth-bg { position: relative; overflow: hidden; display: grid; place-items: center; padding: 1.5rem; }
 .ht-legacy .center-screen { display: grid; place-items: center; color: var(--text-2); }
 
 .ht-legacy .glass-card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(14px); }
@@ -98,3 +98,7 @@
 .ht-legacy .pager { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; }
 
 @media (prefers-reduced-motion: reduce) { .ht-legacy * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* Decorative 3D DNA strand (login). Hidden on small screens so the form always has room. */
+.ht-legacy .auth-dna, .auth-dna { position: absolute; inset: 0 auto 0 4%; width: 140px; opacity: 0.55; pointer-events: none; }
+@media (max-width: 900px) { .auth-dna { display: none; } }

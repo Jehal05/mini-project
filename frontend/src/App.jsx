@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { MedicalBackground } from './design/index.js'
+const LandingPage = lazy(() => import('./features/landing/LandingPage.jsx'))
 const ProfileLayout = lazy(() => import('./features/profile/index.js').then((m) => ({ default: m.ProfileLayout })))
 const DocumentsPage = lazy(() => import('./features/profile/pages/DocumentsPage.jsx'))
 const ContactsPage = lazy(() => import('./features/profile/pages/ContactsPage.jsx'))
@@ -59,7 +60,8 @@ function PageLoading() {
 function Start() {
   const { status, user } = useAuth()
   if (status === 'loading') return <PageLoading />
-  return <Navigate to={status === 'authenticated' ? portalPath(user.role) : '/login'} replace />
+  if (status === 'authenticated') return <Navigate to={portalPath(user.role)} replace />
+  return <LandingPage />
 }
 
 /** Wraps the account, profile, hospital and admin screens so their plain CSS applies only to them. */

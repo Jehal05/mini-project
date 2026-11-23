@@ -318,3 +318,16 @@ Ported from Jehal's branch onto our server (no new dependencies). Everything is 
 - Viewing records writes an audit entry. Tests: `tests/inpatient.test.js` (16 pass on the stand-in runner, with an in-memory repo).
 
 Not ported yet: hospital profile, doctor management, dashboard (81 to 83), the ED board (86), history (90), visit file uploads.
+
+## Live monitoring and detection (Phase 5+6, ported from Daksh's modules)
+
+`attachMonitoring({ app, io, logger })` (in `src/monitoring/index.js`) starts the vitals simulator and the detection engine. Routes are mounted through `monitoringMount` in `app.js` so they sit before the 404 handler.
+
+- Simulator ticks every 2 s for every patient (Ornstein-Uhlenbeck vitals). Scenarios: normal, cardiac event, and others in `src/simulation/scenarios.js`.
+- Detection: rule table (levels 1-3), persistence of 3 ticks, risk score. Level 3 opens one emergency case (source `auto_detection`, status `pending`) on our case collection.
+- Live vitals travel in the private socket room `vitals:<patientId>`. A client sends `vitals:subscribe` after connecting with its JWT in the handshake `auth.token`.
+- History endpoints use `$dateTrunc`, so MongoDB 5.0 or newer is required.
+- Env vars: `SIM_CASE_LAT`, `SIM_CASE_LNG` (location given to simulated cases, default Pune), `VITALS_RETENTION_DAYS`.
+- Output is simulated and never a diagnosis. Not a medical device.
+
+Known gaps: the `patient:<id>` room join (emergency status) is still unauthenticated; no unique index prevents duplicate live cases across several server processes; hospital scoping of clinicians is role-level only; countdown and confirmation arrive with the SOS phase.

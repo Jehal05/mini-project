@@ -10,7 +10,9 @@ export const getCase = (id) => EmergencyCase.findById(id).lean();
 export const getPatient = (id) => Patient.findById(id).lean();
 export const getHospital = (id) => Hospital.findById(id).lean();
 export const getDoctor = (id) => Doctor.findById(id).lean();
-export const latestVitals = (patientId) => VitalReading.findOne({ patient: patientId }).sort({ recordedAt: -1 }).lean();
+// The monitoring engine saves readings as hr/sys/dia/spo2/temp/rr; the case screens read heartRate/systolic/... so map here.
+const asCaseVitals = (r) => r && { ...r, heartRate: r.hr, systolic: r.sys, diastolic: r.dia, temperature: r.temp, respiratoryRate: r.rr };
+export const latestVitals = async (patientId) => asCaseVitals(await VitalReading.findOne({ patient: patientId }).sort({ recordedAt: -1 }).lean());
 export const listDoctors = (hospitalId) => Doctor.find({ hospital: hospitalId }).sort({ name: 1 }).lean();
 
 export const pushTimeline = (caseId, entry) =>
@@ -131,7 +133,7 @@ export async function createDemoEmergency({ lat, lng, severity = 'critical' }) {
     { upsert: true, new: true },
   );
   await VitalReading.create({
-    patient: patient._id, heartRate: 128, systolic: 88, diastolic: 56, spo2: 90, temperature: 36.8, respiratoryRate: 24,
+    patient: patient._id, hr: 128, sys: 88, dia: 56, spo2: 90, temp: 36.8, rr: 24, scenario: 'cardiac_event',
   });
   const doc = await EmergencyCase.create({
     patient: patient._id,

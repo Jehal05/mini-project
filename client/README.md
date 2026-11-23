@@ -127,3 +127,11 @@ No screen has been rendered by me. Not run: the three.js heart, the CSS glass an
 Signed-in hospital staff and doctors get an **Inpatients** item. Patients tab: who is in the hospital, and (staff) admit a patient to a free bed under a doctor. Beds tab: every bed with a shape and a word for its state, counts by ward, add, reserve, clean or remove a free bed. Opening a patient shows notes and vitals, prescriptions (doctors; an allergy warning appears while typing the drug name and again as a confirm step) and the discharge summary (doctors; confirm step, then it is fixed). Demo mode (no account) shows a sign-in message.
 
 Not run or seen: none of these screens have been rendered or used against MongoDB. Manual check: sign in as hospital staff, add a CCU bed, admit a patient to it, sign in as a doctor, add a note and vitals, prescribe a drug matching an allergy on the patient's profile (expect the warning), discharge, then look at the patient's profile history and see the bed turn to cleaning.
+
+## Live vitals and monitoring (Phase 5+6)
+
+- `lib/liveVitals.js`, `lib/monitorSocket.js` and `patient/useLiveVitals.js` stream server vitals into the heart dashboard. If the server stream is unavailable the dashboard falls back to the client simulation. R-R interval and signal quality are always client-simulated.
+- The detection badge (Watch / Urgent / Critical) shows only when the data comes from the server.
+- Admin sidebar has a **Monitoring** panel (`admin/ScenarioPanel.jsx`) to set a patient's scenario.
+
+Manual checklist: sign in as admin, open Monitoring, set Rahul to Cardiac event; sign in as Rahul and watch the badge go Watch, Urgent, Critical; sign in as hospital and see the new case in the queue.

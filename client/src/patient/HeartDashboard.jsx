@@ -8,15 +8,19 @@ import Button from '../ui/Button.jsx';
 import { Card } from '../ui/Surface.jsx';
 import { rangeState } from '../lib/gauge.js';
 import { fetchMoods, saveMood } from '../lib/patientApi.js';
-import useSimulatedVitals from './useSimulatedVitals.js';
+import useLiveVitals from './useLiveVitals.js';
+import { LEVEL_WORD, levelOf, sourceNote, uiStatus } from '../lib/liveVitals.js';
+import { rrInterval, signalQuality } from '../lib/vitalsSim.js';
+import Icon from '../ui/icons.jsx';
 
 const status = (bpm) => (rangeState(bpm, 60, 100) === 'in' ? 'normal' : 'warning');
 const moodLabel = (id) => MOODS.find((m) => m[0] === id)?.[1] ?? id;
 
 // The patient's home: a big beating heart, a live-looking rate, a gauge and two small readings. All readings are SIMULATED
 // (labelled on screen). The mood check-in is the patient's own note, saved on the server; it is not a diagnosis.
-export default function HeartDashboard({ mode = 'calm', signedIn = false }) {
-  const v = useSimulatedVitals(mode);
+export default function HeartDashboard({ mode = 'calm', signedIn = false, patientId = '' }) {
+  const v = useLiveVitals({ patientId, mode });
+  const rr = rrInterval(v.bpm);
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden p-4">
@@ -24,15 +28,36 @@ export default function HeartDashboard({ mode = 'calm', signedIn = false }) {
         <div className="mt-2 flex flex-col items-center gap-3">
           <GaugeArc value={v.bpm} />
           <EcgLine bpm={v.bpm} />
-          <p className="text-xs text-muted">Simulated readings for demonstration</p>
+          <p className="text-xs text-muted">{sourceNote(v.source)}</p>
+          {v.source === 'server' && <DetectionBadge detection={v.detection} />}
         </div>
       </Card>
       <div className="grid grid-cols-2 gap-3">
-        <VitalTile label="R-R interval" value={v.rr} unit="ms" status="normal" values={v.history.map((b) => Math.round(60000 / b))} simulated />
-        <VitalTile label="Signal quality" value={v.quality} unit="%" status={v.quality >= 90 ? 'normal' : 'warning'} simulated />
+        {v.vitals && (
+          <>
+            <VitalTile label="Oxygen" value={v.vitals.spo2} unit="%" status={uiStatus(v.statuses.spo2)} />
+            <VitalTile label="Blood pressure" value={v.vitals.sys != null && v.vitals.dia != null ? `${v.vitals.sys}/${v.vitals.dia}` : null} unit="mmHg" status={uiStatus(v.statuses.sys)} />
+            <VitalTile label="Temperature" value={v.vitals.temp} unit="°C" status={uiStatus(v.statuses.temp)} />
+            <VitalTile label="Breathing" value={v.vitals.rr} unit="/min" status={uiStatus(v.statuses.rr)} />
+          </>
+        )}
+        <VitalTile label="R-R interval" value={rr} unit="ms" status="normal" values={v.history.map((b) => rrInterval(b))} simulated />
+        <VitalTile label="Signal quality" value={signalQuality(v.bpm, () => 0.5)} unit="%" status="normal" simulated />
       </div>
       {signedIn && <MoodCheckIn />}
     </div>
+  );
+}
+
+// The detection engine's current level, as a shape and a word. It is a simulated rule check, never a diagnosis.
+function DetectionBadge({ detection }) {
+  const level = levelOf(detection);
+  const look = [['circle', 'text-low'], ['diamond', 'text-moderate'], ['triangle-alert', 'text-moderate'], ['octagon-alert', 'text-critical']][level];
+  return (
+    <p role="status" aria-live="polite" className={`flex items-center gap-2 text-sm font-semibold ${look[1]}`}>
+      <Icon name={look[0]} size={18} />{LEVEL_WORD[level]}{level > 0 && detection?.rules?.[0]?.message ? `: ${detection.rules[0].message}` : ''}
+      <span className="font-normal text-muted">(simulated check, not a diagnosis)</span>
+    </p>
   );
 }
 

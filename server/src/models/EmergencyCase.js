@@ -59,6 +59,9 @@ const emergencyCaseSchema = new mongoose.Schema(
     firstMedicalContactAt: Date,
     treatmentStartedAt: Date,
     closedAt: Date,
+    // Phase 5-6: how the case started, and the detection that opened it (Daksh's detection engine).
+    source: { type: String, enum: ['demo', 'auto_detection', 'manual_sos', 'bystander_qr'] },
+    detectionRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Detection' },
     // Phase 12: true for the generated demo history (npm run seed:demo-history). Never set for real cases.
     simulatedHistory: { type: Boolean, default: false, index: true },
   },

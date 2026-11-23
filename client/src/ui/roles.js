@@ -29,6 +29,7 @@ const NAV = {
   admin: [
     { id: 'analytics', label: 'Analytics', icon: 'chart', title: 'Analytics' },
     { id: 'backups', label: 'Backups', icon: 'database', title: 'Backups' },
+    { id: 'monitoring', label: 'Monitoring', icon: 'heart-pulse', title: 'Monitoring simulator' },
   ],
 };
 

@@ -17,6 +17,7 @@ import { screenForRole } from './lib/authHeaders.js';
 const FindHospitals = lazy(() => import('./patient/FindHospitals.jsx'));
 const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
 const ProfileApp = lazy(() => import('./patient/ProfileApp.jsx'));
+const ScenarioPanel = lazy(() => import('./admin/ScenarioPanel.jsx'));
 const InpatientApp = lazy(() => import('./inpatient/InpatientApp.jsx'));
 const PassportPanel = lazy(() => import('./patient/PassportPanel.jsx'));
 const PassportLookup = lazy(() => import('./portal/PassportLookup.jsx'));
@@ -61,7 +62,7 @@ function Signed({ account }) {
     else screen = <PatientStatus account={account} />;
   } else if (role === 'hospital') screen = current === 'passport' ? <PassportLookup /> : current === 'inpatient' ? (account ? <InpatientApp account={account} /> : <DemoNeedsLogin what="inpatient care" />) : <PortalApp view={current} account={account} />;
   else if (role === 'crew') screen = <CrewApp account={account} />;
-  else if (role === 'admin') screen = <AdminApp view={current} account={account} />;
+  else if (role === 'admin') screen = current === 'monitoring' ? (account ? <ScenarioPanel /> : <DemoNeedsLogin what="the monitoring controls" />) : <AdminApp view={current} account={account} />;
   else screen = current === 'inpatient' ? (account ? <InpatientApp account={account} /> : <DemoNeedsLogin what="inpatient care" />) : <DoctorApp account={account} />;
 
   return (

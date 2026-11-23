@@ -1,10 +1,11 @@
 import http from 'http';
-import app from './app.js';
+import app, { monitoringMount } from './app.js';
 import { env } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { initSocket } from './sockets/index.js';
 import { startNoAnswerScheduler } from './services/notifications.js';
 import { startAmbulanceSimulator } from './services/simulator.js';
+import { attachMonitoring } from './monitoring/index.js';
 
 async function start() {
   await connectDB();
@@ -12,6 +13,7 @@ async function start() {
   const httpServer = http.createServer(app);
   const io = initSocket(httpServer, { corsOrigin: env.clientUrl });
 
+  const monitoring = await attachMonitoring({ app: monitoringMount, io });
   const stopScheduler = startNoAnswerScheduler();
   const stopSimulator = startAmbulanceSimulator();
 
@@ -25,6 +27,7 @@ async function start() {
     shuttingDown = true;
     console.log(`[server] ${signal} received, shutting down`);
     stopScheduler();
+    monitoring.stop();
     stopSimulator();
     io.close();
     httpServer.close(async () => {

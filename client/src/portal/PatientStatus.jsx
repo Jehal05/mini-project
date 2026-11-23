@@ -54,7 +54,7 @@ export default function PatientStatus({ account = null }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <HeartDashboard mode={status.kind === 'accepted' ? 'emergency' : 'calm'} signedIn={Boolean(account)} />
+      <HeartDashboard mode={status.kind === 'accepted' ? 'emergency' : 'calm'} signedIn={Boolean(account)} patientId={account?.patientId || ''} />
       {!patientId ? (
         <Card><EmptyState icon="heart-pulse" title="No emergency in progress">
           When an alert is raised for you, its progress shows here. For this demo, ask the hospital screen to create a demo emergency.

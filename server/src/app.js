@@ -15,6 +15,11 @@ app.use(cors({ origin: env.clientUrl, credentials: true }));
 app.use(['/api/patients/me/documents', '/api/patients/me/photo'], express.json({ limit: '8mb' }));
 app.use(express.json({ limit: '1mb' }));
 
+// The monitoring and detection routers are added at startup (server.js) because they need the Socket.IO server.
+// They are mounted here, before the not-found handler, so they are reachable.
+export const monitoringMount = express.Router();
+app.use(monitoringMount);
+
 app.use('/api', routes);
 
 app.use(notFound);

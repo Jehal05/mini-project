@@ -2,7 +2,7 @@ import { formatMinutes } from '../lib/time.js';
 import { useNow } from '../lib/useNow.js';
 
 // Feature 105. The server computes the stages. Between updates we keep running stages ticking locally,
-// and a stage turns red when it runs past its target.
+// and a stage turns red (with the words "over target") when it runs past its target.
 export default function GoldenHourClock({ stages }) {
   const now = useNow();
   return (
@@ -13,19 +13,19 @@ export default function GoldenHourClock({ stages }) {
         const overdue = elapsed > s.targetMin;
         const pct = Math.min(100, (elapsed / s.targetMin) * 100);
         return (
-          <div key={s.key} className={`rounded border p-2 text-sm ${overdue ? 'border-red-600 bg-red-50' : 'border-slate-200'}`}>
-            <div className="flex justify-between">
-              <span className="font-medium">{s.label}</span>
-              <span className={`font-mono ${overdue ? 'font-bold text-red-700' : ''}`}>
-                {s.status === 'not_started' ? 'not started' : formatMinutes(elapsed)} / {s.targetMin} min
+          <div key={s.key} className={`rounded-ui border p-2 text-sm ${overdue ? 'border-critical bg-critical-soft' : 'border-line bg-surface'}`}>
+            <div className="flex justify-between gap-2">
+              <span className="font-semibold text-ink">{s.label}</span>
+              <span className={`tnum ${overdue ? 'font-bold text-critical' : 'text-ink'}`}>
+                {s.status === 'not_started' ? 'not started' : formatMinutes(elapsed)} of {s.targetMin} min
               </span>
             </div>
-            <div className="mt-1 h-1.5 rounded bg-slate-200">
-              <div className={`h-1.5 rounded ${overdue ? 'bg-red-600' : s.status === 'done' ? 'bg-green-600' : 'bg-blue-600'}`} style={{ width: `${s.status === 'not_started' ? 0 : pct}%` }} />
+            <div className="mt-1 h-1.5 rounded-full bg-line">
+              <div className={`h-1.5 rounded-full ${overdue ? 'bg-critical' : s.status === 'done' ? 'bg-low' : 'bg-accent'}`} style={{ width: `${s.status === 'not_started' ? 0 : pct}%` }} />
             </div>
-            <div className="mt-0.5 text-xs text-slate-500">
+            <div className="mt-0.5 text-xs text-muted">
               {s.status === 'done' && (overdue ? 'Finished late' : 'Done on time')}
-              {s.status === 'running' && (overdue ? 'OVER TARGET' : 'Running')}
+              {s.status === 'running' && (overdue ? 'Over target' : 'Running')}
               {s.status === 'stopped' && 'Stopped when the case closed'}
             </div>
           </div>

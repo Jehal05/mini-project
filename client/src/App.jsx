@@ -1,12 +1,13 @@
 import { Suspense, lazy, useState } from 'react';
 import AppShell from './ui/AppShell.jsx';
-import { Skeleton, EmptyState } from './ui/Feedback.jsx';
+import { Skeleton } from './ui/Feedback.jsx';
 import { defaultView, isRole, isValidView } from './ui/roles.js';
 import { useTheme } from './ui/useTheme.js';
 import { useConnection } from './lib/useConnection.js';
 import PortalApp from './portal/PortalApp.jsx';
 import PatientStatus from './portal/PatientStatus.jsx';
 import CrewApp from './crew/CrewApp.jsx';
+import DoctorApp from './doctor/DoctorApp.jsx';
 
 // Heavy screens (maps, charts) load only when opened.
 const FindHospitals = lazy(() => import('./patient/FindHospitals.jsx'));
@@ -39,7 +40,7 @@ export default function App() {
   else if (role === 'hospital') screen = <PortalApp view={current} />;
   else if (role === 'crew') screen = <CrewApp />;
   else if (role === 'admin') screen = <AdminApp view={current} />;
-  else screen = <EmptyState icon="stethoscope" title="Doctor screen is on its way">Your assigned cases will appear here.</EmptyState>;
+  else screen = <DoctorApp />;
 
   return (
     <AppShell role={role} onRole={changeRole} view={current} onView={setView} theme={theme} onToggleTheme={toggleTheme} connection={connection}>

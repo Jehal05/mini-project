@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addRecord, checkAllergy, fetchAdmission, fetchDischarge, fetchPrescriptions, fetchRecords, finalizeDischarge, prescribe } from '../lib/inpatientApi.js';
+import { addRecord, addRecordFile, recordFileUrl, checkAllergy, fetchAdmission, fetchDischarge, fetchPrescriptions, fetchRecords, finalizeDischarge, prescribe } from '../lib/inpatientApi.js';
+import { readAsBase64 } from '../lib/patientApi.js';
 import Button from '../ui/Button.jsx';
 import { Panel } from '../ui/Surface.jsx';
 import { Field, Input } from '../ui/Form.jsx';
@@ -46,6 +47,18 @@ function Notes({ id, open }) {
   const load = useCallback(() => fetchRecords(id).then(setList).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   async function send(body, reset) { setBusy(true); setError(''); try { await addRecord(id, body); reset(); await load(); } catch (e) { setError(Object.values(e.fields ?? {})[0] || e.message); } finally { setBusy(false); } }
+  const [fileForm, setFileForm] = useState({ kind: 'ecg', title: '', file: null });
+  async function sendFile(e) {
+    e.preventDefault(); setBusy(true); setError('');
+    try {
+      const f = fileForm.file;
+      await addRecordFile(id, { kind: fileForm.kind, title: fileForm.title || undefined, name: f.name, data: await readAsBase64(f) });
+      setFileForm({ kind: fileForm.kind, title: '', file: null }); e.target.reset(); await load();
+    } catch (err) { setError(Object.values(err.fields ?? {})[0] || err.message); } finally { setBusy(false); }
+  }
+  async function openFile(recordId) {
+    try { const url = await recordFileUrl(id, recordId); window.open(url, '_blank', 'noopener'); setTimeout(() => URL.revokeObjectURL(url), 60000); } catch (err) { setError(err.message); }
+  }
   const numbers = () => Object.fromEntries(Object.entries(v).filter(([, x]) => x !== ''));
   return (
     <Panel title="Notes and vitals">
@@ -66,12 +79,20 @@ function Notes({ id, open }) {
           </form>
         </div>
       )}
+      {open && (
+        <form onSubmit={sendFile} className="mt-4 flex flex-wrap items-end gap-3 border-t border-line pt-3">
+          <Field label="Report type">{(p) => <select {...p} value={fileForm.kind} onChange={(e) => setFileForm({ ...fileForm, kind: e.target.value })} className="min-h-touch rounded-ui border border-line bg-surface px-2 text-ink"><option value="ecg">ECG</option><option value="lab">Lab report</option></select>}</Field>
+          <Field label="Title" hint="Optional">{(p) => <Input {...p} value={fileForm.title} maxLength={120} onChange={(e) => setFileForm({ ...fileForm, title: e.target.value })} />}</Field>
+          <Field label="File" hint="PDF, JPEG or PNG">{(p) => <input {...p} type="file" accept="application/pdf,image/jpeg,image/png" onChange={(e) => setFileForm({ ...fileForm, file: e.target.files?.[0] ?? null })} />}</Field>
+          <Button type="submit" size="sm" busy={busy} disabled={!fileForm.file}>Upload report</Button>
+        </form>
+      )}
       {error && <p role="alert" className="mt-2 text-sm font-semibold text-critical">{error}</p>}
       <ul className="mt-4 space-y-2" aria-label="Entries">
         {(list ?? []).map((r) => (
           <li key={r.id} className="rounded-ui border border-line p-2 text-sm">
             <p className="text-xs text-muted">{when(r.at)}{r.authorName ? `, ${r.authorName}` : ''}</p>
-            {r.kind === 'note' ? <p className="whitespace-pre-wrap">{r.text}</p> : <p className="tnum">Vitals: {Object.entries(r.vitals ?? {}).map(([k, x]) => `${k} ${x}`).join(', ')}</p>}
+            {r.file ? <p><Button size="sm" variant="secondary" onClick={() => openFile(r.id)}>Open {r.kind === 'ecg' ? 'ECG' : 'lab report'}</Button> <span className="ml-1">{r.title || r.file.name}</span></p> : r.kind === 'note' ? <p className="whitespace-pre-wrap">{r.text}</p> : <p className="tnum">Vitals: {Object.entries(r.vitals ?? {}).map(([k, x]) => `${k} ${x}`).join(', ')}</p>}
           </li>
         ))}
         {list && !list.length && <li className="text-sm text-muted">No entries yet.</li>}

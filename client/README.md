@@ -149,3 +149,9 @@ Patient home, signed in (`emergency/EmergencyArea.jsx`, lazy):
 `emergency/constants.js` and `twin/constants.js` copy values from the root `shared/` folder; their tests fail if they drift.
 
 Manual checklist: sign in as admin, set Rahul to Cardiac event; as Rahul, wait for "Are you okay?"; try "Send help now", the countdown running out, and cancelling with a reason; check the hospital queue only gets the case after it is sent; open a contact's `/status/<token>` link (shown in the dev server log or the WhatsApp link) and tap "I have seen this".
+
+## My hospital (hospital portal, `hospitalmgmt/`)
+
+New **My hospital** item in the hospital navigation (needs a signed-in hospital account) with tabs: Dashboard, Doctors, Emergency dept (bays and patients on their way), History (filters and paging) and Profile. Buttons that the account's role cannot use are hidden; the server enforces the same rules. Inpatient stays now accept ECG and lab report uploads (PDF, JPEG, PNG) with an "Open" button per report.
+
+Manual checklist: sign in as a hospital admin, add a cardiologist and switch them on duty, check Profile says "Cardiologist on duty: Yes"; add a bay, occupy it with triage 2, clear it, mark ready, remove it; open History and check names appear only on "Accepted" rows; upload a small PDF in an inpatient stay and open it.

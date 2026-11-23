@@ -28,6 +28,7 @@ export const reopenAdmission = (id) => Admission.updateOne({ _id: id }, { $set: 
 
 export const addRecord = (data) => VisitRecord.create(data).then((r) => r.toObject());
 export const listRecords = (admission) => lean(VisitRecord.find({ admission }).sort({ createdAt: -1 }).limit(200));
+export const findRecord = (admission, id) => lean(VisitRecord.findOne({ _id: id, admission }));
 export const countRecords = (admission) => VisitRecord.countDocuments({ admission });
 
 export const addPrescription = (data) => Prescription.create(data).then((r) => r.toObject());

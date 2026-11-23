@@ -23,6 +23,7 @@ const NAV = {
     { id: 'queue', label: 'Emergency queue', icon: 'siren', title: 'Emergency queue' },
     { id: 'fleet', label: 'Ambulances', icon: 'ambulance', title: 'Ambulance fleet' },
     { id: 'inpatient', label: 'Inpatients', icon: 'stethoscope', title: 'Inpatients and beds' },
+    { id: 'manage', label: 'My hospital', icon: 'info', title: 'My hospital' },
     { id: 'passport', label: 'Patient passport', icon: 'user', title: 'Open a patient passport' },
   ],
   crew: [{ id: 'trip', label: 'My trip', icon: 'ambulance', title: 'Your trip' }],

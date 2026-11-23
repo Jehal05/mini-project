@@ -11,6 +11,7 @@ import authRoutes from './auth.js';
 import patientRoutes from './patients.js';
 import passportRoutes from './passport.js';
 import inpatientRoutes from './inpatient.js';
+import hospitalMgmtRoutes from './hospitalMgmt.js';
 import { pushPublicKey } from '../controllers/caseController.js';
 
 const router = Router();
@@ -27,6 +28,7 @@ router.use('/auth', authRoutes);
 router.use('/patients/me', patientRoutes);
 router.use('/passport', passportRoutes);
 router.use('/inpatient', inpatientRoutes);
+router.use('/hospital', hospitalMgmtRoutes);
 router.get('/push/public-key', pushPublicKey);
 
 // Add feature routers below, one line each, so merges stay conflict-free:

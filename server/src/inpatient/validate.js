@@ -3,33 +3,33 @@ export const WARDS = Object.freeze(['ICU', 'CCU', 'ED', 'GENERAL']);
 export const BED_STATES = Object.freeze(['free', 'occupied', 'reserved', 'cleaning']);
 import { invalid } from './fields.js';
 const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
-const blank = (v) => v === undefined || v === null || (typeof v === 'string' && v.trim() === '');
+export const blank = (v) => v === undefined || v === null || (typeof v === 'string' && v.trim() === '');
 
-const text = (label, max, required) => (v) => {
+export const text = (label, max, required) => (v) => {
   if (blank(v)) { if (required) throw `${label} is required`; return undefined; }
   if (typeof v !== 'string') throw `${label} must be text`;
   const t = v.trim();
   if (t.length > max) throw `Use at most ${max} characters`;
   return t;
 };
-const oneOf = (label, list, required) => (v) => {
+export const oneOf = (label, list, required) => (v) => {
   if (blank(v)) { if (required) throw `${label} is required`; return undefined; }
   if (!list.includes(v)) throw `Choose one of: ${list.join(', ')}`;
   return v;
 };
-const id24 = (label, required) => (v) => {
+export const id24 = (label, required) => (v) => {
   if (blank(v)) { if (required) throw `${label} is required`; return undefined; }
   if (!/^[a-f\d]{24}$/i.test(String(v))) throw `${label} is not valid`;
   return String(v);
 };
-const num = (label, min, max) => (v) => {
+export const num = (label, min, max) => (v) => {
   if (blank(v)) return undefined;
   const n = Number(v);
   if (!Number.isFinite(n) || n < min || n > max) throw `${label} must be between ${min} and ${max}`;
   return n;
 };
 
-function run(body, rules) {
+export function run(body, rules) {
   if (!isObj(body)) throw invalid({ _: 'Send a JSON object' });
   const out = {}; const fields = {};
   for (const k of Object.keys(body)) if (!(k in rules)) fields[k] = 'This field cannot be set here';

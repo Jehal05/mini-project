@@ -4,6 +4,10 @@ import { httpError } from '../utils/httpError.js';
 import * as repo from './repo.js';
 import { matchingAllergies } from './allergy.js';
 import { invalid } from './fields.js';
+import { env } from '../config/env.js';
+import { validateUpload } from '../patients/validate.js';
+import { checkedFile } from '../patients/service.js';
+import { deleteStored, readStored, saveFile } from '../utils/storage.js';
 
 const err = (status, message, code, extra) => Object.assign(httpError(status, message), { code, ...extra });
 const sid = (v) => String(v);
@@ -41,7 +45,7 @@ export async function removeBed(actor, bedId) {
   throw err(409, 'An occupied bed cannot be removed', 'BED_OCCUPIED');
 }
 
-export async function listDoctors(actor) { return (await repo.listDoctors(hospitalOf(actor))).map((d) => ({ id: sid(d._id), name: d.name, specialty: d.specialty })); }
+export async function listDoctors(actor) { return (await repo.listDoctors(hospitalOf(actor))).filter((d) => d.isActive !== false).map((d) => ({ id: sid(d._id), name: d.name, specialty: d.specialty })); }
 
 // ---- admissions (feature 84) ----
 async function present(a) {
@@ -94,7 +98,7 @@ async function own(actor, id, { open = false } = {}) {
 export async function getAdmission(actor, id) { return present(await own(actor, id)); }
 
 // ---- visit records (feature 87) ----
-const presentRecord = (r) => ({ id: sid(r._id), kind: r.kind, text: r.text, vitals: r.vitals, authorName: r.authorName, at: r.createdAt });
+const presentRecord = (r) => ({ id: sid(r._id), kind: r.kind, text: r.text, vitals: r.vitals, title: r.title, file: r.file ? { name: r.file.originalName, mimeType: r.file.mimeType, size: r.file.size } : null, authorName: r.authorName, at: r.createdAt });
 export async function listRecords(actor, id) {
   const a = await own(actor, id);
   await audit(actor, 'record.view', a.patientId, { view: 'visit_records' });
@@ -107,6 +111,32 @@ export async function addRecord(actor, id, v) {
   const rec = await repo.addRecord({ hospital: a.hospital, admission: a._id, kind, author: actor.id, authorName: await repo.userName(actor.id), ...(kind === 'note' ? { text } : { vitals }) });
   await audit(actor, 'record.edit', a.patientId, { section: 'visit_records', op: kind });
   return presentRecord(rec);
+}
+
+// An ECG or lab report added to the stay. The type is read from the file's own bytes (PDF, JPEG or PNG), never from its name.
+const cleanFileName = (n) => String(n ?? 'file').replace(/[\u0000-\u001f\u007f/\\]/g, '').trim().slice(0, 120) || 'file';
+export async function addRecordFile(actor, id, body) {
+  const kind = body?.kind;
+  if (!['ecg', 'lab'].includes(kind)) throw invalid({ kind: 'Choose ecg or lab' });
+  const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : undefined;
+  const up = validateUpload(body, { needsType: false, maxBytes: env.documentMaxBytes });
+  const a = await own(actor, id, { open: true });
+  if ((await repo.countRecords(a._id)) >= MAX_RECORDS) throw err(409, `One stay can have at most ${MAX_RECORDS} entries`, 'RECORD_LIMIT');
+  const { type, data } = checkedFile(up.buffer, ['pdf', 'jpeg', 'png'], 'A report');
+  const storedName = await saveFile('visit-files', data, type.ext);
+  try {
+    const rec = await repo.addRecord({ hospital: a.hospital, admission: a._id, kind, title: title || undefined, author: actor.id, authorName: await repo.userName(actor.id), file: { storedName, originalName: cleanFileName(up.name), mimeType: type.mime, size: data.length } });
+    await audit(actor, 'record.edit', a.patientId, { section: 'visit_records', op: kind });
+    return presentRecord(rec);
+  } catch (e) { await deleteStored('visit-files', storedName).catch(() => {}); throw e; }
+}
+
+export async function getRecordFile(actor, id, recordId) {
+  const a = await own(actor, id);
+  const r = await repo.findRecord(a._id, recordId);
+  if (!r?.file) throw err(404, 'File not found', 'NOT_FOUND');
+  await audit(actor, 'record.view', a.patientId, { view: 'visit_file', kind: r.kind });
+  return { mime: r.file.mimeType, name: r.file.originalName, data: await readStored('visit-files', r.file.storedName) };
 }
 
 // ---- prescriptions (feature 88): doctors only (the route enforces it) ----

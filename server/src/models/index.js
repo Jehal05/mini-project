@@ -21,3 +21,4 @@ export { default as VisitRecord } from './VisitRecord.js';
 export { default as DischargeSummary } from './DischargeSummary.js';
 export { default as HealthEvent } from './HealthEvent.js';
 export { default as DetectionConfig } from './DetectionConfig.js';
+export { default as EdBay } from './EdBay.js';

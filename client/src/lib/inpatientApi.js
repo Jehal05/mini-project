@@ -24,3 +24,12 @@ export const checkAllergy = (id, drug) => call('GET', `/admissions/${id}/prescri
 export const prescribe = (id, body) => call('POST', `/admissions/${id}/prescriptions`, body).then((d) => d.prescription);
 export const fetchDischarge = (id) => call('GET', `/admissions/${id}/discharge`);
 export const finalizeDischarge = (id, body) => call('POST', `/admissions/${id}/discharge`, body);
+
+// ECG and lab reports for a stay: sent as base64 JSON, opened through a temporary blob URL (the caller revokes it).
+export const addRecordFile = (id, body) => call('POST', `/admissions/${id}/records/file`, body).then((d) => d.record);
+export async function recordFileUrl(id, recordId) {
+  let res;
+  try { res = await authedFetch(`/api/inpatient/admissions/${id}/records/${recordId}/file`); } catch { throw new Error('Cannot reach the server. Check your connection and try again.'); }
+  if (!res.ok) throw new Error('Could not open the file');
+  return URL.createObjectURL(await res.blob());
+}

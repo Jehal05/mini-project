@@ -366,3 +366,21 @@ Access: a patient reaches only their own patient and cases; doctors, hospital st
 **Database.** A partial unique index (`one_live_case_per_patient`) allows one live automatic or SOS case per patient; demo cases (`source: 'demo'`) are excluded. It uses `$in` in a partial filter, which needs **MongoDB 6.0 or newer**. If the index cannot be built the app still starts and the single-process atomic upsert still holds.
 
 **Known gaps.** Two server processes would each arm timers (updates stay atomic, but alerts could repeat). Ambulance release after a cancel is best effort. `emergency:unresolved` has no admin screen yet. Joining `patient:<id>` is still unauthenticated.
+
+## Hospital management (`/api/hospital`, features 81–83, 86, 90)
+
+Every route needs a hospital login (`doctor`, `hospital_staff` or `hospital_admin`) and works only on the hospital in the token; no hospital id is ever taken from the URL or body.
+
+| Route | Who | What |
+| --- | --- | --- |
+| `GET /me`, `PATCH /me` | read: all; change: admin | Profile. Admin may change **phone** and **cath lab** only; name and place stay with the central admin. |
+| `GET /dashboard` | all | Incoming and handled emergencies, free beds by ward, doctors on duty, cardiologist flag, available ambulances, average time from alert to accept, admitted patients. |
+| `GET/POST /doctors`, `PATCH /doctors/:id` | read: all; change: admin | Roster, duty on/off, "mark as left". The hospital's `cardiologistOnDuty` flag (used in ranking) is recomputed from the roster after every change. |
+| `GET /ed`, `POST /ed/bays`, `PATCH /ed/bays/:id`, `DELETE /ed/bays/:id` | read: all; bays: staff and admin; occupy/clear/ready: doctor too | Bays move `vacant → occupied → cleaning → vacant`, each as one atomic conditional update (a second click gets 409 `BAY_STATE`). Occupying needs a triage level 1–5; a patient ID (HT-YYYY-NNNN) is optional. Max 40 bays. |
+| `GET /history?status=&page=&limit=` | all | Emergencies this hospital was alerted about, with how each ended for it: accepted, declined, no answer, taken elsewhere, cancelled. **The patient's name is shown only for cases this hospital accepted.** |
+
+Visit files: `POST /api/inpatient/admissions/:id/records/file` stores an ECG or lab report (PDF, JPEG or PNG, detected from the bytes) and `GET .../records/:recordId/file` returns it. Opening one is audit-logged.
+
+Tests: `tests/hospitalmgmt.test.js` (fake repo; scoping, bay transitions, duty-to-flag sync, response time, history privacy).
+
+Not ported: doctor login invitations (doctors here are roster entries with no login), Jehal's separate `HospitalCase` model (history reads our `EmergencyCase`), live push of bay changes.

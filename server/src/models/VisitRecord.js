@@ -7,7 +7,9 @@ const visitRecordSchema = new Schema(
   {
     hospital: { type: Schema.Types.ObjectId, ref: 'Hospital', required: true },
     admission: { type: Schema.Types.ObjectId, ref: 'Admission', required: true, index: true },
-    kind: { type: String, enum: ['note', 'vitals'], required: true },
+    kind: { type: String, enum: ['note', 'vitals', 'ecg', 'lab'], required: true }, // ecg and lab are uploaded files (Phase 17)
+    title: { type: String, trim: true, maxlength: 120 },
+    file: { _id: false, storedName: String, originalName: String, mimeType: String, size: Number },
     text: { type: String, trim: true, maxlength: 4000 },
     vitals: { heartRate: Number, systolic: Number, diastolic: Number, spo2: Number, temperatureC: Number },
     author: { type: Schema.Types.ObjectId, ref: 'User' },

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { sendFile } from './fileResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { authenticate } from '../auth/guard.js';
@@ -7,7 +8,7 @@ import { validateAdmit, validateBed, validateBedState, validateDischarge, valida
 
 // Inpatient care for the caller's own hospital. The hospital id comes from the token, never from the URL.
 const router = Router();
-router.param('id', (_req, _res, next, v) => (/^[a-f\d]{24}$/i.test(v) ? next() : next(httpError(404, 'Not found'))));
+for (const name of ['id', 'recordId']) router.param(name, (_req, _res, next, v) => (/^[a-f\d]{24}$/i.test(v) ? next() : next(httpError(404, 'Not found'))));
 
 const only = (...roles) => (req, _res, next) => (roles.includes(req.user.role) ? next() : next(Object.assign(httpError(403, 'Your role cannot do this'), { code: 'ROLE_FORBIDDEN' })));
 const staff = only('hospital_staff', 'hospital_admin');
@@ -29,6 +30,9 @@ router.get('/admissions/:id', send((req) => svc.getAdmission(req.user, req.param
 
 router.get('/admissions/:id/records', send((req) => svc.listRecords(req.user, req.params.id).then((records) => ({ records }))));
 router.post('/admissions/:id/records', clinical, send((req) => svc.addRecord(req.user, req.params.id, validateNote(req.body)).then((record) => ({ record })), 201));
+
+router.post('/admissions/:id/records/file', clinical, send((req) => svc.addRecordFile(req.user, req.params.id, req.body).then((record) => ({ record })), 201));
+router.get('/admissions/:id/records/:recordId/file', asyncHandler(async (req, res) => sendFile(res, await svc.getRecordFile(req.user, req.params.id, req.params.recordId))));
 
 router.get('/admissions/:id/prescriptions', send((req) => svc.listPrescriptions(req.user, req.params.id).then((prescriptions) => ({ prescriptions }))));
 router.get('/admissions/:id/prescriptions/check', doctor, send((req) => svc.checkAllergy(req.user, req.params.id, req.query.drug)));

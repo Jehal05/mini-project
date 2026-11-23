@@ -19,8 +19,8 @@ const entry = (type, message, data, actor = {}) => ({ type, at: new Date(), acto
 const fail = (status, message) => Object.assign(new Error(message), { status })
 
 export class AmbulanceService {
-  constructor({ io, logger = console, now = () => Date.now(), speedKmh = Number(process.env.AMBULANCE_SPEED_KMH) || 60, tickMs = TICK_MS, routing = createRouting({ logger }) } = {}) {
-    Object.assign(this, { io, logger, now, speedKmh, tickMs, routing })
+  constructor({ io, logger = console, now = () => Date.now(), speedKmh = Number(process.env.AMBULANCE_SPEED_KMH) || 60, tickMs = TICK_MS, routing = createRouting({ logger }), pusher = null } = {}) {
+    Object.assign(this, { io, logger, now, speedKmh, tickMs, routing, pusher })
     this.timer = null
   }
 
@@ -99,6 +99,7 @@ export class AmbulanceService {
       { $set: { ambulance: claimed._id, status: CASE_STATUS.AMBULANCE_ASSIGNED }, $push: { timeline: entry('ambulance_assigned', `Ambulance ${claimed.vehicleNumber} (${claimed.type}) dispatched`, { ambulance: String(claimed._id), type: claimed.type }, actor) } },
     )
     await this.emitStage(c, claimed, 'en_route')
+    this.pusher?.toContacts(c._id, { title: 'Ambulance on the way', body: `Ambulance ${claimed.vehicleNumber} has been sent.` }).catch(() => {})
     this.io?.to(patientRoom(c.patient)).emit(EV.AMBULANCE_ASSIGNED, this.payload(c, claimed))
     this.io?.to(hospitalRoom(hospitalId)).emit(EV.AMBULANCE_ASSIGNED, this.payload(c, claimed))
     return claimed
@@ -213,6 +214,7 @@ export class AmbulanceService {
     await updateHospitalCase({ hospitalId: c.acceptedHospital, emergencyCaseId: String(caseId) }, { status: 'arrived', arrivedAt: now })
     await this.release(a._id, 'arrived')
     const p = { caseId: String(c._id), hospitalId: String(c.acceptedHospital), simulated: true, at: now.toISOString() }
+    this.pusher?.toContacts(c._id, { title: 'Arrived at the hospital', body: 'The patient has reached the hospital.' }).catch(() => {})
     this.io?.to(patientRoom(c.patient)).emit(EV.ARRIVED, p)
     this.io?.to(hospitalRoom(c.acceptedHospital)).emit(EV.ARRIVED, p)
     return c

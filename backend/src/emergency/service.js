@@ -75,6 +75,7 @@ export class EmergencyService {
     now = Date.now,
     publicUrl = process.env.PUBLIC_APP_URL ?? 'http://localhost:5173',
     roundTimeoutMs = ESCALATION.ROUND_TIMEOUT_MS,
+    pusher = null,
   } = {}) {
     this.io = io
     this.discovery = discovery
@@ -82,6 +83,7 @@ export class EmergencyService {
     this.now = now
     this.publicUrl = publicUrl.replace(/\/$/, '')
     this.roundTimeoutMs = roundTimeoutMs
+    this.pusher = pusher
     this.notifier = notifier ?? createDevNotifier({ logger })
     this.patientRecordFor = patientRecordFor ?? ((id) => Patient.findById(id).lean().then(toTwinRecord))
     this.contactsFor = contactsFor ?? (async (id) => (await this.patientRecordFor(id))?.emergencyContacts ?? [])
@@ -330,6 +332,7 @@ export class EmergencyService {
       ambulanceId: after && c.ambulance ? String(c.ambulance) : undefined,
     }
     this.emit(c, EV.CANCELLED, payload)
+    this.pusher?.toContacts(c._id, { title: 'Emergency cancelled', body: 'The emergency request was cancelled.' }).catch(() => {})
     // The accepting hospital and the crew must hear it (the ambulance is released from their side).
     if (payload.hospitalId) this.io?.to(hospitalRoom(payload.hospitalId)).emit(EV.CANCELLED, { ...this.base(c), ...payload }) // TODO(Puneet): confirm room names, add the crew room
     return c
@@ -362,13 +365,16 @@ export class EmergencyService {
     }
     if (!contacts.length) return null
     const patientName = nameOf(await this.patientRecordFor(c.patient).catch(() => null)) ?? 'A HealthTwin patient'
-    const planned = contacts.map((contact) => {
+    const devices = (await this.pusher?.contactDevices(c.patient).catch(() => null)) ?? new Map() // contacts who allowed push on an earlier status link
+    const planned = contacts.map((contact0) => {
+      const mine = devices.get(String(contact0.id ?? contact0._id)) ?? []
+      const contact = mine.length ? { ...contact0, devices: mine } : contact0
       const token = randomBytes(16).toString('hex')
       const link = `${this.publicUrl}/status/${token}`
       const text = alertText({ patientName, link })
       const whatsappLink = buildWhatsAppLink(contact.phone, text)
-      const channels = [contact.email && 'email', contact.pushSubscription && 'push', whatsappLink && 'whatsapp'].filter(Boolean)
-      return { contact, link, text, record: { name: contact.name, relation: contact.relation, phone: contact.phone, email: contact.email, channels, statusLinkToken: token, whatsappLink, sentAt: new Date(this.now()) } }
+      const channels = [contact.email && 'email', (contact.pushSubscription || contact.devices?.length) && 'push', whatsappLink && 'whatsapp'].filter(Boolean)
+      return { contact, link, text, record: { contactId: contact.id ?? contact._id, name: contact.name, relation: contact.relation, phone: contact.phone, email: contact.email, channels, statusLinkToken: token, whatsappLink, sentAt: new Date(this.now()) } }
     })
     // Recorded first, and only if no alert exists yet, so a repeat call can never alert twice.
     const updated = await EmergencyCase.findOneAndUpdate(
@@ -380,6 +386,7 @@ export class EmergencyService {
     for (const p of planned) {
       if (p.contact.email) await this.deliver('email', { to: p.contact.email, subject: 'SIMULATED HealthTwin emergency alert', text: p.text, link: p.link })
       if (p.contact.pushSubscription) await this.deliver('push', { to: p.contact.pushSubscription, text: p.text, link: p.link })
+      if (p.contact.devices?.length) await this.pusher.sendTo(p.contact.devices, { title: 'HealthTwin emergency alert', body: p.text, url: new URL(p.link).pathname, tag: 'contact-alert', requireInteraction: true }) // devices saved from an earlier status link
     }
     this.emit(updated, EV.CONTACTS, { count: planned.length })
     return updated

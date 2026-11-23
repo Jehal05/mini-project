@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import PortalLayout from '../../components/PortalLayout.jsx';
+import PushToggle from '../push/PushToggle.jsx';
+import { saveStaffDevice } from '../push/push.js';
 import useIncoming from '../response/useIncoming.js';
 import Takeover from '../response/Takeover.jsx';
 import '../profile/profile.css';
@@ -30,6 +32,7 @@ export default function HospitalLayout() {
           <NavLink key={to} to={to} end={end} className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>{label}{badge && waiting > 0 && <span className="pill pill-red" aria-label={`${waiting} waiting for a response`}> {waiting}</span>}</NavLink>
         ))}
       </nav>
+      <PushToggle save={saveStaffDevice} label="Get case alerts when this tab is closed" hint="A notification says a case needs a response. It never names the patient." />
       <Takeover items={incoming.items} offsetMs={incoming.offsetMs} onChanged={incoming.reload} />
       <Outlet context={{ role: user.role, incoming }} />
     </PortalLayout>

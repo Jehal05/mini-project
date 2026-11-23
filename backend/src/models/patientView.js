@@ -37,7 +37,7 @@ export function toTwinRecord(patient) {
     allergies: known('allergies') ? patient.allergies.map((a) => a.allergen).filter(Boolean) : undefined,
     medications: known('medications') ? meds.map((m) => m.drug).filter(Boolean) : undefined,
     onBloodThinner: known('medications') ? meds.some((m) => isBloodThinner(m)) : undefined,
-    emergencyContacts: [...(patient.emergencyContacts ?? [])].sort((a, b) => (a.priority ?? 9) - (b.priority ?? 9)).map((c) => ({ name: c.name, relation: c.relation, phone: c.phone, email: c.email })),
+    emergencyContacts: [...(patient.emergencyContacts ?? [])].sort((a, b) => (a.priority ?? 9) - (b.priority ?? 9)).map((c) => ({ id: c._id ? String(c._id) : undefined, name: c.name, relation: c.relation, phone: c.phone, email: c.email })),
     fitnessLevel: patient.fitnessLevel,
   }
 }

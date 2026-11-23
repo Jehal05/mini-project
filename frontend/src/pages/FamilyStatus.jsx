@@ -5,6 +5,8 @@ import { useParams } from 'react-router-dom'
 import { Badge, Button, Card, MedicalBackground, SimulatedNotice } from '../design/index.js'
 import { emergencyApi } from '../features/emergency/api.js'
 import { CallLinks } from '../features/emergency/CallLinks.jsx'
+import PushToggle from '../features/push/PushToggle.jsx'
+import { saveContactDevice } from '../features/push/push.js'
 import { CANCEL_LABEL, STATUS_TEXT, STATUS_TONE } from '../features/emergency/status.js'
 
 export default function FamilyStatus() {
@@ -65,6 +67,7 @@ export default function FamilyStatus() {
               </Button>
               <CallLinks />
             </div>
+            {data.isLive && <div className="mt-4"><PushToggle save={saveContactDevice(token)} label="Get updates on this device" hint="You will be told when a hospital accepts and when the ambulance arrives, even if this page is closed." /></div>}
           </Card>
         )}
       </div>

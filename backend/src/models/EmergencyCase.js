@@ -125,6 +125,7 @@ const contactAlertSchema = new Schema(
     phone: String,
     email: String,
     channels: [{ type: String, enum: ['email', 'push', 'whatsapp'] }],
+    contactId: Schema.Types.ObjectId, // the patient's emergency contact this alert went to
     statusLinkToken: String, // live-status link for family (the token is the credential)
     whatsappLink: String, // pre-filled wa.me link the patient can tap
     sentAt: { type: Date, default: Date.now },

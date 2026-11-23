@@ -10,7 +10,7 @@ import FleetPanel from './FleetPanel.jsx';
 const KEY = 'ht.portalHospital';
 
 // Hospital Portal. The hospital picker is the TEMPORARY login stub until Jehal's real hospital login exists.
-export default function PortalApp() {
+export default function PortalApp({ view = 'queue' }) {
   const [hospitals, setHospitals] = useState([]);
   const [hospitalId, setHospitalId] = useState(() => localStorage.getItem(KEY) || '');
   const [selectedId, setSelectedId] = useState(null);
@@ -18,7 +18,7 @@ export default function PortalApp() {
   const [busy, setBusy] = useState(false);
   const [takeoverError, setTakeoverError] = useState('');
   const [info, setInfo] = useState('');
-  const [showFleet, setShowFleet] = useState(false);
+  const showFleet = view === 'fleet';
 
   useEffect(() => { fetchHospitals().then(setHospitals).catch(() => setHospitals([])); }, []);
   useEffect(() => { if (hospitalId) localStorage.setItem(KEY, hospitalId); }, [hospitalId]);
@@ -78,7 +78,6 @@ export default function PortalApp() {
             <button className="rounded border px-3 py-1 text-sm" onClick={async () => setInfo(await enableBackgroundAlerts(hospitalId).catch((e) => e.message))}>
               Alerts when tab is closed
             </button>
-            <button className="rounded border px-3 py-1 text-sm" onClick={() => setShowFleet((v) => !v)}>{showFleet ? 'Hide fleet' : 'Ambulance fleet'}</button>
             <button className="rounded bg-red-700 px-3 py-1 text-sm font-semibold text-white" onClick={demo}>Create demo emergency</button>
           </>
         )}
@@ -97,7 +96,7 @@ export default function PortalApp() {
 
       {!hospitalId ? (
         <p className="rounded bg-white p-4 text-sm shadow">Choose a hospital to see its incoming emergencies.</p>
-      ) : (
+      ) : showFleet ? null : (
         <div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
           <CaseQueue cases={cases} selectedId={selectedId} onSelect={setSelectedId} hospitalId={hospitalId} sort={sort} onSort={setSort} />
           {selected ? (

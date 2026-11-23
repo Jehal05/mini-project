@@ -1,5 +1,5 @@
 // Disclaimer is always shown. In emergency mode the Call 112 / Call 108 buttons stay visible too.
-export default function EmergencyBanner({ emergency }) {
+export default function EmergencyBanner({ emergency, showDisclaimer = true }) {
   return (
     <div>
       {emergency && (
@@ -11,9 +11,11 @@ export default function EmergencyBanner({ emergency }) {
           </div>
         </div>
       )}
-      <p className="bg-amber-100 px-4 py-1 text-center text-xs text-amber-900">
-        Simulated data for demonstration. Not a medical device.
-      </p>
+      {showDisclaimer && (
+        <p className="bg-amber-100 px-4 py-1 text-center text-xs text-amber-900">
+          Simulated data for demonstration. Not a medical device.
+        </p>
+      )}
     </div>
   );
 }

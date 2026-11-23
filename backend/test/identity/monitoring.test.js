@@ -280,4 +280,30 @@ describe('Socket.IO', () => {
     await a.agent.post('/api/auth/logout').set({ 'X-Requested-With': 'healthtwin' });
     await expect(ready(open(a.token))).rejects.toThrow(/session has ended/i);
   });
+
+  it('closes a connected socket after its login ends', async () => {
+    process.env.SOCKET_RECHECK_MS = '50';
+    try {
+      const a = await patientSession();
+      const socket = await ready(open(a.token));
+      const closed = new Promise((resolve) => socket.on('disconnect', resolve));
+      await a.agent.post('/api/auth/logout').set({ 'X-Requested-With': 'healthtwin' });
+      await expect(Promise.race([closed, new Promise((_, no) => setTimeout(() => no(new Error('still open')), 3000))])).resolves.toBeDefined();
+    } finally { delete process.env.SOCKET_RECHECK_MS; }
+  });
+});
+
+describe('Unresolved emergencies (admin alert)', () => {
+  it('lists unresolved cases for the central admin only', async () => {
+    const a = await monitored(await patientSession());
+    await EmergencyCase.create({ patient: a.patient._id, patientCode: a.patient.patientId, status: 'unresolved', source: 'manual', severity: 3 }).catch(async () => {
+      const made = await request(app).post('/api/emergency/sos').set(bearer(a.token)).send().expect(201);
+      await EmergencyCase.updateOne({ _id: made.body.case.id }, { $set: { status: 'unresolved' } });
+    });
+    const admin = await loginAs(await makeUser({ role: 'central_admin' }));
+    const res = await request(app).get('/api/emergency/unresolved').set(bearer(admin.token)).expect(200);
+    expect(res.body.items.some((c) => c.patientCode === a.patient.patientId && c.status === 'unresolved')).toBe(true);
+    await request(app).get('/api/emergency/unresolved').set(bearer(a.token)).expect(403);
+    await request(app).get('/api/emergency/unresolved').expect(401);
+  });
 });

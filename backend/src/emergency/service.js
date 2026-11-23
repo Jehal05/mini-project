@@ -8,7 +8,7 @@
 //
 // Hospital discovery is Puneet's and is not on main: it is an injectable hook,
 //   discovery.notify({ caseId, round, radiusKm, location, caseSnapshot })
-// TODO(Puneet): pass the real one. TODO(Jehal): real role checks on the routes and the admin room.
+// TODO(Puneet): pass the real one.
 
 import { randomBytes } from 'node:crypto'
 import mongoose from 'mongoose'
@@ -299,7 +299,7 @@ export class EmergencyService {
     if (!c) return null
     this.clear(caseId)
     this.emit(c, EV.UNRESOLVED, { message: 'No hospital has accepted yet. Call 112 now.', numbers: EMERGENCY_NUMBERS })
-    this.io?.to(ADMIN_ROOM).emit(EV.UNRESOLVED, { ...this.base(c), location: c.location ?? null }) // TODO(Jehal): admin room and role check
+    this.io?.to(ADMIN_ROOM).emit(EV.UNRESOLVED, { ...this.base(c), location: c.location ?? null })
     return c
   }
 
@@ -452,6 +452,12 @@ export class EmergencyService {
   async active(patientId) {
     const c = await EmergencyCase.findOne({ patient: patientId, status: { $in: ACTIVE_STATUSES } }).lean()
     return c ? this.toView(c) : null
+  }
+
+  /** Cases no hospital accepted after every round, oldest first: what the central admin has to act on. */
+  async unresolved() {
+    const items = await EmergencyCase.find({ status: S.UNRESOLVED }).sort({ createdAt: 1 }).limit(100).lean()
+    return items.map((c) => this.toView(c))
   }
 
   async get(caseId) {

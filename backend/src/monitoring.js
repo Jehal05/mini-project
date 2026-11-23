@@ -20,7 +20,7 @@ export async function createMonitoring({ io, discovery, notifier, audit = auditD
 
   const engine = await attachSimulation({ app: extraApi, io, basePath: '/sim', logger, autoStart, ...rules, ...simulationOptions })
   const detection = await attachDetection({ app: extraApi, io, engine, basePath: '/detection', logger, autoStart, audit, ...rules })
-  const emergency = await attachEmergency({ app: extraApi, io, detection, discovery, notifier, basePath: '/emergency', logger, guard: rules.guard, access: rules.access, ...emergencyOptions })
+  const emergency = await attachEmergency({ app: extraApi, io, detection, discovery, notifier, basePath: '/emergency', logger, guard: rules.guard, adminGuard: rules.presenterGuard, access: rules.access, ...emergencyOptions })
 
   // The patient edits their profile: the twin, the baseline and the risk score follow it.
   const onProfile = async ({ patient } = {}) => {

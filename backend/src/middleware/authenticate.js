@@ -47,7 +47,17 @@ export async function userFromToken(token) {
     throw err;
   }
   touchSession(payload.sid);
-  return { id: payload.sub, role: payload.role, hospitalId: payload.hospitalId, patientId: payload.patientId, sid: payload.sid };
+  return { id: payload.sub, role: payload.role, hospitalId: payload.hospitalId, patientId: payload.patientId, sid: payload.sid, fam: payload.fam };
+}
+
+/** True while the login behind `user` (from userFromToken) is still live and the account active. Ignores token expiry. */
+export async function sessionStillLive(user) {
+  if (!user?.fam || !user?.id) return false;
+  const [live, active] = await Promise.all([
+    RefreshToken.exists({ family: user.fam, revokedAt: { $exists: false } }),
+    User.exists({ _id: user.id, isActive: true }),
+  ]);
+  return Boolean(live && active);
 }
 
 /** Requires `Authorization: Bearer <access token>` and sets req.user (see userFromToken). */

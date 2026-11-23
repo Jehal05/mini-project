@@ -1,6 +1,7 @@
 // REST endpoints for the SOS flow. Mounted under /api/emergency.
 //
 //   POST /sos                       { patient, location? }      41  join the live case or open one
+//   GET  /unresolved                central admin: cases nobody accepted after every round
 //   GET  /active?patient=           the patient's live case (restores the screen after a reload)
 //   GET  /mine?patient=&page=&limit=                             50  incident history
 //   GET  /first-aid?patient=                                     104 first aid + 112/108, aspirin rule
@@ -13,9 +14,7 @@
 //   GET  /status/:token             family status page data (the token is the credential)
 //   POST /status/:token/seen        a contact taps "Seen"
 //
-// INTERIM access: `guard` is whatever the host passes (the same one as the monitoring routes).
-// TODO(Jehal): real login. Patient routes: only that patient (acknowledge: also a family link);
-// cancel: the patient, or hospital staff on the case; the token routes stay public by design.
+// Access: `guard` and `access` come from the host (backend/src/access/monitoringAccess.js): patients reach only their own cases, hospital roles only cases they accepted; the token routes stay public by design. `adminGuard` protects GET /unresolved.
 
 import express from 'express'
 import mongoose from 'mongoose'
@@ -42,7 +41,7 @@ function paging(query) {
 // A caller who may not see something gets the same 404 as for something that does not exist.
 const WRITE_ROUTES = new Set(['symptoms', 'confirm', 'location'])
 
-export function createEmergencyRouter(service, { guard = allow, access } = {}) {
+export function createEmergencyRouter(service, { guard = allow, adminGuard = allow, access } = {}) {
   const router = express.Router()
   router.use(express.json())
 
@@ -84,6 +83,10 @@ export function createEmergencyRouter(service, { guard = allow, access } = {}) {
     const p = await patientOf(req.body?.patient, req, { write: true })
     const out = await service.sos(p._id, { location: req.body?.location })
     res.status(out.created ? 201 : 200).json(out)
+  })
+
+  router.get('/unresolved', adminGuard, async (_req, res) => {
+    res.json({ items: await service.unresolved(), serverNow: new Date(service.now()).toISOString(), simulated: true })
   })
 
   router.get('/active', async (req, res) => {

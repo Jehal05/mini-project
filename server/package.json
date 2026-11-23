@@ -12,7 +12,8 @@
     "seed:demo-history": "node src/seed/demoHistory.js",
     "backup": "node scripts/backup.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:users": "node src/seed/authUsers.js"
   },
   "engines": {
     "node": ">=18"

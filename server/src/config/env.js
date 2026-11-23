@@ -33,5 +33,13 @@ export const env = {
   backupKeep: Number(process.env.BACKUP_KEEP) || 14,
   backupEncryptionKey: process.env.BACKUP_ENCRYPTION_KEY || '', // 64 hex characters. Required in production.
   allowProductionRestore: process.env.ALLOW_PRODUCTION_RESTORE === 'true',
+  // Real login (Phase 14). Mirrors Jehal's design: 15 min access token in memory, rotating refresh cookie, 30 min idle limit.
+  accessTtlSeconds: Number(process.env.ACCESS_TTL_SECONDS) || 15 * 60,
+  refreshTtlDays: Number(process.env.REFRESH_TTL_DAYS) || 7,
+  idleTimeoutMinutes: Number(process.env.IDLE_TIMEOUT_MINUTES) || 30,
+  maxFailedLogins: Number(process.env.MAX_FAILED_LOGINS) || 5,
+  lockoutMinutes: Number(process.env.LOCKOUT_MINUTES) || 15,
+  // The old x-hospital-id / x-doctor-id / x-ambulance-id / x-admin-token headers still work ONLY in tests or when DEV_AUTH=true. Never in production.
+  devAuth: (process.env.NODE_ENV || 'development') === 'test' || ((process.env.NODE_ENV || 'development') !== 'production' && process.env.DEV_AUTH === 'true'),
   sweepIntervalSeconds: Number(process.env.NO_ANSWER_SWEEP_SECONDS) || 5,
 };

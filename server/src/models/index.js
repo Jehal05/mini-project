@@ -14,3 +14,4 @@ export { default as Notification } from './Notification.js';
 export { default as AuditLog } from './AuditLog.js';
 export { default as PushSubscription } from './PushSubscription.js';
 export { default as Trip } from './Trip.js';
+export { default as RefreshToken } from './RefreshToken.js';

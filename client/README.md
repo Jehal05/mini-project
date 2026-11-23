@@ -38,3 +38,33 @@ checklist / timer / timeline all call the server. Open the Patient status tab to
   five Recharts charts, each with a "Show as table" alternative, and a Backups section (back up now, verify, restore with a dry-run summary and a typed `RESTORE`).
   Empty states say "No data yet". Run `npm run seed:demo-history` in `server/` for simulated history.
 - Install the new dependency with `npm install` (adds `recharts`).
+
+## Design system and role screens (Phase 13)
+
+One medical look, five different interfaces. Open the app and use **Demo login** (top bar) to switch role; add `?role=doctor` to the URL to start as a role.
+In development, `?ui-kit` shows every component in light and dark.
+
+| Role | Accent and corners | Default theme | Screens |
+|---|---|---|---|
+| Patient | teal, very round | follows device | My emergency (reassuring sentence, ETA, five-step progress, map, Call 112/108), Find hospitals |
+| Doctor | cobalt, tight | dark | My cases: vitals first, heart-rate trend, golden-hour timer, preparation, audited record |
+| Hospital staff | emerald, sharp | follows device | Emergency queue (severity edge, countdown rings, takeover alarm), Ambulances board |
+| Ambulance crew | burnt orange, round | follows device | My trip: one large action, high contrast |
+| Admin | plum | dark | Analytics (theme-aware charts + tables), Backups (typed `RESTORE`) |
+
+The ECG trace in the top bar is the connection indicator: it draws a beat when live, dashes while reconnecting and goes flat offline, always with a text label.
+The faint cardiograph-paper background is the class `paper-bg`; delete it from `AppShell.jsx` to remove it.
+
+**Files added**
+- `src/ui/theme.css` (colour variables, role accents, dark theme, focus ring, reduced motion), `tailwind.config.js` (tokens as Tailwind colours)
+- `src/ui/`: `AppShell`, `Button`, `Surface` (Card, Panel, StatTile, Badge, SeverityBadge), `Form`, `Feedback` (Skeleton, EmptyState, ErrorState, Toast), `Overlay` (Modal, Tooltip), `Data` (Table, ProgressRing, Timeline, Tabs), `EcgTrace`, `Sparkline`, `icons`, `UiKit`
+- Pure helpers with tests: `ui/tokens.js`, `ui/vitals.js`, `ui/theme.js`, `ui/roles.js`, `lib/patientStages.js`, `lib/vitalsTrend.js`, `lib/connection.js` (tests in `ui/tokens.test.js` and `lib/connection.test.js`)
+- `src/patient/` (PatientStepper, FindHospitals), `src/doctor/` (DoctorApp, DoctorCaseView, useDoctorCases), `portal/CountdownRing.jsx`, `admin/useChartColors.js`, `lib/doctorApi.js`, `lib/useConnection.js`
+
+**Accessibility:** severity is always a shape plus a word plus a colour; every interactive target is at least 44px; visible focus ring; skip link; `aria-live` on connection,
+patient status and form messages; dialogs trap focus and close on Escape; animation stops under reduced motion; charts keep a "Show as table"; text pairs measured at 4.5:1 or better in both themes.
+
+**Vitals highlight ranges are simulated** (`ui/vitals.js`) and shown with a note. They are not clinical advice.
+
+**For Jehal:** the role switcher, doctor picker, hospital picker, ambulance picker and admin token box are all temporary demo logins. Real login should set the role
+(and the doctor, hospital or ambulance id) and replace them. Server: `middleware/requireDoctor.js` is a dev stub like the others, and `GET /api/doctors/dev-options` is dev-only (404 in production).

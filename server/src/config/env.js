@@ -41,5 +41,14 @@ export const env = {
   lockoutMinutes: Number(process.env.LOCKOUT_MINUTES) || 15,
   // The old x-hospital-id / x-doctor-id / x-ambulance-id / x-admin-token headers still work ONLY in tests or when DEV_AUTH=true. Never in production.
   devAuth: (process.env.NODE_ENV || 'development') === 'test' || ((process.env.NODE_ENV || 'development') !== 'production' && process.env.DEV_AUTH === 'true'),
+  // Patient records (Phase 15)
+  uploadsDir: process.env.UPLOADS_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../uploads'),
+  photoMaxBytes: 2 * 1024 * 1024,
+  documentMaxBytes: 5 * 1024 * 1024,
+  maxDocumentsPerPatient: 50,
+  bloodThinnerDrugs: (process.env.BLOOD_THINNERS || 'warfarin,acenocoumarol,heparin,enoxaparin,apixaban,rivaroxaban,dabigatran,clopidogrel,ticagrelor,prasugrel').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
+  bystanderPerIpPerHour: Number(process.env.BYSTANDER_PER_IP_PER_HOUR) || 5,
+  bystanderPerPatientPerHour: Number(process.env.BYSTANDER_PER_PATIENT_PER_HOUR) || 3,
+  testAlertsPerContactPerHour: Number(process.env.TEST_ALERTS_PER_CONTACT_PER_HOUR) || 3,
   sweepIntervalSeconds: Number(process.env.NO_ANSWER_SWEEP_SECONDS) || 5,
 };

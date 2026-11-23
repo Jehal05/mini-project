@@ -3,8 +3,25 @@
 import { connectDB, disconnectDB } from '../config/db.js';
 import { Hospital, Doctor, Ambulance, Patient, User } from '../models/index.js';
 import { hashPassword } from '../auth/password.js';
+import crypto from 'node:crypto';
+import { nextSequence } from '../models/Counter.js';
 
 export const DEFAULT_DEMO_PASSWORD = 'HealthTwin#2026';
+
+// Gives the first demo patient an HT id, a QR token and a small sample profile so the new screens are not empty. Never overwrites filled fields.
+async function fillDemoProfile(p) {
+  const $set = {};
+  if (!p.patientId) { const y = new Date().getFullYear(); $set.patientId = `HT-${y}-${String(await nextSequence(`patientId:${y}`)).padStart(4, '0')}`; }
+  if (!p.qrToken) $set.qrToken = crypto.randomBytes(32).toString('hex');
+  if (!p.bloodGroup) $set.bloodGroup = 'B+';
+  if (!p.dateOfBirth) $set.dateOfBirth = new Date('1978-04-12');
+  if (!p.emergencyContacts?.length) $set.emergencyContacts = [{ name: 'Anita Sharma', relation: 'Spouse', phone: '+919800000001', priority: 1 }];
+  if (!p.allergies?.length) $set.allergies = [{ allergen: 'Penicillin', reaction: 'Rash', severity: 'severe' }];
+  if (!p.cardiacConditions?.length) $set.cardiacConditions = [{ type: 'stent', year: 2021 }];
+  if (!p.medications?.length) $set.medications = [{ drug: 'Atorvastatin', dose: '20 mg', frequency: 'Once daily' }];
+  if (Object.keys($set).length) await Patient.updateOne({ _id: p._id }, { $set });
+  return { ...p, ...$set };
+}
 
 export async function seedUsers({ password = process.env.DEMO_PASSWORD || DEFAULT_DEMO_PASSWORD } = {}) {
   if (process.env.NODE_ENV === 'production') throw new Error('Demo accounts are never created in production');
@@ -18,7 +35,8 @@ export async function seedUsers({ password = process.env.DEMO_PASSWORD || DEFAUL
   const hospital = await Hospital.findOne({ simulated: true }).sort({ name: 1 }).lean();
   const doctor = hospital ? await Doctor.findOne({ hospital: hospital._id, onDuty: true }).sort({ name: 1 }).lean() : null;
   const ambulance = hospital ? await Ambulance.findOne({ homeHospital: hospital._id }).sort({ vehicleNumber: 1 }).lean() : null;
-  const patient = await Patient.findOne({}).sort({ createdAt: 1 }).lean();
+  let patient = await Patient.findOne({}).sort({ createdAt: 1 }).lean();
+  if (patient) patient = await fillDemoProfile(patient);
 
   await upsert('admin@healthtwin.demo', { name: 'Central Admin (demo)', role: 'central_admin' });
   if (hospital) {

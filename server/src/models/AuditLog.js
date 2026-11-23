@@ -7,6 +7,7 @@ const auditLogSchema = new mongoose.Schema(
     action: { type: String, required: true },
     resourceType: String,
     resourceId: mongoose.Schema.Types.ObjectId,
+    resourceRef: String, // readable id such as HT-2026-0001 (never a QR token)
     meta: mongoose.Schema.Types.Mixed,
   },
   { timestamps: true },

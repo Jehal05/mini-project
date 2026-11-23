@@ -27,3 +27,4 @@ export const revokeAllForUser = async (user, now) => { store.tokens.filter((t) =
 export const familyIsLive = async (family) => store.tokens.some((t) => t.family === family && !t.revokedAt);
 export const touchFamily = async (family, now) => { store.tokens.filter((t) => t.family === family && !t.revokedAt).forEach((t) => { t.lastActivityAt = new Date(now); }); };
 export const setPassword = async (id, h) => { store.users.get(sid(id)).passwordHash = h; };
+export const createUser = async (data) => { const id = oid(++n); store.users.set(id, { _id: id, failedLogins: 0, ...data }); return clone(store.users.get(id)); };

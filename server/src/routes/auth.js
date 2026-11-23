@@ -5,6 +5,7 @@ import { httpError } from '../utils/httpError.js';
 import * as auth from '../auth/service.js';
 import { authenticate } from '../auth/guard.js';
 import { passwordProblems } from '../auth/password.js';
+import { registerPatient } from '../patients/service.js';
 
 const COOKIE = 'ht_refresh';
 const cookieOpts = () => ({ httpOnly: true, secure: env.nodeEnv === 'production', sameSite: 'lax', path: '/api/auth', maxAge: env.refreshTtlDays * 86400000 });
@@ -31,6 +32,9 @@ function limiter(max, windowMs = 15 * 60000) {
 
 const router = Router();
 const withCode = (res, e) => res.status(e.status || 500).json({ error: e.status >= 500 ? 'Internal server error' : e.message, code: e.code });
+
+// Feature 1: patients sign up themselves. Other roles are created by an administrator.
+router.post('/register', limiter(10), asyncHandler(async (req, res) => res.status(201).json(await registerPatient(req.body))));
 
 router.post('/login/:portal', limiter(30), asyncHandler(async (req, res) => {
   const out = await auth.login(req.params.portal, req.body ?? {}, ctxOf(req));

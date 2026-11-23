@@ -1,0 +1,6 @@
+
+# Backups hold patient data. Never commit them.
+backups/
+*.htbak
+*.htbak.tmp
+uploads/

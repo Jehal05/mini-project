@@ -11,6 +11,9 @@ export async function launch() {
 /** A page that records console errors, page errors and failed API calls (quality gate: none allowed). */
 export async function openPage(browser, viewport = DESKTOP, { context: ctxOpts = {} } = {}) {
   const context = await browser.newContext({ viewport, ...ctxOpts })
+  // Map tiles come from the public internet; serve a blank tile so tests do not depend on it.
+  const blank = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=', 'base64')
+  await context.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: blank }))
   const page = await context.newPage()
   page.problems = []
   page.on('console', (m) => {

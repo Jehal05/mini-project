@@ -34,7 +34,7 @@ export default function LeafletMap({ points, lines = [], circles = [], height = 
     state.current.layer = L.layerGroup().addTo(map)
     state.current.map = map
     map.on('click', (e) => pick.current?.({ lng: e.latlng.lng, lat: e.latlng.lat }))
-    return () => { map.remove(); state.current = { map: null, layer: null, fitKey: '' } }
+    return () => { map.stop(); map.off(); map.remove(); state.current = { map: null, layer: null, fitKey: '' } }
   }, [])
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function LeafletMap({ points, lines = [], circles = [], height = 
     if (points.length && state.current.fitKey !== fitKey) {
       state.current.fitKey = fitKey
       const b = L.latLngBounds([...points.map((p) => [p.lat, p.lng]), ...lines.flatMap((l) => (l.path ?? []).map(([lng, lat]) => [lat, lng]))])
-      map.fitBounds(b, { padding: [30, 30], maxZoom: 16 })
+      map.fitBounds(b, { padding: [30, 30], maxZoom: 16, animate: false })
     }
   }, [points, lines, circles, fitKey, draggablePin])
 

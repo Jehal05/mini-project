@@ -1,11 +1,9 @@
-// Calls the hospital-staff endpoints. The x-hospital-id header is the TEMPORARY dev login stub
-// (server/src/middleware/requireHospitalStaff.js). Jehal's real auth replaces it with a token.
+// Calls the hospital-staff endpoints with the signed-in person's token. The x-hospital-id header is only the
+// demo-mode fallback (server accepts it in tests or with DEV_AUTH=true).
+import { authedFetch } from './session.js';
+
 export async function portalFetch(hospitalId, path, { method = 'GET', body } = {}) {
-  const res = await fetch(`/api${path}`, {
-    method,
-    headers: { 'x-hospital-id': hospitalId, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const res = await authedFetch(`/api${path}`, { method, body, legacy: { 'x-hospital-id': hospitalId } });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;

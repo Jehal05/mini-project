@@ -11,8 +11,9 @@ import { EmptyState } from '../ui/Feedback.jsx';
 import TrackingMap from './TrackingMap.jsx';
 
 // Feature 67: what the patient (or family) sees. Joins the patient room and shows live status.
-export default function PatientStatus() {
-  const [patientId, setPatientId] = useState(() => localStorage.getItem('ht.demoPatientId') || '');
+export default function PatientStatus({ account = null }) {
+  const [storedId, setPatientId] = useState(() => localStorage.getItem('ht.demoPatientId') || '');
+  const patientId = account ? account.patientId || '' : storedId;
   const [status, setStatus] = useState({ kind: 'waiting', text: 'Waiting for a hospital to respond…' });
   const [trip, setTrip] = useState(null);
 
@@ -80,12 +81,12 @@ export default function PatientStatus() {
         <a href="tel:108" className="flex min-h-[3.5rem] items-center justify-center gap-2 rounded-ui bg-critical px-4 text-lg font-bold text-white"><Icon name="phone" size={20} />Call 108</a>
       </div>
 
-      <details className="rounded-ui border border-line bg-surface p-3 text-sm">
+      {!account && <details className="rounded-ui border border-line bg-surface p-3 text-sm">
         <summary className="cursor-pointer font-semibold text-muted">Demo details</summary>
         <label className="mt-2 block text-muted">Patient id (filled in by the demo emergency)
           <input className="mt-1 min-h-touch w-full rounded-ui border border-line bg-surface px-2 text-xs text-ink" value={patientId} onChange={(e) => setPatientId(e.target.value.trim())} />
         </label>
-      </details>
+      </details>}
     </div>
   );
 }

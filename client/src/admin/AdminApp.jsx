@@ -12,8 +12,9 @@ import { EmptyState, ErrorState } from '../ui/Feedback.jsx';
 const KEY = 'ht.adminToken';
 
 // Features 96 and 99. The token box is the TEMPORARY dev admin login until Jehal's real admin login exists.
-export default function AdminApp({ view = 'analytics' }) {
-  const [token, setToken] = useState(() => sessionStorage.getItem(KEY) || '');
+export default function AdminApp({ view = 'analytics', account = null }) {
+  const [pickedToken, setToken] = useState(() => sessionStorage.getItem(KEY) || '');
+  const token = account ? 'session' : pickedToken; // signed in: adminFetch sends the session token, the box is hidden
   const [from, setFrom] = useState(() => dateInput(30));
   const [to, setTo] = useState(() => dateInput(0));
   const [hospitalId, setHospitalId] = useState('');
@@ -23,7 +24,7 @@ export default function AdminApp({ view = 'analytics' }) {
   const [error, setError] = useState('');
 
   useEffect(() => { fetchHospitals().then(setHospitals).catch(() => setHospitals([])); }, []);
-  useEffect(() => { if (token) sessionStorage.setItem(KEY, token); }, [token]);
+  useEffect(() => { if (!account && token) sessionStorage.setItem(KEY, token); }, [account, token]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -49,7 +50,7 @@ export default function AdminApp({ view = 'analytics' }) {
   return (
     <div className="space-y-4">
       <Card className="flex flex-wrap items-end gap-3 p-3">
-        <Field label="Admin token (demo login)">{(p) => <Input type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} {...p} />}</Field>
+        {!account && <Field label="Admin token (demo login)">{(p) => <Input type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} {...p} />}</Field>}
         {view === 'analytics' && (
           <>
             <Field label="From">{(p) => <Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} {...p} />}</Field>

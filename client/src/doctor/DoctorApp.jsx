@@ -13,14 +13,15 @@ const KEY = 'ht.doctorId';
 
 // Doctor screen: only the cases assigned to this doctor. The picker is the TEMPORARY demo login
 // (dev-only list from the server). Jehal's real doctor login replaces it and supplies the doctor id.
-export default function DoctorApp() {
+export default function DoctorApp({ account = null }) {
   const [logins, setLogins] = useState([]);
-  const [doctorId, setDoctorId] = useState(() => localStorage.getItem(KEY) || '');
+  const [pickedId, setDoctorId] = useState(() => localStorage.getItem(KEY) || '');
+  const doctorId = account ? account.doctorId || '' : pickedId; // signed in: the account decides, no picker
   const [selectedId, setSelectedId] = useState(null);
   const { doctor, cases, history, loading, error, upsert, reload, newAssignment, clearAssignment } = useDoctorCases(doctorId);
 
-  useEffect(() => { fetchDoctorLogins().then(setLogins).catch(() => setLogins([])); }, []);
-  useEffect(() => { if (doctorId) localStorage.setItem(KEY, doctorId); }, [doctorId]);
+  useEffect(() => { if (!account) fetchDoctorLogins().then(setLogins).catch(() => setLogins([])); }, [account]);
+  useEffect(() => { if (!account && doctorId) localStorage.setItem(KEY, doctorId); }, [account, doctorId]);
   useEffect(() => { if (selectedId && !cases.some((c) => c.id === selectedId)) setSelectedId(null); }, [cases, selectedId]);
 
   const selected = cases.find((c) => c.id === selectedId) || cases[0] || null;
@@ -29,12 +30,13 @@ export default function DoctorApp() {
   return (
     <div className="space-y-4">
       <Card className="flex flex-wrap items-end gap-3 p-3">
-        <label className="space-y-1 text-sm"><span className="block font-semibold">Doctor (demo login)</span>
+        {!account && <label className="space-y-1 text-sm"><span className="block font-semibold">Doctor (demo login)</span>
           <Select value={doctorId} onChange={(e) => { setDoctorId(e.target.value); setSelectedId(null); }}>
             <option value="">Choose your name</option>
             {logins.map((d) => <option key={d.id} value={d.id}>{d.name}, {d.specialty}{d.hospitalName ? ` at ${d.hospitalName}` : ''}</option>)}
           </Select>
-        </label>
+        </label>}
+        {account && !doctorId && <p className="text-sm text-muted">This account is not linked to a doctor profile. Ask an administrator to link it.</p>}
         {doctor && <p className="pb-2 text-sm text-muted">{doctor.hospitalName}</p>}
       </Card>
 

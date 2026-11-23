@@ -1,11 +1,8 @@
-// Crew endpoints. x-ambulance-id is the TEMPORARY dev login stub (server/src/middleware/requireAmbulanceCrew.js).
-// Jehal's real auth replaces it with a token.
+// Crew endpoints with the signed-in person's token. x-ambulance-id is only the demo-mode fallback.
+import { authedFetch } from './session.js';
+
 export async function crewFetch(ambulanceId, path, { method = 'GET', body } = {}) {
-  const res = await fetch(`/api${path}`, {
-    method,
-    headers: { 'x-ambulance-id': ambulanceId, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const res = await authedFetch(`/api${path}`, { method, body, legacy: { 'x-ambulance-id': ambulanceId } });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;

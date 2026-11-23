@@ -14,15 +14,16 @@ const KEY = 'ht.crewAmbulance';
 
 // Feature 107: mobile-friendly crew view. Big buttons, one action at a time.
 // The ambulance picker is the TEMPORARY dev login stub until Jehal's real crew login exists.
-export default function CrewApp() {
+export default function CrewApp({ account = null }) {
   const [options, setOptions] = useState([]);
-  const [ambulanceId, setAmbulanceId] = useState(() => localStorage.getItem(KEY) || '');
+  const [pickedId, setAmbulanceId] = useState(() => localStorage.getItem(KEY) || '');
+  const ambulanceId = account ? account.ambulanceId || '' : pickedId; // signed in: the account decides, no picker
   const [caseId, setCaseId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { fetchCrewOptions().then(setOptions).catch(() => setOptions([])); }, []);
-  useEffect(() => { if (ambulanceId) localStorage.setItem(KEY, ambulanceId); }, [ambulanceId]);
+  useEffect(() => { if (!account) fetchCrewOptions().then(setOptions).catch(() => setOptions([])); }, [account]);
+  useEffect(() => { if (!account && ambulanceId) localStorage.setItem(KEY, ambulanceId); }, [account, ambulanceId]);
 
   const load = useCallback(async () => (await crewFetch(ambulanceId, '/trips/crew/current')).trip, [ambulanceId]);
   const { trip, reload, error: loadError } = useTrip(ambulanceId ? caseId : null, load);
@@ -54,15 +55,15 @@ export default function CrewApp() {
   const action = trip ? crewAction(trip.stage) : null;
   return (
     <div className="mx-auto max-w-lg space-y-4">
-      <label className="block space-y-1 text-sm font-semibold">Ambulance (demo login)
+      {!account && <label className="block space-y-1 text-sm font-semibold">Ambulance (demo login)
         <Select value={ambulanceId} onChange={(e) => { setAmbulanceId(e.target.value); setCaseId(null); }} className="!min-h-[3.25rem] text-base">
           <option value="">Choose your ambulance</option>
           {options.map((o) => <option key={o.id} value={o.id}>{o.vehicleNumber}, {o.type}{o.hospital ? `, ${o.hospital}` : ''}</option>)}
         </Select>
-      </label>
+      </label>}
       {(error || loadError) && <ErrorState title="Trip update failed">{error || loadError}</ErrorState>}
 
-      {!ambulanceId && <Card><EmptyState icon="ambulance" title="Choose your ambulance">Your current trip shows here once you pick a vehicle.</EmptyState></Card>}
+      {!ambulanceId && <Card><EmptyState icon="ambulance" title={account ? 'No ambulance linked' : 'Choose your ambulance'}>{account ? 'This account is not linked to an ambulance. Ask an administrator to link it.' : 'Your current trip shows here once you pick a vehicle.'}</EmptyState></Card>}
       {ambulanceId && !trip && <Card><EmptyState icon="clock" title="Waiting for a dispatch">A new trip appears here by itself. You do not need to refresh.</EmptyState></Card>}
 
       {trip && (

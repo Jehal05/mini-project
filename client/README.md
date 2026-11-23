@@ -39,9 +39,21 @@ checklist / timer / timeline all call the server. Open the Patient status tab to
   Empty states say "No data yet". Run `npm run seed:demo-history` in `server/` for simulated history.
 - Install the new dependency with `npm install` (adds `recharts`).
 
+## Sign-in (Phase 14)
+
+The app opens on a sign-in screen. Pick the tab (Patient, Doctor, Hospital staff, Ambulance crew, Admin), enter email and password. The account decides the screen and which hospital, doctor or ambulance you see, so the pickers are gone.
+
+1. `cd server`, then `npm run seed` and `npm run seed:users`.
+2. Sign in with `patient@`, `doctor@`, `staff@`, `crew@` or `admin@` `healthtwin.demo`. Password is `HealthTwin#2026` unless `DEMO_PASSWORD` is set.
+3. Use **Sign out** (top bar) to switch accounts.
+
+The access token lives in memory only. The browser keeps a refresh cookie (httpOnly) and gets a new token when the old one expires; after 30 minutes idle you sign in again.
+Old demo mode: set `VITE_DEV_AUTH=true` in the client and `DEV_AUTH=true` on the server to bring back the Demo login switcher and pickers.
+Code: `src/lib/session.js` (token, refresh), `src/lib/authHeaders.js` (pure helpers, tested), `src/ui/LoginScreen.jsx`.
+
 ## Design system and role screens (Phase 13)
 
-One medical look, five different interfaces. Open the app and use **Demo login** (top bar) to switch role; add `?role=doctor` to the URL to start as a role.
+One medical look, five different interfaces. In demo mode use **Demo login** (top bar) to switch role; add `?role=doctor` to the URL to start as a role.
 In development, `?ui-kit` shows every component in light and dark.
 
 | Role | Accent and corners | Default theme | Screens |

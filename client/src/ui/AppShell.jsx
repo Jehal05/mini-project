@@ -1,12 +1,12 @@
 import Icon from './icons.jsx';
 import EcgTrace from './EcgTrace.jsx';
-import { ROLES, navFor, pageTitle, showsCallBar } from './roles.js';
+import { ROLES, navFor, pageTitle, showsCallBar, roleLabel } from './roles.js';
 import { CONNECTION_HELP, CONNECTION_LABEL } from '../lib/connection.js';
 
 // Frame around every role: top bar (heartbeat = connection status, demo role switch, theme), side rail or bottom
 // nav, page title, and the permanent "not a medical device" line.
 // The role switcher is the TEMPORARY demo login. Jehal's real login replaces it and supplies the role.
-export default function AppShell({ role, onRole, view, onView, theme, onToggleTheme, connection, children }) {
+export default function AppShell({ role, onRole, account = null, onSignOut, view, onView, theme, onToggleTheme, connection, children }) {
   const nav = navFor(role);
   const calls = showsCallBar(role);
   const navButtons = (bottom) => nav.map((n) => (
@@ -29,13 +29,21 @@ export default function AppShell({ role, onRole, view, onView, theme, onToggleTh
             <span role="status" aria-live="polite" className="text-xs font-semibold text-muted">{CONNECTION_LABEL[connection]}</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <label className="flex items-center gap-2 text-xs text-muted">
+            {account && (
+              <div className="flex items-center gap-2">
+                <span className="hidden text-right text-xs leading-tight sm:block"><span className="block font-semibold text-ink">{account.name}</span><span className="text-muted">{roleLabel(account.role)}</span></span>
+                <button type="button" onClick={onSignOut} className="inline-flex min-h-touch items-center gap-1 rounded-ui border border-line bg-surface px-3 text-sm font-semibold hover:bg-raised">
+                  <Icon name="user" size={16} />Sign out
+                </button>
+              </div>
+            )}
+            {!account && <label className="flex items-center gap-2 text-xs text-muted">
               <span className="hidden sm:inline">Demo login</span>
               <select value={role} onChange={(e) => onRole(e.target.value)} aria-label="Demo login: choose a role"
                 className="min-h-touch rounded-ui border border-line bg-surface px-2 text-sm font-semibold text-ink">
                 {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
               </select>
-            </label>
+            </label>}
             <button type="button" onClick={onToggleTheme} aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               className="grid min-h-touch min-w-touch place-items-center rounded-ui border border-line bg-surface hover:bg-raised">
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={20} />

@@ -268,3 +268,16 @@ Pause traffic during a real restore: requests that arrive mid-swap can see a mix
 - Real admin auth to replace `middleware/requireAdmin.js` (it sets `req.admin = { userId }`, which is then recorded as the audit actor).
 - Where backups live off the server (object storage with its own access rules), and a schedule (cron or the host's job runner) that runs `npm run backup -- backup`.
 - Who may hold `BACKUP_ENCRYPTION_KEY`, and where its copy is kept.
+
+## Phase 14: real sign-in (replaces the dev login stubs)
+
+Mirrors the design of Jehal's `jehal` branch (access JWT + rotating refresh cookie, roles, lockout) with no new dependencies (Node crypto: HS256 JWT, scrypt).
+
+- Roles: `patient`, `doctor`, `hospital_staff`, `hospital_admin`, `ambulance_crew`, `central_admin`. Accounts link to a hospital, doctor, ambulance or patient.
+- `POST /api/auth/login/:portal` (`patient|doctor|staff|crew|admin`), `POST /api/auth/refresh`, `POST /api/auth/logout`, `POST /api/auth/logout-all`, `GET /api/auth/me`, `POST /api/auth/change-password`. Refresh and logout need the header `X-Requested-With: healthtwin` and the `ht_refresh` cookie.
+- Access token 15 min, refresh 7 days rotating, replay of a used refresh token revokes the whole family, 30 min idle limit, lock for 15 min after 5 wrong passwords, one generic error for wrong email or password.
+- Guards: `requireHospitalStaff`, `requireDoctor`, `requireAmbulanceCrew`, `requireCrewOrHospitalStaff`, `requireAdmin` now read the signed-in account. With a token, header-supplied ids are ignored, so staff cannot reach another hospital.
+- `DEV_AUTH=true` (never in production) or `NODE_ENV=test` also accepts the old dev headers. In production a default or short `JWT_SECRET` makes login return 503.
+- Demo accounts: `npm run seed:users` (refuses to run in production).
+
+**For Jehal:** to swap in the full `jehal` auth, re-point the four `require*` exports in `src/middleware/`; the routes read `req.staff`, `req.doctor`, `req.crew`, `req.admin` and do not change. Not ported: register, forgot-password, invites, his patient/hospital/admin portals. Socket.IO rooms are still unauthenticated.

@@ -32,3 +32,7 @@ export const isValidView = (role, view) => navFor(role).some((n) => n.id === vie
 export const pageTitle = (role, view) => navFor(role).find((n) => n.id === view)?.title ?? '';
 // Patient and crew always keep Call 112 / 108 within reach.
 export const showsCallBar = (role) => role === 'patient' || role === 'crew';
+
+// Display names for account roles (what the server calls them).
+const ACCOUNT_LABELS = { patient: 'Patient', doctor: 'Doctor', hospital_staff: 'Hospital staff', hospital_admin: 'Hospital admin', ambulance_crew: 'Ambulance crew', central_admin: 'Administrator' };
+export const roleLabel = (role) => ACCOUNT_LABELS[role] ?? role;

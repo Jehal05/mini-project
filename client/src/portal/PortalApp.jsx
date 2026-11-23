@@ -14,9 +14,10 @@ import { EmptyState, ErrorState, Toast } from '../ui/Feedback.jsx';
 const KEY = 'ht.portalHospital';
 
 // Hospital Portal. The hospital picker is the TEMPORARY login stub until Jehal's real hospital login exists.
-export default function PortalApp({ view = 'queue' }) {
+export default function PortalApp({ view = 'queue', account = null }) {
   const [hospitals, setHospitals] = useState([]);
-  const [hospitalId, setHospitalId] = useState(() => localStorage.getItem(KEY) || '');
+  const [pickedId, setHospitalId] = useState(() => localStorage.getItem(KEY) || '');
+  const hospitalId = account ? account.hospitalId || '' : pickedId; // signed in: the account decides, no picker
   const [selectedId, setSelectedId] = useState(null);
   const [acknowledged, setAcknowledged] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
@@ -25,7 +26,7 @@ export default function PortalApp({ view = 'queue' }) {
   const showFleet = view === 'fleet';
 
   useEffect(() => { fetchHospitals().then(setHospitals).catch(() => setHospitals([])); }, []);
-  useEffect(() => { if (hospitalId) localStorage.setItem(KEY, hospitalId); }, [hospitalId]);
+  useEffect(() => { if (!account && hospitalId) localStorage.setItem(KEY, hospitalId); }, [account, hospitalId]);
 
   const [sort, setSort] = useState('priority');
   const here = hospitals.find((h) => h.id === hospitalId)?.location || null;
@@ -70,12 +71,13 @@ export default function PortalApp({ view = 'queue' }) {
       )}
 
       <Card className="flex flex-wrap items-end gap-3 p-3">
-        <label className="space-y-1 text-sm"><span className="block font-semibold">Hospital (demo login)</span>
+        {!account && <label className="space-y-1 text-sm"><span className="block font-semibold">Hospital (demo login)</span>
           <Select value={hospitalId} onChange={(e) => { setHospitalId(e.target.value); setSelectedId(null); }}>
             <option value="">Choose your hospital</option>
             {hospitals.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
           </Select>
-        </label>
+        </label>}
+        {account && hospitalId && <p className="pb-2 text-sm font-semibold">{hospitals.find((h) => h.id === hospitalId)?.name ?? ''}</p>}
         {hospitalId && (
           <>
             <Button variant="secondary" onClick={async () => setInfo(await enableBackgroundAlerts(hospitalId).catch((e) => e.message))}>Alerts when tab is closed</Button>
@@ -89,7 +91,7 @@ export default function PortalApp({ view = 'queue' }) {
       {error && <ErrorState title="Could not load the queue">{error}</ErrorState>}
 
       {!hospitalId ? (
-        <Card><EmptyState icon="siren" title="Choose a hospital">Pick your hospital above to see its incoming emergencies.</EmptyState></Card>
+        <Card><EmptyState icon="siren" title={account ? 'No hospital linked' : 'Choose a hospital'}>{account ? 'This account is not linked to a hospital. Ask an administrator to link it.' : 'Pick your hospital above to see its incoming emergencies.'}</EmptyState></Card>
       ) : showFleet ? (
         <FleetPanel hospitalId={hospitalId} />
       ) : (

@@ -41,6 +41,7 @@ export async function seedUsers({ password = process.env.DEMO_PASSWORD || DEFAUL
   await upsert('admin@healthtwin.demo', { name: 'Central Admin (demo)', role: 'central_admin' });
   if (hospital) {
     await upsert('staff@healthtwin.demo', { name: `Staff, ${hospital.name} (demo)`, role: 'hospital_staff', hospital: hospital._id });
+    await upsert('hospitaladmin@healthtwin.demo', { name: `Admin, ${hospital.name} (demo)`, role: 'hospital_admin', hospital: hospital._id });
     if (doctor) await upsert('doctor@healthtwin.demo', { name: `${doctor.name} (demo)`, role: 'doctor', hospital: hospital._id, doctor: doctor._id });
     if (ambulance) await upsert('crew@healthtwin.demo', { name: `Crew, ${ambulance.vehicleNumber} (demo)`, role: 'ambulance_crew', hospital: hospital._id, ambulance: ambulance._id });
   }

@@ -9,13 +9,18 @@ const TILE_URL = import.meta.env.VITE_TILE_URL || 'https://tile.openstreetmap.or
 const TONE = { patient: 'var(--ht-critical)', hospital: 'var(--ht-primary)', accepted: 'var(--ht-normal)', weak: 'var(--ht-fg-muted)', ambulance: 'var(--ht-warning)' }
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 
-const AMBULANCE_SVG = `<svg viewBox="0 0 48 32" width="44" height="30" aria-hidden="true" style="transform:perspective(120px) rotateX(35deg);filter:drop-shadow(0 4px 3px var(--ht-shadow))">
-  <rect x="2" y="6" width="30" height="18" rx="3" fill="var(--ht-fg)"/><path d="M32 10h8l6 7v7H32z" fill="var(--ht-fg)"/>
-  <rect x="35" y="12" width="7" height="5" rx="1" fill="var(--ht-primary)"/><rect x="14" y="9" width="3" height="12" fill="var(--ht-critical)"/><rect x="10" y="13" width="11" height="3" fill="var(--ht-critical)"/>
-  <circle cx="11" cy="26" r="4" fill="var(--ht-bg-to)" stroke="var(--ht-fg)" stroke-width="2"/><circle cx="38" cy="26" r="4" fill="var(--ht-bg-to)" stroke="var(--ht-fg)" stroke-width="2"/></svg>`
+// A small isometric vehicle: a lit roof, a shaded side and a ground shadow, with a blinking light bar.
+const AMBULANCE_SVG = `<svg viewBox="0 0 56 40" width="52" height="37" aria-hidden="true" style="filter:drop-shadow(0 5px 3px var(--ht-shadow))">
+  <ellipse cx="28" cy="35" rx="22" ry="4" fill="var(--ht-shadow)" opacity=".5"/>
+  <path d="M6 14l16-7h20l8 5v14l-8 5H14l-8-4z" fill="var(--ht-fg)" opacity=".78"/>
+  <path d="M6 14l16-7h20l8 5-16 7H14z" fill="var(--ht-fg)"/>
+  <path d="M42 12l8 5-16 7v-5z" fill="var(--ht-primary)" opacity=".9"/>
+  <rect x="19" y="13" width="4" height="9" fill="var(--ht-critical)" transform="skewY(-10)"/><rect x="16" y="16" width="10" height="3" fill="var(--ht-critical)" transform="skewY(-10)"/>
+  <rect x="26" y="5" width="10" height="3" rx="1.5" fill="var(--ht-critical)" class="ht-bar"/>
+  <circle cx="16" cy="30" r="3.5" fill="var(--ht-bg-to)" stroke="var(--ht-fg)" stroke-width="2"/><circle cx="40" cy="31" r="3.5" fill="var(--ht-bg-to)" stroke="var(--ht-fg)" stroke-width="2"/></svg>`
 
 function iconFor(p) {
-  if (p.kind === 'ambulance') return L.divIcon({ className: 'ht-map-ambulance', html: AMBULANCE_SVG, iconSize: [44, 30], iconAnchor: [22, 18] })
+  if (p.kind === 'ambulance') return L.divIcon({ className: 'ht-map-ambulance', html: AMBULANCE_SVG, iconSize: [52, 37], iconAnchor: [26, 24] })
   const tone = TONE[p.kind] ?? TONE.hospital
   const shape = p.kind === 'patient' ? 'border-radius:50%;' : 'border-radius:6px;'
   return L.divIcon({ className: 'ht-map-pin', html: `<span style="display:grid;place-items:center;width:26px;height:26px;${shape}background:${tone};border:2px solid var(--ht-fg);font:700 12px/1 system-ui;color:var(--ht-bg-to)">${p.kind === 'patient' ? '' : esc(p.label?.length <= 2 ? p.label : '')}</span>`, iconSize: [26, 26], iconAnchor: [13, 13] })

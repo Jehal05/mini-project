@@ -49,16 +49,19 @@ test('Rehearsal 2: first hospital rejects, the next accepts', { timeout: 200000 
     // Hospital A turns the case down.
     await staffA.getByRole('alertdialog').waitFor({ timeout: 30000 })
     await staffA.getByRole('button', { name: 'Reject', exact: true }).click()
-    await staffA.getByLabel('Reason for rejecting').selectOption('no_beds')
+    await staffA.getByLabel('Reason for rejecting').selectOption('no_ccu_bed')
     await staffA.getByRole('button', { name: 'Confirm rejection' }).click()
 
     // The patient is told, and another hospital is now asked.
     await rahul.getByText(/could not take (you|your case)/i).first().waitFor({ timeout: 30000 })
+    const contacted = rahul.getByRole('region', { name: 'Hospitals contacted' })
+    await contacted.getByText('Could not take you').waitFor({ timeout: 20000 })
+    await contacted.getByText('Waiting').first().waitFor({ timeout: 20000 })
     let next
     await until(async () => {
       const c = await db.collection('emergencycases').findOne({})
       next = c?.hospitalResponses?.find((r) => r.status === 'notified')
-      return Boolean(next) && c.hospitalResponses.some((r) => r.status === 'rejected' && r.rejectReason === 'no_beds')
+      return Boolean(next) && c.hospitalResponses.some((r) => r.status === 'rejected' && r.rejectReason === 'no_ccu_bed')
     }, { what: 'a second hospital to be asked', timeout: 30000 })
 
     // Staff of that second hospital sign in and accept.

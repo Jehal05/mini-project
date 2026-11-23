@@ -4,6 +4,7 @@ import { createApp } from './app.js';
 import { connectDb } from './config/db.js';
 import { config } from './config/env.js';
 import { createMonitoring } from './monitoring.js';
+import { startScheduledBackups } from './services/backup.js';
 
 await connectDb();
 
@@ -17,6 +18,9 @@ httpServer.on('request', app);
 
 httpServer.listen(config.port, () => console.log(`HealthTwin API listening on :${config.port} (${config.env})`));
 
-const shutdown = () => { monitoring.stop(); io.close(); httpServer.close(() => process.exit(0)); };
+// Feature 99: a dump every day when BACKUP_DIR is set; the newest 7 are kept.
+const backups = startScheduledBackups({ dir: process.env.BACKUP_DIR });
+
+const shutdown = () => { backups.stop(); monitoring.stop(); io.close(); httpServer.close(() => process.exit(0)); };
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

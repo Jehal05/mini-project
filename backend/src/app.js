@@ -13,7 +13,9 @@ export function createApp({ extraApi } = {}) {
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({ origin: config.clientOrigin, credentials: true }));
-  app.use(express.json({ limit: '100kb' }));
+  // Backup check and restore take a whole database file, so that route reads its own larger body (routes/admin.routes.js).
+  const smallJson = express.json({ limit: '100kb' });
+  app.use((req, res, next) => (req.path.startsWith('/api/admin/backup/') ? next() : smallJson(req, res, next)));
   app.use(cookieParser());
 
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));

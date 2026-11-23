@@ -10,6 +10,7 @@ import { appEvents, EVENTS } from './events.js'
 import { Patient } from './models/Patient.js'
 import { attachDetection } from './detection/index.js'
 import { attachEmergency } from './emergency/index.js'
+import { createGeocoder } from './response/geocoder.js'
 import { createLiveNotifier } from './emergency/liveNotifier.js'
 import { attachSimulation } from './simulation/index.js'
 import { AmbulanceService } from './response/ambulance.js'
@@ -31,7 +32,7 @@ export async function createMonitoring({ io, discovery: customDiscovery, notifie
   const emergency = await attachEmergency({ app: extraApi, io, detection, discovery, notifier: notifier ?? createLiveNotifier({ logger }), basePath: '/emergency', logger, guard: rules.guard, adminGuard: rules.presenterGuard, access: rules.access, ...emergencyOptions })
 
   const response = new ResponseService({ io, discovery, ambulances, logger })
-  extraApi.use(createResponseRouter({ service: response, ambulances, discovery, access: rules.access }))
+  extraApi.use(createResponseRouter({ service: response, ambulances, discovery, access: rules.access, geocoder: createGeocoder({ logger, ...responseOptions.geocoder }) }))
   if (autoStart) await ambulances.resume()
 
   // The patient edits their profile: the twin, the baseline and the risk score follow it.

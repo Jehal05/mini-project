@@ -1,5 +1,6 @@
 // Database access for the hospital's own management screens: profile, dashboard, doctors, emergency department bays, history.
 // Every change is ONE conditional update with its rule in the filter, so two clicks cannot both succeed.
+import mongoose from 'mongoose';
 import { Admission, Ambulance, AuditLog, Bed, Doctor, EdBay, EmergencyCase, Hospital, Patient } from '../models/index.js';
 
 const lean = (q) => q.lean();
@@ -17,7 +18,8 @@ export const cardiologistOnDuty = async (hospital) => Boolean(await Doctor.exist
 export const countDoctorsOnDuty = (hospital) => Doctor.countDocuments({ hospital, isActive: true, onDuty: true });
 
 // ---- dashboard (82) ----
-export const bedCounts = (hospital) => Bed.aggregate([{ $match: { hospital } }, { $group: { _id: { ward: '$ward', status: '$status' }, n: { $sum: 1 } } }]);
+// aggregate() does not cast ids the way find() does, so the string id from the token is converted here.
+export const bedCounts = (hospital) => Bed.aggregate([{ $match: { hospital: new mongoose.Types.ObjectId(String(hospital)) } }, { $group: { _id: { ward: '$ward', status: '$status' }, n: { $sum: 1 } } }]);
 export const countAvailableAmbulances = (hospital) => Ambulance.countDocuments({ homeHospital: hospital, status: 'available', currentCase: null });
 export const countActiveAdmissions = (hospital) => Admission.countDocuments({ hospital, status: 'admitted' });
 // Cases this hospital is being asked about right now, and the ones it is already handling.

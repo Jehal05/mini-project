@@ -1,10 +1,5 @@
 @import 'leaflet/dist/leaflet.css';
+@import './ui/theme.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-.ht-marker {
-  border-radius: 9999px;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-}

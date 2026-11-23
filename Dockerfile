@@ -15,6 +15,10 @@ COPY backend/package*.json ./backend/
 RUN cd backend && npm ci --omit=dev
 COPY backend ./backend
 COPY --from=web /app/web ./web
+# Writable folders for patient documents and daily backups (mount volumes here in production).
+RUN mkdir -p /app/backend/uploads /app/backups && chown -R node:node /app/backend/uploads /app/backups
+ENV UPLOAD_DIR=/app/backend/uploads BACKUP_DIR=
+VOLUME ["/app/backend/uploads"]
 USER node
 EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1:5000/api/health || exit 1

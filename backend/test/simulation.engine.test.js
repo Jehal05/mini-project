@@ -290,7 +290,7 @@ describe('review fixes: robustness', () => {
   })
 })
 
-describe('review 12: placeholder Patient model', () => {
+describe('review 12: real Patient model', () => {
   it("reads Jehal's likely field names (cardiacHistory, existingConditions, object items)", () => {
     const jehalStyle = {
       _id: 'p-j',
@@ -306,10 +306,12 @@ describe('review 12: placeholder Patient model', () => {
     expect(() => computeBaseline({ age: 30, conditions: 'hypertension', cardiacHistory: null })).not.toThrow()
   })
 
-  it('attachSimulation warns while the placeholder model is in use', async () => {
+  it('uses the real Patient model, so the placeholder warning is gone', async () => {
     const { attachSimulation } = await import('../src/simulation/index.js')
+    const { Patient } = await import('../src/models/Patient.js')
     const logger = { warn: vi.fn(), error: vi.fn() }
     await attachSimulation({ store: memoryStore(), monitorAll: false, autoStart: false, logger })
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringMatching(/PLACEHOLDER Patient model/))
+    expect(Patient.isHealthTwinPlaceholder).toBeUndefined()
+    expect(logger.warn).not.toHaveBeenCalledWith(expect.stringMatching(/PLACEHOLDER Patient model/))
   })
 })

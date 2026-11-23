@@ -15,12 +15,15 @@
 import express from 'express'
 import mongoose from 'mongoose'
 import { Patient } from '../models/Patient.js'
+import { byCode } from '../models/patientView.js'
 import { DEFAULT_THRESHOLDS } from '../../../shared/vitals.js'
 import { DEFAULT_BASELINE_LIMITS, DEFAULT_RISK_WEIGHTS, DETECTION_OUTCOME } from '../../../shared/detection.js'
 import { SEVERITY } from '../../../shared/emergency.js'
 import { describeRules } from './rules.js'
 
 const allow = (_req, _res, next) => next()
+
+const filterStatuses = (statuses, visible) => statuses.filter((s) => s && visible.has(String(s.patientId)))
 
 const MAX_LIMIT = 100
 
@@ -39,7 +42,9 @@ function parseDate(value, name) {
   return Number.isNaN(d.getTime()) ? { error: `${name} must be an ISO date, e.g. 2026-11-18T08:00:00Z` } : { value: d }
 }
 
-export function createDetectionRouter(service, { guard = allow, presenterGuard = allow } = {}) {
+// `configGuard` protects the settings for everyone, `thresholdsGuard` one patient's thresholds; both default to
+// presenterGuard. `access` is as in the simulation router.
+export function createDetectionRouter(service, { guard = allow, presenterGuard = allow, configGuard = presenterGuard, thresholdsGuard = presenterGuard, access } = {}) {
   const router = express.Router()
   router.use(express.json())
   router.use(guard)
@@ -47,9 +52,9 @@ export function createDetectionRouter(service, { guard = allow, presenterGuard =
   async function resolvePatient(req, res, next) {
     try {
       const { id } = req.params
-      const query = mongoose.isValidObjectId(id) ? { _id: id } : { patientCode: id.toUpperCase() }
+      const query = mongoose.isValidObjectId(id) ? { _id: id } : byCode(id)
       const patient = await Patient.findOne(query).lean()
-      if (!patient) return res.status(404).json({ error: 'Patient not found' })
+      if (!patient || (access?.patient && !(await access.patient(req, patient)))) return res.status(404).json({ error: 'Patient not found' })
       req.patient = patient
       req.patientId = String(patient._id)
       next()
@@ -71,7 +76,7 @@ export function createDetectionRouter(service, { guard = allow, presenterGuard =
     })
   })
 
-  router.put('/config', presenterGuard, async (req, res, next) => {
+  router.put('/config', configGuard, async (req, res, next) => {
     try {
       res.json(await service.updateConfig(req.body ?? {}, actorOf(req)))
     } catch (err) {
@@ -80,8 +85,14 @@ export function createDetectionRouter(service, { guard = allow, presenterGuard =
     }
   })
 
-  router.get('/status', (_req, res) => {
-    res.json(service.statuses())
+  router.get('/status', async (req, res, next) => {
+    try {
+      const visible = access?.visibleIds ? await access.visibleIds(req) : null
+      const all = service.statuses()
+      res.json(visible ? filterStatuses(all, new Set(visible)) : all)
+    } catch (err) {
+      next(err)
+    }
   })
 
   router.get('/patients/:id/status', resolvePatient, (req, res) => {
@@ -90,7 +101,7 @@ export function createDetectionRouter(service, { guard = allow, presenterGuard =
     res.json(status)
   })
 
-  router.put('/patients/:id/thresholds', presenterGuard, resolvePatient, async (req, res, next) => {
+  router.put('/patients/:id/thresholds', thresholdsGuard, resolvePatient, async (req, res, next) => {
     try {
       const effective = await service.setPatientThresholds(req.patientId, req.body?.thresholds ?? {}, actorOf(req))
       res.json({ patientId: req.patientId, thresholds: effective.thresholds })

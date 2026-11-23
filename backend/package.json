@@ -3,21 +3,32 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "HealthTwin AI backend. Daksh branch: Phase 1 contracts (VitalReading, EmergencyCase) and the Phase 5 simulated monitoring module.",
+  "description": "HealthTwin AI backend: identity, profiles and hospitals (Jehal) with monitoring, detection and emergency (Daksh).",
   "scripts": {
     "dev": "node src/dev/server.js",
-    "test": "vitest run"
+    "dev:api": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/seed/seed.js",
+    "test": "vitest run && vitest run -c vitest.identity.config.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
     "express": "^5.3.0",
-    "mongoose": "^8.16.0",
-    "socket.io": "^4.8.4"
+    "express-rate-limit": "^8.7.4",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.12.2",
+    "multer": "^2.5.0",
+    "socket.io": "^4.8.4",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.3.0",
     "socket.io-client": "^4.8.4",
     "supertest": "^7.3.2",
-    "vitest": "^3.2.0"
+    "vitest": "^5.1.0"
   }
 }

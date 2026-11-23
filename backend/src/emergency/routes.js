@@ -20,6 +20,7 @@
 import express from 'express'
 import mongoose from 'mongoose'
 import { Patient } from '../models/Patient.js'
+import { byCode, toTwinRecord } from '../models/patientView.js'
 import { buildFirstAid } from '../../../shared/firstaid.js'
 import { EMERGENCY_NUMBERS } from '../../../shared/emergency.js'
 import { httpError } from './service.js'
@@ -35,7 +36,13 @@ function paging(query) {
   return { page, limit }
 }
 
-export function createEmergencyRouter(service, { guard = allow } = {}) {
+// `access` (optional) decides who may touch which patient or case; without it every caller may (the old demo mode):
+//   access.patient(req, patient, { write })  patient: a Patient record
+//   access.case(req, emergencyCase, { write })
+// A caller who may not see something gets the same 404 as for something that does not exist.
+const WRITE_ROUTES = new Set(['symptoms', 'confirm', 'location'])
+
+export function createEmergencyRouter(service, { guard = allow, access } = {}) {
   const router = express.Router()
   router.use(express.json())
 
@@ -51,32 +58,47 @@ export function createEmergencyRouter(service, { guard = allow } = {}) {
 
   router.use(guard)
 
-  async function patientOf(value) {
-    if (typeof value !== 'string' || !value) throw httpError(400, 'patient (id or code such as HT-2026-0001) is required')
-    const p = await Patient.findOne(mongoose.isValidObjectId(value) ? { _id: value } : { patientCode: value.toUpperCase() }).lean()
-    if (!p) throw httpError(404, 'Patient not found')
+  async function patientOf(value, req, opts) {
+    // A signed-in patient is always themself: the id comes from the token, not from the request.
+    const given = req?.user?.role === 'patient' && req.user.patientId ? String(req.user.patientId) : value
+    if (typeof given !== 'string' || !given) throw httpError(400, 'patient (id or code such as HT-2026-0001) is required')
+    const p = await Patient.findOne(mongoose.isValidObjectId(given) ? { _id: given } : byCode(given)).lean()
+    if (!p || (access?.patient && !(await access.patient(req, p, opts)))) throw httpError(404, 'Patient not found')
     return p
   }
 
+  // Every route with :caseId first checks the caller may see that case.
+  router.param('caseId', async (req, _res, next, caseId) => {
+    try {
+      if (!access?.case) return next()
+      const write = WRITE_ROUTES.has(req.path.split('/')[2])
+      const c = mongoose.isValidObjectId(caseId) ? await service.find(caseId) : null
+      if (!c || !(await access.case(req, c, { write }))) throw httpError(404, 'Case not found')
+      return next()
+    } catch (err) {
+      return next(err)
+    }
+  })
+
   router.post('/sos', async (req, res) => {
-    const p = await patientOf(req.body?.patient)
+    const p = await patientOf(req.body?.patient, req, { write: true })
     const out = await service.sos(p._id, { location: req.body?.location })
     res.status(out.created ? 201 : 200).json(out)
   })
 
   router.get('/active', async (req, res) => {
-    const p = await patientOf(req.query.patient)
+    const p = await patientOf(req.query.patient, req)
     res.json({ case: await service.active(p._id), serverNow: new Date(service.now()).toISOString(), numbers: EMERGENCY_NUMBERS, simulated: true })
   })
 
   router.get('/mine', async (req, res) => {
-    const p = await patientOf(req.query.patient)
+    const p = await patientOf(req.query.patient, req)
     res.json(await service.history(p._id, paging(req.query)))
   })
 
   router.get('/first-aid', async (req, res) => {
-    const p = await patientOf(req.query.patient)
-    const aid = buildFirstAid(p)
+    const p = await patientOf(req.query.patient, req)
+    const aid = buildFirstAid(toTwinRecord(p))
     res.json({ ...aid, numbers: EMERGENCY_NUMBERS })
   })
 

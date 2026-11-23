@@ -16,9 +16,9 @@ import { createEmergencyRouter } from './routes.js'
 export { EmergencyService } from './service.js'
 export { createDevNotifier, buildWhatsAppLink } from './notifier.js'
 
-export async function attachEmergency({ app, io, detection, discovery, notifier, guard, basePath = '/api/emergency', logger = console, ...serviceOptions } = {}) {
+export async function attachEmergency({ app, io, detection, discovery, notifier, guard, access, basePath = '/api/emergency', logger = console, ...serviceOptions } = {}) {
   const service = new EmergencyService({ io, discovery, notifier, logger, ...serviceOptions })
-  if (app) app.use(basePath, createEmergencyRouter(service, { guard }))
+  if (app) app.use(basePath, createEmergencyRouter(service, { guard, access }))
   // A Level 3 detection opens a case waiting for confirmation: start its 10 s countdown.
   detection?.onCaseCreated((c) => service.arm(c.caseId).catch((e) => logger.error?.('[emergency] could not start countdown', e)))
   const resumed = await service.start() // cases that were mid-countdown or mid-search resume

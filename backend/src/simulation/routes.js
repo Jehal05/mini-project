@@ -11,6 +11,7 @@
 import express from 'express'
 import mongoose from 'mongoose'
 import { Patient } from '../models/Patient.js'
+import { byCode, codeOf, conditionsOf, nameOf } from '../models/patientView.js'
 import { SCENARIOS, SCENARIO_INFO } from './scenarios.js'
 import { parseRange, vitalsHistory, healthTimeline } from './history.js'
 import { patientTrends } from './trends.js'
@@ -18,7 +19,8 @@ import { patientTrends } from './trends.js'
 const allow = (_req, _res, next) => next()
 
 // presenterGuard defaults to allow here; attachSimulation() passes the PRESENTER_KEY guard (access.js).
-export function createSimulationRouter(engine, { guard = allow, presenterGuard = allow } = {}) {
+// `access` (optional): { patient(req, patient) -> bool, visibleIds(req) -> ids | null }. Without it every caller may.
+export function createSimulationRouter(engine, { guard = allow, presenterGuard = allow, access } = {}) {
   const router = express.Router()
   router.use(express.json())
   router.use(guard)
@@ -27,9 +29,9 @@ export function createSimulationRouter(engine, { guard = allow, presenterGuard =
   async function resolvePatient(req, res, next) {
     try {
       const { id } = req.params
-      const query = mongoose.isValidObjectId(id) ? { _id: id } : { patientCode: id.toUpperCase() }
+      const query = mongoose.isValidObjectId(id) ? { _id: id } : byCode(id)
       const patient = await Patient.findOne(query).lean()
-      if (!patient) return res.status(404).json({ error: 'Patient not found' })
+      if (!patient || (access?.patient && !(await access.patient(req, patient)))) return res.status(404).json({ error: 'Patient not found' })
       req.patient = patient
       req.patientId = String(patient._id)
       next()
@@ -40,22 +42,23 @@ export function createSimulationRouter(engine, { guard = allow, presenterGuard =
 
   const publicPatient = (p) => ({
     id: String(p._id),
-    patientCode: p.patientCode,
-    name: p.name,
+    patientCode: codeOf(p),
+    name: nameOf(p),
     bloodGroup: p.bloodGroup,
     city: p.city,
     dateOfBirth: p.dateOfBirth,
     cardiacConditions: p.cardiacConditions ?? [],
-    conditions: p.conditions ?? [],
+    conditions: conditionsOf(p) ?? [],
   })
 
   router.get('/scenarios', (_req, res) => {
     res.json(SCENARIOS.map((key) => ({ key, ...SCENARIO_INFO[key] })))
   })
 
-  router.get('/patients', async (_req, res, next) => {
+  router.get('/patients', async (req, res, next) => {
     try {
-      const patients = await Patient.find({}).sort({ patientCode: 1 }).lean()
+      const visible = access?.visibleIds ? await access.visibleIds(req) : null
+      const patients = await Patient.find(visible ? { _id: { $in: visible } } : {}).sort({ patientId: 1 }).lean()
       res.json(patients.map((p) => ({ ...publicPatient(p), live: engine.snapshot(String(p._id)) })))
     } catch (err) {
       next(err)

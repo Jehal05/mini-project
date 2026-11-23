@@ -24,6 +24,9 @@ export async function attachDetection({
   basePath = '/api/detection',
   guard,
   presenterGuard = createPresenterKeyGuard(),
+  configGuard,
+  thresholdsGuard,
+  access,
   store = mongoDetectionStore,
   logger = console,
   audit,
@@ -32,7 +35,7 @@ export async function attachDetection({
   if (!engine) throw new Error('attachDetection needs the engine returned by attachSimulation')
   const service = new DetectionService({ engine, store, io, logger, audit })
   await service.init()
-  if (app) app.use(basePath, createDetectionRouter(service, { guard, presenterGuard }))
+  if (app) app.use(basePath, createDetectionRouter(service, { guard, presenterGuard, configGuard, thresholdsGuard, access }))
   if (autoStart) service.start()
   return service
 }

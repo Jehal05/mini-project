@@ -27,6 +27,7 @@ export async function attachSimulation({
   basePath = '/api/sim',
   guard,
   presenterGuard = createPresenterKeyGuard(),
+  access,
   authorizeSubscribe = defaultAuthorizeSubscribe(),
   store = mongoStore,
   engineOptions = {},
@@ -49,7 +50,7 @@ export async function attachSimulation({
     for (const p of patients) await engine.addPatient(p)
   }
 
-  if (app) app.use(basePath, createSimulationRouter(engine, { guard, presenterGuard }))
+  if (app) app.use(basePath, createSimulationRouter(engine, { guard, presenterGuard, access }))
 
   if (io) {
     io.on('connection', (socket) => {

@@ -9,6 +9,7 @@
 // The engine emits `vitals:update` to the room `patient:<id>` on every tick
 // and saves a VitalReading every 30 s (feature 28). All values are simulated.
 
+import { codeOf, nameOf } from '../models/patientView.js'
 import { readingStatuses, worstStatus, VITAL_KEYS, SIMULATED_LABEL } from '../../../shared/vitals.js'
 import { computeBaseline } from './baseline.js'
 import { scenarioTargets, isScenario, SCENARIO_INFO } from './scenarios.js'
@@ -131,8 +132,8 @@ export class SimulationEngine {
 
     const state = {
       id,
-      patientCode: patient.patientCode,
-      name: patient.name,
+      patientCode: codeOf(patient),
+      name: nameOf(patient),
       profile: patient, // medical profile, read by the detection engine's risk score
       thresholds: null, // per-patient override (feature 36); null = use the engine-wide thresholds
       baseline,

@@ -5,6 +5,8 @@
 // Rahul (45, previous cardiac condition) starts near 78 BPM; a fit 25-year-old
 // starts in the mid 60s.
 
+import { conditionsOf } from '../models/patientView.js'
+
 /** Age in whole years from a date of birth, or the age field if present. */
 export function ageOf(patient, now = new Date()) {
   if (typeof patient.age === 'number') return patient.age
@@ -17,12 +19,13 @@ export function ageOf(patient, now = new Date()) {
 }
 
 // Items may be plain strings or objects; Jehal's schema may call the text field type, name or condition.
+
 const lc = (list = []) =>
   (Array.isArray(list) ? list : []).map((x) => String(typeof x === 'string' ? x : x?.type ?? x?.name ?? x?.condition ?? '').toLowerCase())
 
 /** Reads the medical fields we need, tolerating small naming differences in Jehal's Patient schema. */
 export function riskFactors(patient) {
-  const conditions = lc(patient.conditions ?? patient.existingConditions)
+  const conditions = lc(conditionsOf(patient))
   const cardiac = lc(patient.cardiacConditions ?? patient.cardiacHistory)
   return {
     age: ageOf(patient),

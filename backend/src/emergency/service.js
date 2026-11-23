@@ -15,6 +15,8 @@ import mongoose from 'mongoose'
 import { EmergencyCase } from '../models/EmergencyCase.js'
 import { Detection } from '../models/Detection.js'
 import { Patient } from '../models/Patient.js'
+import { assignCaseNumber } from './caseNumber.js'
+import { codeOf, nameOf, toTwinRecord } from '../models/patientView.js'
 import {
   ACK_RECIPIENT_TYPES,
   ACTIVE_STATUSES,
@@ -81,7 +83,7 @@ export class EmergencyService {
     this.publicUrl = publicUrl.replace(/\/$/, '')
     this.roundTimeoutMs = roundTimeoutMs
     this.notifier = notifier ?? createDevNotifier({ logger })
-    this.patientRecordFor = patientRecordFor ?? ((id) => Patient.findById(id).lean())
+    this.patientRecordFor = patientRecordFor ?? ((id) => Patient.findById(id).lean().then(toTwinRecord))
     this.contactsFor = contactsFor ?? (async (id) => (await this.patientRecordFor(id))?.emergencyContacts ?? [])
     this.timers = new Map()
   }
@@ -174,7 +176,7 @@ export class EmergencyService {
       ...(loc && { location: loc }),
     }
     const patient = await this.patientRecordFor(patientId)
-    if (patient?.patientCode) doc.patientCode = patient.patientCode
+    if (codeOf(patient)) doc.patientCode = codeOf(patient)
     const filter = { patient: patientId, status: { $in: ACTIVE_STATUSES } }
     let found
     let created
@@ -189,6 +191,7 @@ export class EmergencyService {
       if (!found) throw err
     }
     if (created) {
+      found.caseNumber = (await assignCaseNumber(found._id, { logger: this.logger })) ?? undefined
       this.emit(found, EV.CREATED, { severity: 3, source: found.source })
       await this.afterSent(found, 'sos')
       return { case: this.toView(found), created: true, joined: false }
@@ -358,7 +361,7 @@ export class EmergencyService {
       this.logger.error?.('[emergency] could not read emergency contacts', err)
     }
     if (!contacts.length) return null
-    const patientName = (await this.patientRecordFor(c.patient).catch(() => null))?.name ?? 'A HealthTwin patient'
+    const patientName = nameOf(await this.patientRecordFor(c.patient).catch(() => null)) ?? 'A HealthTwin patient'
     const planned = contacts.map((contact) => {
       const token = randomBytes(16).toString('hex')
       const link = `${this.publicUrl}/status/${token}`
@@ -411,7 +414,7 @@ export class EmergencyService {
     const alert = c.contactAlerts.find((a) => a.statusLinkToken === token)
     const seen = c.acknowledgements.some((a) => a.recipientType === 'contact' && a.recipientId === contactKey(alert))
     return {
-      patientName: patient?.name ?? 'A HealthTwin patient',
+      patientName: nameOf(patient) ?? 'A HealthTwin patient',
       contactName: alert.name,
       status: c.status,
       isLive: ACTIVE_STATUSES.includes(c.status),

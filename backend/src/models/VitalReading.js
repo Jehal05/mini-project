@@ -71,13 +71,12 @@ vitalReadingSchema.index({ recordedAt: 1 }, { expireAfterSeconds: retentionDays(
 
 // Fill statuses from the default thresholds when the engine has not set them.
 // The engine should pass statuses computed with the admin's current thresholds (feature 36).
-vitalReadingSchema.pre('validate', function fillStatuses(next) {
+vitalReadingSchema.pre('validate', function fillStatuses() {
   const hasStatuses = this.statuses && Object.values(this.statuses.toObject?.() ?? this.statuses).some(Boolean)
   if (!hasStatuses) {
     this.statuses = readingStatuses(this)
     this.status = worstStatus(this)
   }
-  next()
 })
 
 vitalReadingSchema.set('toJSON', {

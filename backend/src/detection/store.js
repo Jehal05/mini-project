@@ -1,6 +1,7 @@
 // Persistence for detection, behind a small interface so the service can be tested
 // with an in-memory store and no database.
 
+import { assignCaseNumber } from '../emergency/caseNumber.js'
 import mongoose from 'mongoose'
 import { Detection } from '../models/Detection.js'
 import { DetectionConfig, MAX_CHANGE_LOG } from '../models/DetectionConfig.js'
@@ -65,7 +66,10 @@ export const mongoDetectionStore = {
     const filter = { patient: doc.patient, status: { $in: ACTIVE_STATUSES } }
     try {
       const res = await EmergencyCase.findOneAndUpdate(filter, { $setOnInsert: doc }, { upsert: true, new: true, includeResultMetadata: true })
-      return { case: res.value.toObject(), created: !res.lastErrorObject?.updatedExisting }
+      const created = !res.lastErrorObject?.updatedExisting
+      const found = res.value.toObject()
+      if (created) found.caseNumber = (await assignCaseNumber(found._id)) ?? undefined
+      return { case: found, created }
     } catch (err) {
       if (err?.code !== DUPLICATE_KEY) throw err
       const existing = await EmergencyCase.findOne(filter).lean()

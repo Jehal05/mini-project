@@ -305,3 +305,16 @@ Notes
 - Files are kept on disk in `UPLOADS_DIR` (default `server/uploads/`, git-ignored). Back this folder up with the database.
 - Not ported: forgot-password email, the discharge-summary download for patients, PDF reports.
 - `npm run seed:users` now also gives the first demo patient an HT id, a QR token and a sample profile.
+
+## Inpatient care (Phase 11, features 84, 85, 87, 88, 89)
+
+Ported from Jehal's branch onto our server (no new dependencies). Everything is under `/api/inpatient` for hospital staff, hospital admins and doctors, and only touches the caller's own hospital (the id comes from the token).
+
+- Beds (85): `GET/POST /beds`, `PATCH/DELETE /beds/:id`. States are free, occupied, reserved, cleaning. An occupied bed changes only by discharging its patient. `GET /doctors` lists the hospital's doctors.
+- Admissions (84): `GET/POST /admissions`, `GET /admissions/:id`. The bed is taken with one conditional update, and a partial unique index allows one open stay per patient. If an ambulance arrival already made a stay without a bed, admitting completes it instead of duplicating it.
+- Notes and vitals (87): `GET/POST /admissions/:id/records` (doctors and staff). File uploads for ECG or lab reports are not ported yet.
+- Prescriptions (88, doctors only): `GET/POST /admissions/:id/prescriptions`, `GET .../prescriptions/check?drug=`. A drug that matches a recorded allergy returns 409 `ALLERGY_WARNING` until the doctor confirms (`acknowledgeAllergy: true`); the override is saved and audited.
+- Discharge (89, doctors only): `GET/POST /admissions/:id/discharge`. The summary is a draft from the prescriptions until finalized, then fixed. Finalizing closes the stay, sets the bed to cleaning and adds the stay to the patient's own hospital history.
+- Viewing records writes an audit entry. Tests: `tests/inpatient.test.js` (16 pass on the stand-in runner, with an in-memory repo).
+
+Not ported yet: hospital profile, doctor management, dashboard (81 to 83), the ED board (86), history (90), visit file uploads.

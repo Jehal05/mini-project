@@ -17,3 +17,5 @@ export { default as Trip } from './Trip.js';
 export { default as RefreshToken } from './RefreshToken.js';
 export { default as Counter } from './Counter.js';
 export { default as BystanderReport } from './BystanderReport.js';
+export { default as VisitRecord } from './VisitRecord.js';
+export { default as DischargeSummary } from './DischargeSummary.js';

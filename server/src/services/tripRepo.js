@@ -46,10 +46,17 @@ export const dispatchCase = (caseId, hospitalId, ambulanceId, now) =>
 export const setCaseFields = (caseId, set, timelineEntry) =>
   EmergencyCase.updateOne({ _id: caseId }, { $set: set, ...(timelineEntry ? { $push: { timeline: timelineEntry } } : {}) });
 
-// Feature 80: minimal admission. Full admission management is Jehal's (feature 84). One per case.
-export const createAdmission = ({ emergencyCase, patient, hospital, admittedAt }) =>
-  Admission.findOneAndUpdate(
-    { emergencyCase },
-    { $setOnInsert: { emergencyCase, patient, hospital, admittedAt } },
-    { upsert: true, new: true },
-  ).lean();
+// Feature 80: the stay that starts when the ambulance arrives (no bed yet; staff complete it, see inpatient/). One per case.
+// A patient can have only one open stay, so if one already exists the arrival is not blocked by it.
+export const createAdmission = async ({ emergencyCase, patient, hospital, admittedAt }) => {
+  try {
+    return await Admission.findOneAndUpdate(
+      { emergencyCase },
+      { $setOnInsert: { emergencyCase, patient, hospital, admittedAt } },
+      { upsert: true, new: true },
+    ).lean();
+  } catch (e) {
+    if (e?.code === 11000) return null;
+    throw e;
+  }
+};

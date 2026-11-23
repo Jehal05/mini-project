@@ -15,10 +15,14 @@ const NAV = {
     { id: 'profile', label: 'My profile', icon: 'user', title: 'Your health profile' },
     { id: 'passport', label: 'QR passport', icon: 'info', title: 'Your QR medical passport' },
   ],
-  doctor: [{ id: 'cases', label: 'My cases', icon: 'stethoscope', title: 'Your assigned cases' }],
+  doctor: [
+    { id: 'cases', label: 'My cases', icon: 'stethoscope', title: 'Your assigned cases' },
+    { id: 'inpatient', label: 'Inpatients', icon: 'user', title: 'Inpatients' },
+  ],
   hospital: [
     { id: 'queue', label: 'Emergency queue', icon: 'siren', title: 'Emergency queue' },
     { id: 'fleet', label: 'Ambulances', icon: 'ambulance', title: 'Ambulance fleet' },
+    { id: 'inpatient', label: 'Inpatients', icon: 'stethoscope', title: 'Inpatients and beds' },
     { id: 'passport', label: 'Patient passport', icon: 'user', title: 'Open a patient passport' },
   ],
   crew: [{ id: 'trip', label: 'My trip', icon: 'ambulance', title: 'Your trip' }],

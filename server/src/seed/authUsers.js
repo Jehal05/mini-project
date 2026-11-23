@@ -33,7 +33,7 @@ export async function seedUsers({ password = process.env.DEMO_PASSWORD || DEFAUL
   };
 
   const hospital = await Hospital.findOne({ simulated: true }).sort({ name: 1 }).lean();
-  const doctor = hospital ? await Doctor.findOne({ hospital: hospital._id, onDuty: true }).sort({ name: 1 }).lean() : null;
+  const doctor = hospital ? (await Doctor.findOne({ hospital: hospital._id, onDuty: true }).sort({ name: 1 }).lean()) ?? (await Doctor.findOne({ hospital: hospital._id }).sort({ name: 1 }).lean()) : null;
   const ambulance = hospital ? await Ambulance.findOne({ homeHospital: hospital._id }).sort({ vehicleNumber: 1 }).lean() : null;
   let patient = await Patient.findOne({}).sort({ createdAt: 1 }).lean();
   if (patient) patient = await fillDemoProfile(patient);

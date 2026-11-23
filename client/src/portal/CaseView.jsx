@@ -4,8 +4,12 @@ import SeverityBadge from './SeverityBadge.jsx';
 import Vitals from './Vitals.jsx';
 import GoldenHourClock from './GoldenHourClock.jsx';
 import Timeline from './Timeline.jsx';
-import Countdown from './Countdown.jsx';
+import CountdownRing from './CountdownRing.jsx';
 import AmbulancePanel from './AmbulancePanel.jsx';
+import Button from '../ui/Button.jsx';
+import { Panel } from '../ui/Surface.jsx';
+import { ErrorState } from '../ui/Feedback.jsx';
+import { Checkbox, Select } from '../ui/Form.jsx';
 
 const REASONS = [
   ['no_beds', 'No beds'],
@@ -70,111 +74,94 @@ export default function CaseView({ hospitalId, caseData, onChange, onGone }) {
   const milestone = (name) => run(async () => onChange(await portalFetch(hospitalId, `/cases/${id}/milestones`, { method: 'POST', body: { name } })));
   const loadPatient = () => run(async () => setPatient(await portalFetch(hospitalId, `/cases/${id}/patient`)));
 
-  const btn = 'rounded px-3 py-1.5 text-sm font-semibold disabled:opacity-50';
-
   return (
-    <div className="space-y-4 rounded-lg bg-white p-4 shadow">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-ui border border-line bg-surface p-4">
         <div>
-          <h2 className="text-xl font-bold">{caseData.patient?.fullName || 'Patient'}</h2>
-          <SeverityBadge severity={caseData.severity} riskScore={caseData.riskScore} />
+          <h2 className="font-title text-2xl font-semibold text-ink">{caseData.patient?.fullName || 'Patient'}</h2>
+          <SeverityBadge severity={caseData.severity} riskScore={caseData.riskScore} solid />
         </div>
-        {pending && <div className="text-right text-sm">Respond within <Countdown respondBy={caseData.respondBy} /></div>}
-      </div>
+        {pending && <div className="flex items-center gap-2 text-sm text-muted">Respond within <CountdownRing respondBy={caseData.respondBy} size={64} /></div>}
+      </header>
 
-      {error && <p className="rounded bg-red-50 p-2 text-sm text-red-800">{error}</p>}
-      {caseData.allHospitalsBusy && <p className="rounded bg-amber-50 p-2 text-sm text-amber-900">All hospitals have been tried for this case.</p>}
+      {error && <ErrorState title="That did not go through">{error}</ErrorState>}
+      {caseData.allHospitalsBusy && <p className="rounded-ui border border-moderate bg-moderate-soft p-2 text-sm text-ink">All hospitals have been tried for this case.</p>}
 
-      <section>
-        <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Latest vitals</h3>
-        <Vitals vitals={caseData.latestVitals} />
-      </section>
+      <Panel title="Latest vitals"><Vitals vitals={caseData.latestVitals} /></Panel>
 
       {pending && (
-        <section className="flex flex-wrap items-center gap-2">
-          <button disabled={busy} onClick={accept} className={`${btn} bg-green-700 text-white`}>Accept emergency</button>
-          <select value={reason} onChange={(e) => setReason(e.target.value)} className="rounded border px-2 py-1.5 text-sm" aria-label="Rejection reason">
-            {REASONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
-          <button disabled={busy} onClick={reject} className={`${btn} border border-red-700 text-red-700`}>Reject</button>
-        </section>
+        <Panel title="Your response">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button disabled={busy} onClick={accept} icon="check">Accept emergency</Button>
+            <Select value={reason} onChange={(e) => setReason(e.target.value)} aria-label="Reason for rejecting" className="max-w-[12rem]">
+              {REASONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </Select>
+            <Button variant="secondary" disabled={busy} onClick={reject}>Reject</Button>
+          </div>
+        </Panel>
       )}
-      {!pending && !mine && <p className="rounded bg-slate-100 p-2 text-sm">Accepted by another hospital.</p>}
+      {!pending && !mine && <p className="rounded-ui border border-line bg-raised p-2 text-sm text-ink">Accepted by another hospital.</p>}
 
-      <section>
-        <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Patient information</h3>
-        {!patient && (
+      <Panel title="Patient information">
+        {!patient ? (
           <>
-            <button disabled={busy || (!pending && !mine)} onClick={loadPatient} className={`${btn} bg-slate-800 text-white`}>Show patient record</button>
-            <p className="mt-1 text-xs text-slate-500">Opening the record is logged.</p>
+            <Button variant="secondary" disabled={busy || (!pending && !mine)} onClick={loadPatient}>Show patient record</Button>
+            <p className="mt-2 text-xs text-muted">Opening the record is logged.</p>
           </>
-        )}
-        {patient && <PatientRecord record={patient} />}
-      </section>
+        ) : <PatientRecord record={patient} />}
+      </Panel>
 
       {mine && (
         <>
           <AmbulancePanel hospitalId={hospitalId} caseData={caseData} onChange={onChange} />
 
-          <section>
-            <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Doctor</h3>
+          <Panel title="Doctor">
             <div className="flex gap-2">
-              <select value={doctorId} onChange={(e) => setDoctorId(e.target.value)} className="flex-1 rounded border px-2 py-1.5 text-sm" aria-label="Doctor">
+              <Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)} aria-label="Doctor">
                 <option value="">Choose an on-duty doctor</option>
-                {doctors.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.specialty})</option>)}
-              </select>
-              <button disabled={busy || !doctorId} onClick={assign} className={`${btn} bg-blue-700 text-white`}>Assign</button>
+                {doctors.map((d) => <option key={d.id} value={d.id}>{d.name}, {d.specialty}</option>)}
+              </Select>
+              <Button disabled={busy || !doctorId} onClick={assign}>Assign</Button>
             </div>
-            {caseData.doctor && <p className="mt-1 text-xs text-green-700">Doctor assigned and alerted.</p>}
-          </section>
+            {caseData.doctor && <p className="mt-2 text-sm font-semibold text-low">Doctor assigned and alerted.</p>}
+          </Panel>
 
-          <section>
-            <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Preparation</h3>
-            <ul className="space-y-1 text-sm">
+          <Panel title="Preparation">
+            <ul>
               {CHECKLIST.map(([key, label]) => {
                 const item = caseData.preparation?.[key] || { done: false };
                 return (
-                  <li key={key} className="flex items-center gap-2">
-                    <input id={key} type="checkbox" disabled={busy} checked={item.done} onChange={(e) => toggle(key, e.target.checked)} />
-                    <label htmlFor={key}>{label}</label>
-                    {item.at && <span className="text-xs text-slate-500">{new Date(item.at).toLocaleTimeString()}</span>}
+                  <li key={key} className="flex items-center justify-between gap-2">
+                    <Checkbox label={label} disabled={busy} checked={item.done} onChange={(e) => toggle(key, e.target.checked)} />
+                    {item.at && <span className="tnum text-xs text-muted">{new Date(item.at).toLocaleTimeString()}</span>}
                   </li>
                 );
               })}
             </ul>
-          </section>
-
-          <section className="flex flex-wrap gap-2">
-            <button disabled={busy || caseData.goldenHour?.[2]?.status !== 'not_started'} onClick={() => milestone('firstMedicalContact')} className={`${btn} border`}>First medical contact</button>
-            <button disabled={busy || caseData.goldenHour?.[2]?.status !== 'running'} onClick={() => milestone('treatmentStarted')} className={`${btn} border`}>Treatment started</button>
-          </section>
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+              <Button variant="secondary" size="sm" disabled={busy || caseData.goldenHour?.[2]?.status !== 'not_started'} onClick={() => milestone('firstMedicalContact')}>Mark first medical contact</Button>
+              <Button variant="secondary" size="sm" disabled={busy || caseData.goldenHour?.[2]?.status !== 'running'} onClick={() => milestone('treatmentStarted')}>Mark treatment started</Button>
+            </div>
+          </Panel>
         </>
       )}
 
-      <section>
-        <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Golden-hour timer</h3>
-        <GoldenHourClock stages={caseData.goldenHour || []} />
-      </section>
-
-      <section>
-        <h3 className="mb-1 text-sm font-bold uppercase text-slate-600">Timeline</h3>
-        <Timeline entries={timeline} />
-      </section>
+      <Panel title="Golden-hour timer"><GoldenHourClock stages={caseData.goldenHour || []} /></Panel>
+      <Panel title="What has happened"><Timeline entries={timeline} /></Panel>
     </div>
   );
 }
 
 function PatientRecord({ record }) {
-  const gap = (v) => (v && v.available === false ? <em className="text-slate-500">{v.note}</em> : <pre className="whitespace-pre-wrap font-sans">{typeof v === 'string' ? v : JSON.stringify(v)}</pre>);
+  const gap = (v) => (v && v.available === false ? <em className="text-muted">{v.note}</em> : <span className="whitespace-pre-wrap">{typeof v === 'string' ? v : JSON.stringify(v)}</span>);
   const row = (label, node) => (
-    <div className="grid grid-cols-[9rem_1fr] gap-2 border-b py-1 text-sm">
-      <div className="font-medium text-slate-600">{label}</div>
-      <div>{node}</div>
+    <div className="grid grid-cols-[8rem_1fr] gap-2 border-b border-line py-2 text-sm last:border-0">
+      <dt className="font-semibold text-muted">{label}</dt><dd className="text-ink">{node}</dd>
     </div>
   );
   const p = record.passport;
   return (
-    <div>
+    <dl>
       {row('Name', p.fullName)}
       {row('Date of birth', p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString() : 'Not recorded')}
       {row('Phone', p.phone || 'Not recorded')}
@@ -184,7 +171,7 @@ function PatientRecord({ record }) {
       {row('Medicines', gap(record.medicines))}
       {row('Symptom answers', gap(record.symptomAnswers))}
       {row('Twin snapshot', gap(record.twinSnapshot))}
-      {row('Health summary', `Severity ${record.healthSummary.severity}, risk ${record.healthSummary.riskScore ?? '–'}`)}
-    </div>
+      {row('Health summary', `Severity ${record.healthSummary.severity}, risk ${record.healthSummary.riskScore ?? 'not available'}`)}
+    </dl>
   );
 }

@@ -6,6 +6,10 @@ import CaseQueue from './CaseQueue.jsx';
 import CaseView from './CaseView.jsx';
 import TakeoverScreen from './TakeoverScreen.jsx';
 import FleetPanel from './FleetPanel.jsx';
+import Button from '../ui/Button.jsx';
+import { Card } from '../ui/Surface.jsx';
+import { Select } from '../ui/Form.jsx';
+import { EmptyState, ErrorState, Toast } from '../ui/Feedback.jsx';
 
 const KEY = 'ht.portalHospital';
 
@@ -60,49 +64,41 @@ export default function PortalApp({ view = 'queue' }) {
   }
 
   return (
-    <div className="p-4">
+    <div className="space-y-4">
       {takeover && (
         <TakeoverScreen caseData={takeover} busy={busy} error={takeoverError} onAccept={acceptTakeover} onReject={rejectTakeover} onAcknowledge={acknowledge} />
       )}
 
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 shadow">
-        <label className="text-sm font-medium">
-          Hospital (demo login){' '}
-          <select value={hospitalId} onChange={(e) => { setHospitalId(e.target.value); setSelectedId(null); }} className="rounded border px-2 py-1">
+      <Card className="flex flex-wrap items-end gap-3 p-3">
+        <label className="space-y-1 text-sm"><span className="block font-semibold">Hospital (demo login)</span>
+          <Select value={hospitalId} onChange={(e) => { setHospitalId(e.target.value); setSelectedId(null); }}>
             <option value="">Choose your hospital</option>
             {hospitals.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
-          </select>
+          </Select>
         </label>
         {hospitalId && (
           <>
-            <button className="rounded border px-3 py-1 text-sm" onClick={async () => setInfo(await enableBackgroundAlerts(hospitalId).catch((e) => e.message))}>
-              Alerts when tab is closed
-            </button>
-            <button className="rounded bg-red-700 px-3 py-1 text-sm font-semibold text-white" onClick={demo}>Create demo emergency</button>
+            <Button variant="secondary" onClick={async () => setInfo(await enableBackgroundAlerts(hospitalId).catch((e) => e.message))}>Alerts when tab is closed</Button>
+            <Button variant="secondary" icon="siren" onClick={demo}>Create demo emergency</Button>
           </>
         )}
-        {info && <span className="text-sm text-slate-700">{info}</span>}
-      </div>
+        <p role="status" aria-live="polite" className="pb-2 text-sm text-muted">{info}</p>
+      </Card>
 
-      {notices.map((n) => (
-        <div key={n.id} className="mb-2 flex justify-between rounded bg-amber-100 px-3 py-2 text-sm text-amber-900">
-          {n.text}
-          <button onClick={() => dismissNotice(n.id)} aria-label="Dismiss">✕</button>
-        </div>
-      ))}
-      {error && <p className="mb-2 rounded bg-red-50 p-2 text-sm text-red-800">{error}</p>}
-
-      {hospitalId && showFleet && <div className="mb-4"><FleetPanel hospitalId={hospitalId} /></div>}
+      {notices.map((n) => <Toast key={n.id} tone="moderate" onClose={() => dismissNotice(n.id)}>{n.text}</Toast>)}
+      {error && <ErrorState title="Could not load the queue">{error}</ErrorState>}
 
       {!hospitalId ? (
-        <p className="rounded bg-white p-4 text-sm shadow">Choose a hospital to see its incoming emergencies.</p>
-      ) : showFleet ? null : (
+        <Card><EmptyState icon="siren" title="Choose a hospital">Pick your hospital above to see its incoming emergencies.</EmptyState></Card>
+      ) : showFleet ? (
+        <FleetPanel hospitalId={hospitalId} />
+      ) : (
         <div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
           <CaseQueue cases={cases} selectedId={selectedId} onSelect={setSelectedId} hospitalId={hospitalId} sort={sort} onSort={setSort} />
           {selected ? (
             <CaseView key={selected.id} hospitalId={hospitalId} caseData={selected} onChange={upsert} onGone={(id) => { remove(id); setSelectedId(null); }} />
           ) : (
-            <p className="rounded bg-white p-4 text-sm text-slate-600 shadow">Select a case to see the patient, controls, timer and timeline.</p>
+            <Card><EmptyState icon="inbox" title="Select a case">Choose one from the queue to see the patient, controls, timer and timeline.</EmptyState></Card>
           )}
         </div>
       )}

@@ -56,7 +56,7 @@ export const ACTIVE_STATUSES = Object.freeze([
 export const CANCEL_REASONS = Object.freeze(['false_alarm', 'feeling_better', 'already_at_hospital', 'other'])
 
 /** Feature 66 */
-export const REJECT_REASONS = Object.freeze(['no_beds', 'no_cardiologist', 'cath_lab_busy', 'other'])
+export const REJECT_REASONS = Object.freeze(['no_beds', 'no_ccu_bed', 'no_cardiologist', 'cath_lab_busy', 'other'])
 
 /** One entry per hospital notified for this case (features 60, 61, 65, 66). */
 export const HOSPITAL_RESPONSE = Object.freeze({

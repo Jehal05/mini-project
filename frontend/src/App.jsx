@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { MedicalBackground } from './design/index.js'
+const LandingPage = lazy(() => import('./features/landing/LandingPage.jsx'))
 const ProfileLayout = lazy(() => import('./features/profile/index.js').then((m) => ({ default: m.ProfileLayout })))
 const DocumentsPage = lazy(() => import('./features/profile/pages/DocumentsPage.jsx'))
 const ContactsPage = lazy(() => import('./features/profile/pages/ContactsPage.jsx'))
@@ -28,6 +29,7 @@ const AmbulancesPage = lazy(() => import('./features/response/pages/AmbulancesPa
 const TrackPage = lazy(() => import('./features/response/pages/TrackPage.jsx'))
 const HospitalFinderPage = lazy(() => import('./features/response/pages/HospitalFinderPage.jsx'))
 const EdPage = lazy(() => import('./features/hospital/pages/EdPage.jsx'))
+const PatientThresholdsPage = lazy(() => import('./features/hospital/pages/PatientThresholdsPage.jsx'))
 const HistoryPage = lazy(() => import('./features/hospital/pages/HistoryPage.jsx'))
 import './features/hospital/hospital.css'
 import './styles/auth.css'
@@ -59,7 +61,8 @@ function PageLoading() {
 function Start() {
   const { status, user } = useAuth()
   if (status === 'loading') return <PageLoading />
-  return <Navigate to={status === 'authenticated' ? portalPath(user.role) : '/login'} replace />
+  if (status === 'authenticated') return <Navigate to={portalPath(user.role)} replace />
+  return <LandingPage />
 }
 
 /** Wraps the account, profile, hospital and admin screens so their plain CSS applies only to them. */
@@ -128,6 +131,7 @@ export default function App() {
               <Route path="beds" element={<BedsPage />} />
               <Route path="ed" element={<EdPage />} />
               <Route path="doctors" element={<DoctorsPage />} />
+              <Route path="thresholds" element={<PatientThresholdsPage />} />
               <Route path="history" element={<HistoryPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>

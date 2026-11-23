@@ -1,7 +1,7 @@
 // Prioritised queue (95), analytics (96), backup and restore (99).
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-import { AuditLog, EmergencyCase, Hospital, Patient } from '../../src/models/index.js';
+import { Ambulance, AuditLog, EmergencyCase, Hospital, Patient } from '../../src/models/index.js';
 import { app, bearer, loginAs, makeHospital, makeUser, patientSession } from './helpers.js';
 
 const admin = async () => (await loginAs(await makeUser({ role: 'central_admin' }))).token;
@@ -88,5 +88,20 @@ describe('backup and restore (99)', () => {
   it('is for central admins only', async () => {
     const s = await patientSession();
     for (const [m, u] of [['get', '/api/admin/backup'], ['post', '/api/admin/backup/restore']]) expect((await request(app)[m](u).set(bearer(s.token)).send({})).status).toBe(403);
+  });
+});
+
+describe('command-centre map', () => {
+  it('lists hospitals, ambulances and located live cases for admins only', async () => {
+    const h = await Hospital.create({ name: `Map Hospital ${Date.now()}`, location: { type: 'Point', coordinates: [73.85, 18.52] } });
+    await Ambulance.create({ hospital: h._id, vehicleNumber: `MH12MAP${Date.now() % 100000}`, position: { type: 'Point', coordinates: [73.86, 18.53] } });
+    const p = await patientSession();
+    await caseFor(p, { location: { point: { type: 'Point', coordinates: [73.87, 18.54] } } });
+    const res = await request(app).get('/api/admin/map').set(bearer(await admin()));
+    expect(res.status).toBe(200);
+    expect(res.body.hospitals.find((x) => x.id === String(h._id))).toMatchObject({ lat: 18.52, lng: 73.85 });
+    expect(res.body.ambulances.some((a) => a.hospital === String(h._id) && a.lat === 18.53)).toBe(true);
+    expect(res.body.cases.find((c) => c.patientCode === p.patient.patientId)).toMatchObject({ lat: 18.54, lng: 73.87 });
+    expect((await request(app).get('/api/admin/map').set(bearer((await patientSession()).token))).status).toBe(403);
   });
 });

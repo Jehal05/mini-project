@@ -3,7 +3,7 @@ import { useLoad } from '../../shared/useLoad.js'
 import { useSave } from '../../profile/useProfile.jsx'
 import { responseApi } from '../api.js'
 import { useSocketEvents } from '../hooks.js'
-import MiniMap from '../MiniMap.jsx'
+import MiniMap from '../MapView.jsx'
 import { TRIP_LABEL, TRIP_STAGES } from '../../../../../shared/response.js'
 
 const NEXT_BUTTON = { at_patient: 'We are at the patient', patient_on_board: 'Patient on board', en_route_to_hospital: 'Leaving for the hospital', at_hospital: 'We are at the hospital' }

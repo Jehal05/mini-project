@@ -1,6 +1,7 @@
 // REST for the hospital response flow. Mounted by monitoring.js under /api.
 //
 //   GET  /hospitals/nearby?lng=&lat=&radiusKm=&cardiac=1&q=        53-59  any signed-in user
+//   GET  /geocode?q=                                               52  any signed-in user (address search for the pin)
 //   GET  /response/track/:caseId                                   67, 70, 76, 77  the patient, the hospital on the case, admins
 //   GET  /response/incoming                                        62, 95  hospital: the live queue, most urgent first
 //   GET  /response/cases/:id                                       63, 64  hospital that was told: case + handover (logged)
@@ -24,7 +25,7 @@ const ROLES = ['doctor', 'hospital_staff', 'hospital_admin']
 const fail = (status, message) => Object.assign(new Error(message), { status })
 const text = (v, max) => (typeof v === 'string' && v.trim() && v.trim().length <= max ? v.trim() : undefined)
 
-export function createResponseRouter({ service, ambulances, discovery, access }) {
+export function createResponseRouter({ service, ambulances, discovery, access, geocoder }) {
   const router = express.Router()
   router.use(express.json())
   const crew = authorize('hospital_staff', 'hospital_admin')
@@ -34,6 +35,11 @@ export function createResponseRouter({ service, ambulances, discovery, access })
     const radiusKm = Math.min(50, Math.max(1, num(req.query.radiusKm) ?? 30))
     const list = await discovery.nearby({ lng: num(req.query.lng), lat: num(req.query.lat), radiusKm, cardiacOnly: req.query.cardiac === '1' || req.query.cardiac === 'true', q: text(req.query.q, 80) })
     res.json({ items: list, radiusKm, simulated: true })
+  })
+
+  // 52: address search for the manual pin (any signed-in user).
+  router.get('/geocode', authenticate, async (req, res) => {
+    res.json({ ...(await (geocoder?.search(req.query.q) ?? { items: [], source: 'none' })), simulated: true })
   })
 
   router.get('/response/track/:caseId', authenticate, async (req, res) => {

@@ -1,5 +1,6 @@
 import { EmergencyCase } from '../models/EmergencyCase.js'
 import { Hospital } from '../models/Hospital.js'
+import { Ambulance } from '../models/Ambulance.js'
 import { GOLDEN_HOUR, byPriority, goldenHour } from '../../../shared/response.js'
 
 const LIVE = ['awaiting_confirmation', 'searching', 'accepted', 'ambulance_assigned', 'patient_on_board', 'unresolved']
@@ -66,5 +67,21 @@ export async function emergencyAnalytics({ days = 14, now = Date.now() } = {}) {
     days, total: cases.length, perDay: Object.entries(perDay).map(([date, count]) => ({ date, count })), stages, acceptance,
     falseAlarm: { count: falseAlarms, cancelled: cancelled.length, ratePercent: cases.length ? Math.round((falseAlarms / cases.length) * 100) : 0 },
     simulated: true,
+  }
+}
+
+/** Command-centre map: every hospital, every ambulance and every live case with a known location. [lng, lat] becomes {lng, lat}. */
+export async function commandMap() {
+  const ll = (p) => (p?.coordinates?.length === 2 ? { lng: p.coordinates[0], lat: p.coordinates[1] } : null)
+  const [hospitals, ambulances, cases] = await Promise.all([
+    Hospital.find({}, { name: 1, location: 1 }).lean(),
+    Ambulance.find({}, { vehicleNumber: 1, type: 1, status: 1, position: 1, hospital: 1, 'trip.caseId': 1, 'trip.stage': 1 }).lean(),
+    EmergencyCase.find({ status: { $in: LIVE } }, { caseNumber: 1, patientCode: 1, status: 1, severity: 1, 'location.point': 1 }).lean(),
+  ])
+  return {
+    hospitals: hospitals.map((h) => ({ id: String(h._id), name: h.name, ...ll(h.location) })).filter((h) => h.lat != null),
+    ambulances: ambulances.map((a) => ({ id: String(a._id), vehicleNumber: a.vehicleNumber, type: a.type, status: a.status, hospital: String(a.hospital), caseId: a.trip?.caseId ?? null, stage: a.trip?.stage ?? null, ...ll(a.position) })).filter((a) => a.lat != null),
+    cases: cases.map((c) => ({ id: String(c._id), caseNumber: c.caseNumber ?? null, patientCode: c.patientCode, status: c.status, severity: c.severity, ...ll(c.location?.point) })).filter((c) => c.lat != null),
+    serverNow: new Date().toISOString(), simulated: true,
   }
 }

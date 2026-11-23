@@ -10,6 +10,9 @@ import { appEvents, EVENTS } from './events.js'
 import { Patient } from './models/Patient.js'
 import { attachDetection } from './detection/index.js'
 import { attachEmergency } from './emergency/index.js'
+import { createPushRouter } from './push/routes.js'
+import { createPushService } from './push/service.js'
+import { createGeocoder } from './response/geocoder.js'
 import { createLiveNotifier } from './emergency/liveNotifier.js'
 import { attachSimulation } from './simulation/index.js'
 import { AmbulanceService } from './response/ambulance.js'
@@ -26,12 +29,14 @@ export async function createMonitoring({ io, discovery: customDiscovery, notifie
   const engine = await attachSimulation({ app: extraApi, io, basePath: '/sim', logger, autoStart, ...rules, ...simulationOptions })
   const detection = await attachDetection({ app: extraApi, io, engine, basePath: '/detection', logger, autoStart, audit, ...rules })
   // Hospital search, notification and the ambulance trip (features 51-80). A caller may still pass its own `discovery`.
-  const discovery = customDiscovery ?? createDiscovery({ io, logger, ...responseOptions.discovery })
-  const ambulances = new AmbulanceService({ io, logger, ...responseOptions.ambulance })
-  const emergency = await attachEmergency({ app: extraApi, io, detection, discovery, notifier: notifier ?? createLiveNotifier({ logger }), basePath: '/emergency', logger, guard: rules.guard, adminGuard: rules.presenterGuard, access: rules.access, ...emergencyOptions })
+  const pusher = createPushService({ logger, ...responseOptions.push }) // 47, 61: Web Push (off until VAPID keys are set)
+  const discovery = customDiscovery ?? createDiscovery({ io, logger, pusher, ...responseOptions.discovery })
+  const ambulances = new AmbulanceService({ io, logger, pusher, ...responseOptions.ambulance })
+  const emergency = await attachEmergency({ app: extraApi, io, detection, discovery, pusher, notifier: notifier ?? createLiveNotifier({ logger }), basePath: '/emergency', logger, guard: rules.guard, adminGuard: rules.presenterGuard, access: rules.access, ...emergencyOptions })
 
-  const response = new ResponseService({ io, discovery, ambulances, logger })
-  extraApi.use(createResponseRouter({ service: response, ambulances, discovery, access: rules.access }))
+  const response = new ResponseService({ io, discovery, ambulances, pusher, logger })
+  extraApi.use(createPushRouter({ pusher }))
+  extraApi.use(createResponseRouter({ service: response, ambulances, discovery, access: rules.access, geocoder: createGeocoder({ logger, ...responseOptions.geocoder }) }))
   if (autoStart) await ambulances.resume()
 
   // The patient edits their profile: the twin, the baseline and the risk score follow it.
@@ -51,6 +56,7 @@ export async function createMonitoring({ io, discovery: customDiscovery, notifie
     detection,
     emergency,
     response,
+    pusher,
     ambulances,
     discovery,
     stop() {

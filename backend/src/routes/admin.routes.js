@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as c from '../controllers/adminHospitals.controller.js';
 import { protect, validate } from '../middleware/index.js';
 import express from 'express';
-import { emergencyAnalytics, prioritisedQueue } from '../services/analytics.js';
+import { commandMap, emergencyAnalytics, prioritisedQueue } from '../services/analytics.js';
 import { createBackup, restoreBackup, validateBackup } from '../services/backup.js';
 import { writeAudit } from '../utils/audit.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -20,6 +20,7 @@ router.patch('/hospitals/:id', validate(hospitalUpdateSchema), c.updateHospital)
 
 // Feature 95: every live emergency, most urgent first. Feature 96: analytics.
 router.get('/emergencies', async (_req, res) => res.json({ items: await prioritisedQueue(), serverNow: new Date().toISOString(), simulated: true }));
+router.get('/map', async (_req, res) => res.json(await commandMap()));
 router.get('/analytics', async (req, res) => {
   const days = Math.min(90, Math.max(1, Number(req.query.days) || 14));
   res.json(await emergencyAnalytics({ days }));

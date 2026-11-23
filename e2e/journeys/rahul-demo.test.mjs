@@ -52,12 +52,31 @@ test('Rahul: collapse -> help sent -> hospital accepts -> ambulance -> arrival',
       if (await arrival.isVisible()) return true
       for (const name of crewButtons) {
         const b = staff.getByRole('button', { name })
-        if (await b.isVisible() && await b.isEnabled()) { await b.click(); break }
+        // The page re-renders on every position update, so a button can vanish mid-check: just look again.
+        try { if (await b.isVisible() && await b.isEnabled({ timeout: 2000 })) { await b.click({ timeout: 2000 }); break } } catch { /* retry on the next pass */ }
       }
       return false
     }, { timeout: 120000, every: 400, what: 'the crew to reach the hospital' })
+    // A crew button can race the simulator moving the same stage on; the server answers 409 and the screen refreshes. Not a fault.
+    staff.problems = staff.problems.filter((x) => !/409/.test(x))
     await staff.getByRole('button', { name: 'Confirm arrival' }).click()
     await until(async () => (await stack.mongoose.connection.db.collection('emergencycases').findOne({}))?.status === 'arrived', { what: 'case arrived', timeout: 20000 })
+
+    // Step 14: the hospital admits Rahul to a bed under a doctor.
+    await staff.goto(`${stack.url}/hospital/admissions`)
+    await staff.getByRole('form', { name: 'Admit patient' }).waitFor()
+    await staff.getByLabel('Patient ID').fill('HT-2026-0001')
+    await staff.getByLabel('Bed').selectOption({ index: 1 })
+    await staff.getByLabel('Doctor').selectOption({ index: 1 })
+    await staff.getByRole('button', { name: 'Admit patient' }).click()
+    await until(async () => (await stack.mongoose.connection.db.collection('admissions').countDocuments({})) >= 1, { what: 'admission saved', timeout: 20000 })
+    await staff.getByText('HT-2026-0001').first().waitFor()
+
+    // Step 15: the finished case is in the emergency history and the incident report PDF downloads.
+    await staff.goto(`${stack.url}/hospital/history`)
+    const download = staff.waitForEvent('download', { timeout: 20000 })
+    await staff.getByRole('button', { name: /Incident report PDF/ }).first().click()
+    assert.match((await download).suggestedFilename(), /\.pdf$/i)
 
     for (const p of pages) assert.deepEqual(p.problems, [], p.problems.join('\n'))
   } catch (e) {

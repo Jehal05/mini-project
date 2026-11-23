@@ -4,6 +4,7 @@ const q = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v !== u
 
 export const responseApi = {
   nearby: (params) => api(`/hospitals/nearby?${q(params)}`),
+  geocode: (text) => api(`/geocode?${q({ q: text })}`),
   track: (caseId) => api(`/response/track/${caseId}`),
   incoming: () => api('/response/incoming'),
   caseFor: (id) => api(`/response/cases/${id}`),

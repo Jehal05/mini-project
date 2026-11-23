@@ -20,3 +20,25 @@ export function routeLine(a, b, steps = 24) {
 }
 
 export const ROAD_FACTOR = 1.3 // roads are longer than the straight line between two points
+
+/** Length of a polyline in km. */
+export function pathLengthKm(path) {
+  let km = 0
+  for (let i = 1; i < path.length; i++) km += distanceKm(path[i - 1], path[i])
+  return km
+}
+
+/** The point a fraction `f` (0 to 1) of the way along a polyline, measured by length. */
+export function pointAlongFraction(path, f) {
+  if (!path?.length) return null
+  if (path.length === 1 || f <= 0) return path[0]
+  if (f >= 1) return path[path.length - 1]
+  const target = pathLengthKm(path) * f
+  let walked = 0
+  for (let i = 1; i < path.length; i++) {
+    const seg = distanceKm(path[i - 1], path[i])
+    if (walked + seg >= target) return lerpPoint(path[i - 1], path[i], seg ? (target - walked) / seg : 0)
+    walked += seg
+  }
+  return path[path.length - 1]
+}

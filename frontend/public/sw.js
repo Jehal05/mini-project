@@ -19,3 +19,22 @@ self.addEventListener('fetch', (e) => {
     return res;
   })));
 });
+
+// Features 47 and 61: Web Push. The server sends a short title and text only; clicking opens the right page.
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch { data = { title: 'HealthTwin', body: e.data?.text() }; }
+  e.waitUntil(self.registration.showNotification(data.title || 'HealthTwin alert', {
+    body: data.body || '', tag: data.tag, requireInteraction: Boolean(data.requireInteraction),
+    icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', data: { url: data.url || '/' },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+    const open = wins.find((w) => new URL(w.url).origin === self.location.origin);
+    if (open) { open.navigate(url); return open.focus(); }
+    return self.clients.openWindow(url);
+  }));
+});

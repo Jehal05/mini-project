@@ -31,6 +31,7 @@ docker run -p 5000:5000 --env-file .env.production healthtwin
 | `STATIC_DIR` | Already `/app/web` in the image. |
 | `MAIL_PROVIDER=resend`, `RESEND_API_KEY`, `MAIL_FROM` | Real email for password resets and contact alerts. |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push for contact alerts. |
+| `ROUTING_URL`, `GEOCODER_URL`, `TILE_HOSTS` (and `VITE_TILE_URL` at build time) | Road routes (OSRM), address search (Nominatim) and map tiles. The public servers are development-only; use your own for real traffic. Unset, the app falls back to straight-line routes and built-in Pune areas. |
 | `BACKUP_DIR` | Mount a volume here for the daily database dump (feature 99). |
 | `UPLOAD_DIR` | Mount a volume for patient documents. |
 | `AMBULANCE_SPEED_KMH` | Leave at 60 for the demo ambulance simulator. |

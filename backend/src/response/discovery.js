@@ -17,7 +17,7 @@ export const FIRST_ROUND_HOSPITALS = 3 // "the top 3 are notified first" (59)
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const entry = (type, message, data) => ({ type, at: new Date(), actorRole: 'system', message, data })
 
-export function createDiscovery({ io, logger = console, now = () => Date.now(), responseWindowMs = ESCALATION.ROUND_TIMEOUT_MS } = {}) {
+export function createDiscovery({ io, pusher = null, logger = console, now = () => Date.now(), responseWindowMs = ESCALATION.ROUND_TIMEOUT_MS } = {}) {
   /**
    * Features 53-57, 59: hospitals within `radiusKm` of a point, nearest data first, each with its capability card,
    * score and breakdown, sorted best first. `cardiacOnly` is the facility filter (57); `q` searches name or area (56).
@@ -83,6 +83,8 @@ export function createDiscovery({ io, logger = console, now = () => Date.now(), 
       }).catch((err) => logger.error?.('[discovery] could not record the hospital case', err.message))
       const payload = alertPayload(updated, h, response)
       io?.to(hospitalRoom(h.id)).emit(RESPONSE_EVENTS.HOSPITAL_ALERT, payload)
+      // 61: staff whose tab is closed. The text never names the patient.
+      pusher?.toHospital(h.id, { title: 'Emergency: a case needs a response', body: 'Open the hospital portal to accept or reject it.', url: '/hospital/incoming' }).catch((e) => logger.warn?.(`[push] ${e.message}`))
       done.push({ hospital: h.id, name: h.name, rank, payload })
     }
     return done

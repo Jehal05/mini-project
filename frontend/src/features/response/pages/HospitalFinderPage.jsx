@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PortalLayout from '../../../components/PortalLayout.jsx'
 import { responseApi } from '../api.js'
-import MiniMap from '../MiniMap.jsx'
+import MapView from '../MapView.jsx'
+import LocationPicker from '../LocationPicker.jsx'
 import '../response.css'
 
 // Manual fallback when the browser will not share a location (feature 51). Real coordinates of Pune areas.
@@ -34,7 +35,7 @@ export default function HospitalFinderPage() {
       { enableHighAccuracy: true, timeout: 8000 },
     )
   }
-  const points = [{ id: 'me', kind: 'patient', lng: where.point[0], lat: where.point[1], label: where.label }, ...res.items.map((h, n) => ({ id: h.id, kind: h.cardiacCapable ? 'accepted' : 'weak', lng: h.location.coordinates[0], lat: h.location.coordinates[1], label: `${n + 1}` }))]
+  const hospitals = res.items.map((h, n) => ({ id: h.id, kind: h.cardiacCapable ? 'accepted' : 'weak', lng: h.location.coordinates[0], lat: h.location.coordinates[1], label: `${n + 1}` }))
   return (
     <PortalLayout title="Hospitals near you">
       <p><Link to="/patient">← Home</Link></p>
@@ -54,7 +55,7 @@ export default function HospitalFinderPage() {
       </section>
       <section className="glass-card" aria-labelledby="m-h">
         <h2 id="m-h">Map</h2>
-        <MiniMap points={points} />
+        <LocationPicker value={{ lng: where.point[0], lat: where.point[1], label: where.label }} extraPoints={hospitals} onChange={(p) => setWhere({ source: 'manual', label: p.label, point: [p.lng, p.lat] })} label="Map of your location and the ranked hospitals" />
       </section>
       <section className="glass-card" aria-labelledby="l-h">
         <h2 id="l-h">Ranked hospitals</h2>

@@ -19,8 +19,8 @@ const fail = (status, message, code) => Object.assign(new Error(message), { stat
 const LIVE_FOR_HOSPITAL = ['received', 'accepted', 'arrived']
 
 export class ResponseService {
-  constructor({ io, discovery, ambulances, logger = console, now = () => Date.now() } = {}) {
-    Object.assign(this, { io, discovery, ambulances, logger, now })
+  constructor({ io, discovery, ambulances, pusher = null, logger = console, now = () => Date.now() } = {}) {
+    Object.assign(this, { io, discovery, ambulances, pusher, logger, now })
   }
 
   /** The hospital's response row on a case, or null. Rejected and superseded hospitals lose access (63). */
@@ -146,6 +146,7 @@ export class ResponseService {
     this.io?.to(patientRoom(accepted.patient)).emit(EV.ACCEPTED, payload)
     this.io?.to(hospitalRoom(hospitalId)).emit(EV.ACCEPTED, payload)
     this.io?.to(ADMIN_ROOM).emit(EV.ACCEPTED, payload)
+    this.pusher?.toContacts(caseId, { title: 'A hospital accepted', body: message }).catch(() => {}) // 47, 67
 
     let ambulance = null
     try { ambulance = await this.ambulances.assign(caseId, hospitalId, { actor: { role: 'system' } }) } catch (err) { this.logger.error?.('[response] ambulance assignment failed', err.message) }

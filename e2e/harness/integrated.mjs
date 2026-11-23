@@ -9,7 +9,7 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../..')
 export const DIST = path.join(root, 'e2e/dist')
 
-export async function startIntegrated({ ambulanceSpeedKmh = 4000 } = {}) {
+export async function startIntegrated({ ambulanceSpeedKmh = 4000, roundTimeoutMs } = {}) {
   Object.assign(process.env, {
     NODE_ENV: 'test', RATE_LIMIT: 'off', MAIL_PROVIDER: 'console', STATIC_DIR: DIST,
     AMBULANCE_SPEED_KMH: String(ambulanceSpeedKmh), CLIENT_ORIGIN: 'http://127.0.0.1',
@@ -31,7 +31,7 @@ export async function startIntegrated({ ambulanceSpeedKmh = 4000 } = {}) {
   const server = http.createServer()
   const io = new Server(server)
   const logger = { log() {}, info() {}, warn() {}, error: console.error }
-  const monitoring = await createMonitoring({ io, autoStart: true, logger })
+  const monitoring = await createMonitoring({ io, autoStart: true, logger, ...(roundTimeoutMs && { emergencyOptions: { roundTimeoutMs } }) })
   server.on('request', createApp({ extraApi: monitoring.extraApi }))
   await new Promise((ok) => server.listen(0, '127.0.0.1', ok))
   const url = `http://127.0.0.1:${server.address().port}`

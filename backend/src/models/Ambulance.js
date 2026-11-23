@@ -27,7 +27,11 @@ const ambulanceSchema = new Schema(
       hospitalPoint: [Number],
       legFrom: [Number],
       legTo: [Number],
-      legKm: Number, // road length of the current leg (straight line times a road factor)
+      legKm: Number, // road length of the current leg (a routed distance, or the straight line times a road factor)
+      legPath: [[Number]], // the current leg as [lng, lat] points
+      hospitalPath: [[Number]], // the leg from the patient to the hospital, planned at dispatch
+      hospitalKm: Number,
+      routeSource: { type: String, enum: ['road', 'estimate'] },
       progressKm: { type: Number, default: 0 },
       stageTimes: { type: Map, of: Date },
       dispatchedAt: Date,

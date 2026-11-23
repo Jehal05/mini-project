@@ -1,5 +1,6 @@
 import { useAuth } from '../auth/AuthContext.jsx';
 import { ROLE_LABEL } from '../auth/roles.js';
+import GlobalSos from '../features/emergency/GlobalSos.jsx';
 import IdleWarning from './IdleWarning.jsx';
 
 export default function PortalLayout({ title, children }) {
@@ -20,6 +21,7 @@ export default function PortalLayout({ title, children }) {
         <h1>{title}</h1>
         {children}
       </main>
+      <GlobalSos />
     </div>
   );
 }

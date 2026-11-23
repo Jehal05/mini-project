@@ -2,6 +2,8 @@
 // said no, a manual fallback. (The map with the accuracy circle belongs to the GPS/map features 51-52.)
 import { useEffect, useRef, useState } from 'react'
 import { Badge, Button, Card } from '../../design/index.js'
+import LocationPicker from '../response/LocationPicker.jsx'
+import MapView from '../response/MapView.jsx'
 import { emergencyApi } from './api.js'
 
 const SEND_EVERY_MS = 10_000
@@ -67,6 +69,7 @@ export function LocationShare({ caseId, location }) {
           <span className="text-fg-muted"> · {location.source === 'gps' ? 'GPS' : 'entered by you'}</span>
           {location.address && <span> · {location.address}</span>}
           <br />
+          <MapView points={[{ id: 'me', kind: 'patient', lng: p[0], lat: p[1], label: 'You' }]} circles={location.accuracyM ? [{ lng: p[0], lat: p[1], radiusM: location.accuracyM }] : []} height={220} label="Map of your shared location with its accuracy circle" />
           <a href={`https://www.openstreetmap.org/?mlat=${p[1]}&mlon=${p[0]}#map=17/${p[1]}/${p[0]}`} target="_blank" rel="noopener noreferrer" className="text-link underline">
             Open in a map
           </a>
@@ -80,6 +83,15 @@ export function LocationShare({ caseId, location }) {
           Enter location manually
         </button>
       ) : (
+        <>
+        <div className="mt-3">
+          <LocationPicker
+            height={220}
+            value={form.lat && form.lng && Number.isFinite(Number(form.lat)) ? { lat: Number(form.lat), lng: Number(form.lng), label: form.address || 'Your pin' } : null}
+            onChange={(v) => setForm({ lat: v.lat.toFixed(6), lng: v.lng.toFixed(6), address: v.label === 'Dropped pin' ? form.address : v.label })}
+            label="Map to choose your location"
+          />
+        </div>
         <form onSubmit={saveManual} className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="Enter your location">
           <label className="text-xs text-fg-muted">
             Latitude
@@ -104,6 +116,7 @@ export function LocationShare({ caseId, location }) {
             )}
           </div>
         </form>
+        </>
       )}
       {error && (
         <p role="alert" className="mt-2 text-sm text-critical">

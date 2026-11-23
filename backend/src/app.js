@@ -13,7 +13,10 @@ export function createApp({ extraApi, staticDir = config.staticDir } = {}) {
   const app = express();
   if (config.trustProxy) app.set('trust proxy', 1);
   app.disable('x-powered-by');
-  app.use(helmet());
+  // Map tiles are images from the tile server (feature 55). Add hosts with TILE_HOSTS (space separated) if you use another.
+  const tileHosts = ['https://tile.openstreetmap.org', 'https://*.tile.openstreetmap.org', ...(process.env.TILE_HOSTS ?? '').split(/\s+/).filter(Boolean)];
+  const directives = helmet.contentSecurityPolicy.getDefaultDirectives();
+  app.use(helmet({ contentSecurityPolicy: { directives: { ...directives, 'img-src': ["'self'", 'data:', 'blob:', ...tileHosts] } } }));
   app.use(cors({ origin: config.clientOrigin, credentials: true }));
   // Backup check and restore take a whole database file, so that route reads its own larger body (routes/admin.routes.js).
   const smallJson = express.json({ limit: '100kb' });

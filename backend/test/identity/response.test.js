@@ -216,6 +216,50 @@ describe('a case with no location (51)', () => {
   });
 });
 
+describe('road routes (54, 76, 77)', () => {
+  it('plans both legs on the road, moves the ambulance along them and reports the route source', async () => {
+    const original = monitoring.ambulances.routing;
+    const bend = (a, b) => [a, [b[0], a[1]], b]; // an L-shaped "road": east then north
+    monitoring.ambulances.routing = { route: async (a, b) => ({ path: bend(a, b), km: 5, durationSec: 400, source: 'road' }) };
+    try {
+      await Hospital.updateMany({}, { isActive: false });
+      const h = await hospital({ offsetKm: 2 });
+      await Ambulance.create({ hospital: h._id, vehicleNumber: `MH12${Date.now() % 10000}R`, type: 'ALS', position: h.location });
+      const p = await patientSession();
+      const c = await sos(p);
+      await settle();
+      const t = await staff(h);
+      expect((await call('post', t, `/api/response/cases/${c.id}/accept`)).status).toBe(200);
+      const car = await Ambulance.findOne({ 'trip.caseId': c.id }).lean();
+      expect(car.trip).toMatchObject({ routeSource: 'road', legKm: 5, hospitalKm: 5 });
+      expect(car.trip.legPath).toHaveLength(3);
+      const track = (await call('get', p.token, `/api/response/track/${c.id}`)).body.ambulance;
+      expect(track.routeSource).toBe('road');
+      expect(track.route.source).toBe('road');
+      expect(track.route.toPatient).toHaveLength(3);
+      expect(track.route.toHospital).toHaveLength(3);
+      expect(track.etaToHospitalSeconds).toBeGreaterThan(track.etaSeconds);
+      await monitoring.ambulances.tick(2000);
+      const moved = await Ambulance.findById(car._id).lean();
+      expect(moved.position.coordinates[1]).toBeCloseTo(car.trip.legFrom[1], 5); // still on the first, east-west part of the L
+      expect(moved.position.coordinates[0]).not.toBe(car.trip.legFrom[0]);
+    } finally {
+      monitoring.ambulances.routing = original;
+    }
+  });
+});
+
+describe('address search (52)', () => {
+  it('needs a login and finds the built-in Pune areas when no geocoder is online', async () => {
+    expect((await request(app).get('/api/geocode?q=Kothrud')).status).toBe(401);
+    const p = await patientSession();
+    const res = await call('get', p.token, '/api/geocode?q=Kothrud');
+    expect(res.status).toBe(200);
+    expect(res.body.items[0]).toMatchObject({ lng: expect.any(Number), lat: expect.any(Number) });
+    expect(res.body.source).toBe('builtin');
+  });
+});
+
 describe('ambulance fleet (71, 72)', () => {
   it('registers a vehicle for the staff member’s own hospital only, and refuses duplicates', async () => {
     const h = await hospital();

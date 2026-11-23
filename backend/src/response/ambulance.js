@@ -1,7 +1,7 @@
 // Features 71-80 and 107: the ambulance fleet, assignment, dispatch and the simulated trip.
 //
-// No hardware and no routing service: a vehicle moves along the straight line between its start, the patient and the
-// hospital (times a road factor) every 2 seconds. Everything it sends is marked `simulated: true`.
+// No hardware: a vehicle moves along the planned road route (from the routing service) or, if that is off or fails, the
+// straight line times a road factor, every 2 seconds. Everything it sends is marked `simulated: true`.
 
 import { Ambulance } from '../models/Ambulance.js'
 import { EmergencyCase } from '../models/EmergencyCase.js'
@@ -9,7 +9,8 @@ import { Hospital } from '../models/Hospital.js'
 import { updateHospitalCase } from '../services/hospitalCases.js'
 import { ADMIN_ROOM, CASE_STATUS, hospitalRoom } from '../../../shared/emergency.js'
 import { RESPONSE_EVENTS as EV, TRIP_LABEL, TRIP_STAGES } from '../../../shared/response.js'
-import { distanceKm, lerpPoint, ROAD_FACTOR, routeLine } from './geo.js'
+import { distanceKm, pointAlongFraction, ROAD_FACTOR, routeLine } from './geo.js'
+import { createRouting } from './routing.js'
 
 export const TICK_MS = 2000 // feature 75
 const MOVING = ['en_route', 'en_route_to_hospital']
@@ -18,8 +19,8 @@ const entry = (type, message, data, actor = {}) => ({ type, at: new Date(), acto
 const fail = (status, message) => Object.assign(new Error(message), { status })
 
 export class AmbulanceService {
-  constructor({ io, logger = console, now = () => Date.now(), speedKmh = Number(process.env.AMBULANCE_SPEED_KMH) || 60, tickMs = TICK_MS } = {}) {
-    Object.assign(this, { io, logger, now, speedKmh, tickMs })
+  constructor({ io, logger = console, now = () => Date.now(), speedKmh = Number(process.env.AMBULANCE_SPEED_KMH) || 60, tickMs = TICK_MS, routing = createRouting({ logger }), pusher = null } = {}) {
+    Object.assign(this, { io, logger, now, speedKmh, tickMs, routing, pusher })
     this.timer = null
   }
 
@@ -79,13 +80,15 @@ export class AmbulanceService {
     if (c.ambulance && String(c.ambulance) !== String(chosen._id)) await this.release(c.ambulance, 'replaced')
 
     const from = chosen.position.coordinates
+    const hospitalPoint = hospital.location.coordinates
+    const [toPatient, toHospital] = await Promise.all([this.routing.route(from, patientPoint), this.routing.route(patientPoint, hospitalPoint)]) // 54, 76
     const now = new Date(this.now())
     const claimed = await Ambulance.findOneAndUpdate(
       { _id: chosen._id, status: 'available' },
       {
         $set: {
           status: 'dispatched',
-          trip: { caseId: String(c._id), stage: 'en_route', patientPoint, hospitalPoint: hospital.location.coordinates, legFrom: from, legTo: patientPoint, legKm: distanceKm(from, patientPoint) * ROAD_FACTOR, progressKm: 0, stageTimes: { en_route: now }, dispatchedAt: now },
+          trip: { caseId: String(c._id), stage: 'en_route', patientPoint, hospitalPoint: hospital.location.coordinates, legFrom: from, legTo: patientPoint, legKm: toPatient.km, legPath: toPatient.path, hospitalPath: toHospital.path, hospitalKm: toHospital.km, routeSource: toPatient.source === 'road' && toHospital.source === 'road' ? 'road' : 'estimate', progressKm: 0, stageTimes: { en_route: now }, dispatchedAt: now },
         },
       },
       { returnDocument: 'after' },
@@ -96,6 +99,7 @@ export class AmbulanceService {
       { $set: { ambulance: claimed._id, status: CASE_STATUS.AMBULANCE_ASSIGNED }, $push: { timeline: entry('ambulance_assigned', `Ambulance ${claimed.vehicleNumber} (${claimed.type}) dispatched`, { ambulance: String(claimed._id), type: claimed.type }, actor) } },
     )
     await this.emitStage(c, claimed, 'en_route')
+    this.pusher?.toContacts(c._id, { title: 'Ambulance on the way', body: `Ambulance ${claimed.vehicleNumber} has been sent.` }).catch(() => {})
     this.io?.to(patientRoom(c.patient)).emit(EV.AMBULANCE_ASSIGNED, this.payload(c, claimed))
     this.io?.to(hospitalRoom(hospitalId)).emit(EV.AMBULANCE_ASSIGNED, this.payload(c, claimed))
     return claimed
@@ -113,7 +117,7 @@ export class AmbulanceService {
     const t = a.trip ?? {}
     const toGo = Math.max(0, (t.legKm ?? 0) - (t.progressKm ?? 0))
     const moving = MOVING.includes(t.stage)
-    const afterLeg = t.stage === 'en_route' && t.patientPoint && t.hospitalPoint ? distanceKm(t.patientPoint, t.hospitalPoint) * ROAD_FACTOR : 0
+    const afterLeg = t.stage === 'en_route' && t.patientPoint && t.hospitalPoint ? (t.hospitalKm ?? distanceKm(t.patientPoint, t.hospitalPoint) * ROAD_FACTOR) : 0
     return {
       caseId: String(c._id ?? c.caseId ?? t.caseId),
       ambulanceId: String(a._id),
@@ -125,6 +129,7 @@ export class AmbulanceService {
       etaSeconds: moving ? Math.round((toGo / this.speedKmh) * 3600) : 0,
       etaToHospitalSeconds: Math.round(((toGo + (t.stage === 'en_route' ? afterLeg : 0)) / this.speedKmh) * 3600),
       remainingKm: Math.round(toGo * 10) / 10,
+      routeSource: t.routeSource ?? 'estimate',
       at: new Date(this.now()).toISOString(),
       simulated: true,
     }
@@ -158,11 +163,14 @@ export class AmbulanceService {
       const step = (this.speedKmh * dtMs) / 3_600_000
       const progress = Math.min(a.trip.legKm, a.trip.progressKm + step)
       const arrived = progress >= a.trip.legKm
-      const position = { type: 'Point', coordinates: lerpPoint(a.trip.legFrom, a.trip.legTo, a.trip.legKm ? progress / a.trip.legKm : 1) }
+      const fraction = a.trip.legKm ? progress / a.trip.legKm : 1
+      const path = a.trip.legPath?.length ? a.trip.legPath : [a.trip.legFrom, a.trip.legTo]
+      const position = { type: 'Point', coordinates: pointAlongFraction(path, fraction) }
       const next = await Ambulance.findOneAndUpdate({ _id: a._id, 'trip.stage': a.trip.stage }, { $set: { position, 'trip.progressKm': progress } }, { returnDocument: 'after' }).lean()
       if (!next) continue
       this.io?.to(patientRoom(c.patient)).emit(EV.AMBULANCE_POSITION, this.payload(c, next))
       if (c.acceptedHospital) this.io?.to(hospitalRoom(c.acceptedHospital)).emit(EV.AMBULANCE_POSITION, this.payload(c, next))
+      this.io?.to(ADMIN_ROOM).emit(EV.AMBULANCE_POSITION, this.payload(c, next))
       if (arrived) await this.advance(c._id, a.trip.stage === 'en_route' ? 'at_patient' : 'at_hospital', { role: 'system' }, { fromSimulation: true })
     }
   }
@@ -179,7 +187,7 @@ export class AmbulanceService {
     const set = { 'trip.stage': toStage, [`trip.stageTimes.${toStage}`]: now }
     if (toStage === 'at_patient' && !fromSimulation) Object.assign(set, { position: { type: 'Point', coordinates: a0.trip.patientPoint }, 'trip.progressKm': a0.trip.legKm })
     if (toStage === 'at_patient') set.position = { type: 'Point', coordinates: a0.trip.patientPoint }
-    if (toStage === 'en_route_to_hospital') Object.assign(set, { status: 'on_trip', 'trip.legFrom': a0.trip.patientPoint, 'trip.legTo': a0.trip.hospitalPoint, 'trip.legKm': distanceKm(a0.trip.patientPoint, a0.trip.hospitalPoint) * ROAD_FACTOR, 'trip.progressKm': 0 })
+    if (toStage === 'en_route_to_hospital') Object.assign(set, { status: 'on_trip', 'trip.legFrom': a0.trip.patientPoint, 'trip.legTo': a0.trip.hospitalPoint, 'trip.legKm': a0.trip.hospitalKm ?? distanceKm(a0.trip.patientPoint, a0.trip.hospitalPoint) * ROAD_FACTOR, 'trip.legPath': a0.trip.hospitalPath?.length ? a0.trip.hospitalPath : [a0.trip.patientPoint, a0.trip.hospitalPoint], 'trip.progressKm': 0 })
     if (toStage === 'patient_on_board') set.status = 'on_trip'
     if (toStage === 'at_hospital') set.position = { type: 'Point', coordinates: a0.trip.hospitalPoint }
     const a = await Ambulance.findOneAndUpdate({ _id: a0._id, 'trip.stage': from }, { $set: set }, { returnDocument: 'after' }).lean()
@@ -207,6 +215,7 @@ export class AmbulanceService {
     await updateHospitalCase({ hospitalId: c.acceptedHospital, emergencyCaseId: String(caseId) }, { status: 'arrived', arrivedAt: now })
     await this.release(a._id, 'arrived')
     const p = { caseId: String(c._id), hospitalId: String(c.acceptedHospital), simulated: true, at: now.toISOString() }
+    this.pusher?.toContacts(c._id, { title: 'Arrived at the hospital', body: 'The patient has reached the hospital.' }).catch(() => {})
     this.io?.to(patientRoom(c.patient)).emit(EV.ARRIVED, p)
     this.io?.to(hospitalRoom(c.acceptedHospital)).emit(EV.ARRIVED, p)
     return c
@@ -216,7 +225,9 @@ export class AmbulanceService {
   routeFor(trip) {
     if (!trip?.patientPoint?.length) return null
     const first = trip.stage === 'en_route' ? trip.legFrom : trip.patientPoint
-    return { toPatient: routeLine(first, trip.patientPoint), toHospital: routeLine(trip.patientPoint, trip.hospitalPoint), simulated: true }
+    const toPatient = trip.stage === 'en_route' && trip.legPath?.length ? trip.legPath : routeLine(first, trip.patientPoint)
+    const toHospital = trip.hospitalPath?.length ? trip.hospitalPath : routeLine(trip.patientPoint, trip.hospitalPoint)
+    return { toPatient, toHospital, source: trip.routeSource ?? 'estimate', simulated: true }
   }
 
   async resume() {

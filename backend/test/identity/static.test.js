@@ -22,3 +22,12 @@ describe('single-origin deployment (STATIC_DIR)', () => {
     expect(missing.text).not.toContain('<title>');
   });
 });
+
+describe('security headers', () => {
+  it('lets the page load map tile images from OpenStreetMap, and nothing else remote', async () => {
+    const res = await request(createApp()).get('/api/health');
+    const csp = res.headers['content-security-policy'];
+    expect(csp).toMatch(/img-src [^;]*https:\/\/tile\.openstreetmap\.org/);
+    expect(csp).toMatch(/script-src 'self'/);
+  });
+});

@@ -6,7 +6,7 @@ import { hospitalApi } from '../../hospital/api.js'
 import { responseApi } from '../api.js'
 import GoldenHour from '../GoldenHour.jsx'
 import { useSocketEvents } from '../hooks.js'
-import MiniMap from '../MiniMap.jsx'
+import MiniMap from '../MapView.jsx'
 import { PREP_LABEL, REJECT_LABEL, REJECT_REASONS } from '../reasons.js'
 import Timeline from '../Timeline.jsx'
 

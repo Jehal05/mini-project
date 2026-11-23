@@ -35,3 +35,7 @@
 .ht-legacy .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.25rem 0; }
 .ht-legacy .chip-ok { border-color: var(--normal); }
 .ht-legacy .chip-no { color: var(--text-2); }
+
+/* Leaflet map markers (feature 55). */
+.ht-map-pin, .ht-map-ambulance { background: none; border: 0; }
+.leaflet-container { font-family: inherit; background: var(--ht-bg-to); }

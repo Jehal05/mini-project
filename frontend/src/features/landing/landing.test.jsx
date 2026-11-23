@@ -16,7 +16,7 @@ describe('landing page', () => {
     expect(screen.getByRole('link', { name: 'Hospital staff login' })).toHaveAttribute('href', '/login?portal=staff')
     expect(screen.getByRole('link', { name: 'Admin login' })).toHaveAttribute('href', '/login?portal=admin')
     expect(screen.getByRole('link', { name: 'Scan a QR passport' })).toHaveAttribute('href', '/scan')
-    expect(screen.getByRole('img', { name: /four heart chambers/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /heart with its four chambers/i })).toBeInTheDocument()
     expect(screen.getAllByText(/simulated|fictional/i).length).toBeGreaterThan(0)
   })
 })

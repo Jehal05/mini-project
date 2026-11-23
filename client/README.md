@@ -155,3 +155,14 @@ Manual checklist: sign in as admin, set Rahul to Cardiac event; as Rahul, wait f
 New **My hospital** item in the hospital navigation (needs a signed-in hospital account) with tabs: Dashboard, Doctors, Emergency dept (bays and patients on their way), History (filters and paging) and Profile. Buttons that the account's role cannot use are hidden; the server enforces the same rules. Inpatient stays now accept ECG and lab report uploads (PDF, JPEG, PNG) with an "Open" button per report.
 
 Manual checklist: sign in as a hospital admin, add a cardiologist and switch them on duty, check Profile says "Cardiologist on duty: Yes"; add a bay, occupy it with triage 2, clear it, mark ready, remove it; open History and check names appear only on "Accepted" rows; upload a small PDF in an inpatient stay and open it.
+
+## PDF reports (Phase 18)
+
+Made in the browser by a small dependency-free writer (`src/lib/pdf.js`); builders are in `src/reports/reports.js`.
+
+- Wallet passport card, 2 pages (front with QR, back with emergency tier): Passport tab, "Download wallet card (PDF)" (feature 20)
+- Discharge summary: admission page, after discharge, "Download PDF" (feature 89)
+- Patient report: profile header, "Download my report (PDF)" (feature 97)
+- Emergency incident report: each incident in Emergency history (feature 97)
+
+Every report carries "Simulated data for demonstration. Not a medical device." Tests: `src/reports/reports.test.js`.

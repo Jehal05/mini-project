@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { Badge, Button, Card } from './kit.jsx'
 import { followEmergency } from './socket.js'
 import { emergencyApi } from './api.js'
+import { downloadPdf, safeFileName } from '../lib/pdf.js'
+import { incidentReportPdf } from '../reports/reports.js'
 import { CANCEL_LABEL, SOURCE_TEXT, STATUS_TEXT, STATUS_TONE } from './status.js'
 
 const PAGE = 5
@@ -57,6 +59,9 @@ export function EmergencyHistory({ patientId, refreshKey }) {
                     </li>
                   ))}
                 </ol>
+                <Button variant="secondary" className="mt-2" onClick={() => downloadPdf(incidentReportPdf({ incident: c }), `${safeFileName(`incident-${c.caseNumber ?? c.id}`)}.pdf`)}>
+                  Download report (PDF)
+                </Button>
               </details>
             </li>
           ))}

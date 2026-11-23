@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { downloadPdf, safeFileName } from '../lib/pdf.js';
+import { dischargePdf } from '../reports/reports.js';
 import { addRecord, addRecordFile, recordFileUrl, checkAllergy, fetchAdmission, fetchDischarge, fetchPrescriptions, fetchRecords, finalizeDischarge, prescribe } from '../lib/inpatientApi.js';
 import { readAsBase64 } from '../lib/patientApi.js';
 import Button from '../ui/Button.jsx';
@@ -33,7 +35,7 @@ export default function AdmissionDetail({ id, role, onBack }) {
       </Panel>
       <Notes id={id} open={open} />
       <Prescriptions id={id} open={open} isDoctor={isDoctor} onChange={refresh} />
-      <Discharge id={id} open={open} isDoctor={isDoctor} onDone={refresh} />
+      <Discharge id={id} adm={adm} open={open} isDoctor={isDoctor} onDone={refresh} />
     </div>
   );
 }
@@ -153,7 +155,7 @@ function Prescriptions({ id, open, isDoctor, onChange }) {
   );
 }
 
-function Discharge({ id, open, isDoctor, onDone }) {
+function Discharge({ id, adm, open, isDoctor, onDone }) {
   const [state, setState] = useState(null);
   const [f, setF] = useState(null);
   const [error, setError] = useState('');
@@ -163,6 +165,10 @@ function Discharge({ id, open, isDoctor, onDone }) {
   async function finish() {
     setBusy(true); setError('');
     try { const out = await finalizeDischarge(id, { diagnosis: f.diagnosis, treatment: f.treatment, followUp: f.followUp || undefined, medicines: f.medicines }); setState(out); setConfirm(false); onDone(); } catch (e) { setError(Object.values(e.fields ?? {})[0] || e.message); setConfirm(false); } finally { setBusy(false); }
+  }
+  function download() {
+    const admission = { patientName: adm.patientName, patientId: adm.patientId, ward: adm.ward, bedLabel: adm.bedLabel ?? adm.bed, admittedAt: adm.admittedAt, dischargedAt: adm.dischargedAt, reason: adm.reason };
+    downloadPdf(dischargePdf({ admission, summary: state.summary, hospitalName: adm.hospitalName ?? 'Hospital', finalized: state.finalized }), `${safeFileName(`discharge-${adm.patientId ?? id}`)}.pdf`);
   }
   if (!state && !error) return null;
   return (
@@ -175,6 +181,7 @@ function Discharge({ id, open, isDoctor, onDone }) {
           <div><dt className="font-semibold text-muted">Medicines</dt><dd>{state.summary.medicines.length ? state.summary.medicines.map((m) => `${m.drug} ${m.dose ?? ''} ${m.frequency ?? ''} ${m.duration ?? ''}`.trim()).join('; ') : 'None'}</dd></div>
           {state.summary.followUp && <div><dt className="font-semibold text-muted">Follow-up</dt><dd>{state.summary.followUp}</dd></div>}
           <p className="text-xs text-muted">Finalized {when(state.summary.finalizedAt)}{state.summary.finalizedByName ? ` by ${state.summary.finalizedByName}` : ''}. It cannot be changed, and it now appears in the patient's history.</p>
+          <Button type="button" variant="secondary" onClick={download}>Download PDF</Button>
         </dl>
       )}
       {state && !state.finalized && f && (isDoctor && open ? (

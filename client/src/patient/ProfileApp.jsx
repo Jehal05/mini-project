@@ -8,6 +8,9 @@ import MedicalPanel from './MedicalPanel.jsx';
 import DocumentsPanel from './DocumentsPanel.jsx';
 import { usePatient } from './usePatient.js';
 import { initials } from '../lib/patientRecord.js';
+import Button from '../ui/Button.jsx';
+import { downloadPdf, safeFileName } from '../lib/pdf.js';
+import { patientReportPdf } from '../reports/reports.js';
 
 const TABS = [
   { id: 'personal', label: 'About me' }, { id: 'contacts', label: 'Contacts' },
@@ -29,6 +32,7 @@ export default function ProfileApp() {
           <p className="text-sm text-muted">{patient.patientId ? `Patient ID ${patient.patientId}` : 'Patient ID not issued yet'}{patient.age != null ? `, age ${patient.age}` : ''}</p>
         </div>
         {patient.bloodGroup && <Badge tone="critical" className="ml-auto">Blood group {patient.bloodGroup}</Badge>}
+        <Button variant="secondary" className={patient.bloodGroup ? '' : 'ml-auto'} onClick={() => downloadPdf(patientReportPdf({ patient }), `${safeFileName(`patient-report-${patient.patientId ?? 'me'}`)}.pdf`)}>Download my report (PDF)</Button>
       </Card>
       <Tabs tabs={TABS} value={tab} onChange={setTab} label="Profile sections" />
       <div role="tabpanel" aria-labelledby={`tab-${tab}`}>

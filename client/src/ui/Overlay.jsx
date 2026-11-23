@@ -9,7 +9,7 @@ export function Modal({ open, onClose, title, children, footer, tone = 'neutral'
     prev.current = document.activeElement;
     const el = ref.current;
     const focusables = () => [...el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((n) => !n.disabled);
-    (focusables()[0] ?? el).focus();
+    (el.querySelector('[data-autofocus]') ?? focusables()[0] ?? el).focus();
     const onKey = (e) => {
       if (e.key === 'Escape') { e.stopPropagation(); onClose?.(); return; }
       if (e.key !== 'Tab') return;

@@ -4,6 +4,11 @@ import { crewAction } from '../lib/stages.js';
 import { useTrip } from '../portal/useTrip.js';
 import TrackingMap from '../portal/TrackingMap.jsx';
 import StageTracker from '../portal/StageTracker.jsx';
+import { formatEta } from '../lib/stages.js';
+import Icon from '../ui/icons.jsx';
+import { Card } from '../ui/Surface.jsx';
+import { Select } from '../ui/Form.jsx';
+import { EmptyState, ErrorState } from '../ui/Feedback.jsx';
 
 const KEY = 'ht.crewAmbulance';
 
@@ -48,40 +53,40 @@ export default function CrewApp() {
 
   const action = trip ? crewAction(trip.stage) : null;
   return (
-    <div className="mx-auto max-w-lg space-y-3 p-3">
-      <label className="block text-sm font-medium">
-        Ambulance (demo login)
-        <select value={ambulanceId} onChange={(e) => { setAmbulanceId(e.target.value); setCaseId(null); }} className="mt-1 w-full rounded border px-2 py-3 text-base">
+    <div className="mx-auto max-w-lg space-y-4">
+      <label className="block space-y-1 text-sm font-semibold">Ambulance (demo login)
+        <Select value={ambulanceId} onChange={(e) => { setAmbulanceId(e.target.value); setCaseId(null); }} className="!min-h-[3.25rem] text-base">
           <option value="">Choose your ambulance</option>
-          {options.map((o) => <option key={o.id} value={o.id}>{o.vehicleNumber} · {o.type}{o.hospital ? ` · ${o.hospital}` : ''}</option>)}
-        </select>
+          {options.map((o) => <option key={o.id} value={o.id}>{o.vehicleNumber}, {o.type}{o.hospital ? `, ${o.hospital}` : ''}</option>)}
+        </Select>
       </label>
-      {(error || loadError) && <p className="rounded bg-red-50 p-2 text-sm text-red-800">{error || loadError}</p>}
+      {(error || loadError) && <ErrorState title="Trip update failed">{error || loadError}</ErrorState>}
 
-      {ambulanceId && !trip && <p className="rounded bg-white p-4 text-center shadow">Waiting for a dispatch…</p>}
+      {!ambulanceId && <Card><EmptyState icon="ambulance" title="Choose your ambulance">Your current trip shows here once you pick a vehicle.</EmptyState></Card>}
+      {ambulanceId && !trip && <Card><EmptyState icon="clock" title="Waiting for a dispatch">A new trip appears here by itself. You do not need to refresh.</EmptyState></Card>}
 
       {trip && (
         <>
-          <div className="rounded-lg bg-slate-900 p-3 text-white">
-            <p className="text-sm opacity-80">{trip.hospital?.name}</p>
-            <p className="text-2xl font-bold">{action.text}</p>
+          <div role="status" aria-live="polite" className="rounded-ui bg-ink p-4 text-surface">
+            <p className="text-sm opacity-80">Going to {trip.hospital?.name}</p>
+            <p className="font-title text-3xl font-semibold leading-tight">{action.text}</p>
+            {trip.stage !== 'at_hospital' && <p className="tnum mt-1 text-lg">{formatEta(trip.etaMinutes)} to {trip.activeLeg === 1 ? 'the hospital' : 'the patient'}</p>}
           </div>
           <StageTracker stage={trip.stage} stageTimes={trip.stageTimes} large />
           <TrackingMap trip={trip} height="h-64" />
           {action.kind === 'pickup' && (
-            <button disabled={busy} onClick={() => act('pickup')} className="w-full rounded-lg bg-green-700 py-5 text-xl font-bold text-white disabled:opacity-50">Patient picked up</button>
+            <button type="button" disabled={busy} onClick={() => act('pickup')} className="min-h-[5rem] w-full rounded-ui bg-accent text-2xl font-bold text-accent-ink disabled:opacity-50">Patient picked up</button>
           )}
           {action.kind === 'arrive' && (
-            <button disabled={busy} onClick={() => act('arrive')} className="w-full rounded-lg bg-green-700 py-5 text-xl font-bold text-white disabled:opacity-50">Arrived at hospital</button>
+            <button type="button" disabled={busy} onClick={() => act('arrive')} className="min-h-[5rem] w-full rounded-ui bg-accent text-2xl font-bold text-accent-ink disabled:opacity-50">Arrived at hospital</button>
           )}
         </>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <a href="tel:112" className="rounded-lg bg-red-700 py-4 text-center text-lg font-bold text-white">Call 112</a>
-        <a href="tel:108" className="rounded-lg bg-red-700 py-4 text-center text-lg font-bold text-white">Call 108</a>
+      <div className="grid grid-cols-2 gap-3">
+        <a href="tel:112" className="flex min-h-[4rem] items-center justify-center gap-2 rounded-ui bg-critical text-xl font-bold text-white"><Icon name="phone" size={22} />Call 112</a>
+        <a href="tel:108" className="flex min-h-[4rem] items-center justify-center gap-2 rounded-ui bg-critical text-xl font-bold text-white"><Icon name="phone" size={22} />Call 108</a>
       </div>
-      <p className="text-center text-xs text-slate-500">Simulated data for demonstration. Not a medical device.</p>
     </div>
   );
 }

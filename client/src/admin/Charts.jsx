@@ -1,24 +1,22 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import ChartCard from './ChartCard.jsx';
+import { useChartColors } from './useChartColors.js';
 import { SEVERITY_LABELS, ambulanceRows, cell, hospitalRows, reasonRows, timingRows } from '../lib/analyticsView.js';
 
-// Severity colours plus fill patterns, so the series differ without colour.
-const SEV = {
-  critical: { color: '#b91c1c', pattern: 'solid' },
-  high: { color: '#c2410c', pattern: 'stripes' },
-  moderate: { color: '#a16207', pattern: 'dots' },
-  low: { color: '#1d4ed8', pattern: 'cross' },
-};
-const fillFor = (key) => (SEV[key].pattern === 'solid' ? SEV[key].color : `url(#pat-${key})`);
+// Severity colours (from the theme) plus fill patterns, so the series differ without colour.
+const PATTERN = { critical: 'solid', high: 'stripes', moderate: 'dots', low: 'cross' };
+const SEV_KEYS = Object.keys(PATTERN);
+const fillFor = (key, c) => (PATTERN[key] === 'solid' ? c[key] : `url(#pat-${key})`);
 
-function Patterns() {
+function Patterns({ c }) {
   return (
     <defs>
-      {Object.entries(SEV).map(([key, { color, pattern }]) => {
+      {SEV_KEYS.map((key) => {
+        const pattern = PATTERN[key]; const color = c[key];
         if (pattern === 'solid') return null;
         return (
           <pattern key={key} id={`pat-${key}`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform={pattern === 'stripes' ? 'rotate(45)' : undefined}>
-            <rect width="6" height="6" fill="#fff" />
+            <rect width="6" height="6" fill={c.surface} />
             {pattern === 'stripes' && <rect width="3" height="6" fill={color} />}
             {pattern === 'dots' && <circle cx="3" cy="3" r="1.8" fill={color} />}
             {pattern === 'cross' && <path d="M0 0L6 6M6 0L0 6" stroke={color} strokeWidth="1.2" />}
@@ -30,9 +28,18 @@ function Patterns() {
 }
 
 const H = 260;
+// Shared axis, grid, tooltip and legend styling from the theme colours.
+const look = (c) => ({
+  grid: { stroke: c.line, strokeDasharray: '3 3' },
+  axis: { tick: { fill: c.muted, fontSize: 11 }, stroke: c.line },
+  tip: { contentStyle: { background: c.surface, border: `1px solid ${c.line}`, borderRadius: 6, color: c.ink }, labelStyle: { color: c.ink }, itemStyle: { color: c.ink }, cursor: { fill: c.line, opacity: 0.4 } },
+  legend: { formatter: (v) => <span style={{ color: c.ink }}>{v}</span> },
+});
 const common = { margin: { top: 8, right: 8, left: 0, bottom: 4 } };
 
 export function CasesPerDay({ summary, loading, error }) {
+  const c = useChartColors();
+  const L = look(c);
   const rows = summary?.casesPerDay || [];
   return (
     <ChartCard
@@ -45,14 +52,14 @@ export function CasesPerDay({ summary, loading, error }) {
     >
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} {...common}>
-          <Patterns />
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} fontSize={11} />
-          <YAxis allowDecimals={false} fontSize={11} />
-          <Tooltip />
-          <Legend />
-          {Object.keys(SEV).map((k) => (
-            <Bar key={k} dataKey={k} name={SEVERITY_LABELS[k]} stackId="s" fill={fillFor(k)} stroke={SEV[k].color} />
+          <Patterns c={c} />
+          <CartesianGrid {...L.grid} />
+          <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} {...L.axis} />
+          <YAxis allowDecimals={false} {...L.axis} />
+          <Tooltip {...L.tip} />
+          <Legend {...L.legend} />
+          {SEV_KEYS.map((k) => (
+            <Bar key={k} dataKey={k} name={SEVERITY_LABELS[k]} stackId="s" fill={fillFor(k, c)} stroke={c[k]} />
           ))}
         </BarChart>
       </ResponsiveContainer>
@@ -61,6 +68,8 @@ export function CasesPerDay({ summary, loading, error }) {
 }
 
 export function ResponseTimes({ summary, loading, error }) {
+  const c = useChartColors();
+  const L = look(c);
   const rows = timingRows(summary?.responseTimes);
   return (
     <ChartCard
@@ -74,13 +83,13 @@ export function ResponseTimes({ summary, loading, error }) {
     >
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} {...common}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" fontSize={10} interval={0} />
-          <YAxis fontSize={11} />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="median" name="Median" fill="#1d4ed8" />
-          <Bar dataKey="p90" name="90th percentile" fill="#fff" stroke="#1d4ed8" strokeWidth={2} />
+          <CartesianGrid {...L.grid} />
+          <XAxis dataKey="name" {...L.axis} tick={{ fill: L.axis.tick.fill, fontSize: 10 }} interval={0} />
+          <YAxis {...L.axis} />
+          <Tooltip {...L.tip} />
+          <Legend {...L.legend} />
+          <Bar dataKey="median" name="Median" fill={c.info} />
+          <Bar dataKey="p90" name="90th percentile" fill={c.surface} stroke={c.info} strokeWidth={2} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -88,6 +97,8 @@ export function ResponseTimes({ summary, loading, error }) {
 }
 
 export function RejectionReasons({ summary, loading, error }) {
+  const c = useChartColors();
+  const L = look(c);
   const rows = reasonRows(summary?.rejectionReasons);
   return (
     <ChartCard
@@ -100,11 +111,11 @@ export function RejectionReasons({ summary, loading, error }) {
     >
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} layout="vertical" margin={{ top: 8, right: 8, left: 40, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" allowDecimals={false} fontSize={11} />
-          <YAxis type="category" dataKey="name" fontSize={11} width={110} />
-          <Tooltip />
-          <Bar dataKey="count" name="Count" fill="#7c3aed" />
+          <CartesianGrid {...L.grid} />
+          <XAxis type="number" allowDecimals={false} {...L.axis} />
+          <YAxis type="category" dataKey="name" {...L.axis} width={110} />
+          <Tooltip {...L.tip} />
+          <Bar dataKey="count" name="Count" fill={c.accent} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -112,6 +123,8 @@ export function RejectionReasons({ summary, loading, error }) {
 }
 
 export function HospitalComparison({ summary, loading, error }) {
+  const c = useChartColors();
+  const L = look(c);
   const rows = hospitalRows(summary?.hospitals);
   return (
     <ChartCard
@@ -125,11 +138,11 @@ export function HospitalComparison({ summary, loading, error }) {
     >
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} {...common}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" fontSize={10} interval={0} tickFormatter={(n) => n.replace('Demo ', '').slice(0, 14)} />
-          <YAxis domain={[0, 100]} fontSize={11} unit="%" />
-          <Tooltip />
-          <Bar dataKey="acceptanceRate" name="Acceptance rate" fill="#15803d" />
+          <CartesianGrid {...L.grid} />
+          <XAxis dataKey="name" {...L.axis} interval={0} tickFormatter={(n) => n.replace('Demo ', '').slice(0, 14)} />
+          <YAxis domain={[0, 100]} {...L.axis} unit="%" />
+          <Tooltip {...L.tip} />
+          <Bar dataKey="acceptanceRate" name="Acceptance rate" fill={c.low} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -137,6 +150,8 @@ export function HospitalComparison({ summary, loading, error }) {
 }
 
 export function Utilisation({ summary, loading, error }) {
+  const c = useChartColors();
+  const L = look(c);
   const rows = ambulanceRows(summary?.ambulances);
   return (
     <ChartCard
@@ -150,11 +165,11 @@ export function Utilisation({ summary, loading, error }) {
     >
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} {...common}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" fontSize={10} interval={0} tickFormatter={(n) => n.replace('MH12-DEMO-', '')} />
-          <YAxis domain={[0, 100]} fontSize={11} unit="%" />
-          <Tooltip />
-          <Bar dataKey="onTripPercent" name="On a trip" fill="#0f766e" />
+          <CartesianGrid {...L.grid} />
+          <XAxis dataKey="name" {...L.axis} interval={0} tickFormatter={(n) => n.replace('MH12-DEMO-', '')} />
+          <YAxis domain={[0, 100]} {...L.axis} unit="%" />
+          <Tooltip {...L.tip} />
+          <Bar dataKey="onTripPercent" name="On a trip" fill={c.accent} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

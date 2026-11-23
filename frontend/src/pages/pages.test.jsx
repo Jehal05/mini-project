@@ -286,25 +286,38 @@ describe('Presenter key (review 3)', () => {
 })
 
 describe('App routes (review 10: lazy-loaded pages)', () => {
-  it('loads the presenter page on demand and redirects / to Rahul', async () => {
-    const { default: App } = await import('../App.jsx')
-    const { unmount } = render(
-      <ThemeProvider>
-        <MemoryRouter initialEntries={['/presenter']}>
-          <App />
-        </MemoryRouter>
-      </ThemeProvider>,
-    )
-    expect(await screen.findByRole('heading', { name: 'Presenter control panel' })).toBeInTheDocument()
-    unmount()
+  const signedIn = (role) => ({ status: 'authenticated', user: { role, name: 'Test User' }, notice: null })
 
-    render(
+  async function renderApp(path, auth) {
+    const { default: App } = await import('../App.jsx')
+    const { AuthContext } = await import('../auth/AuthContext.jsx')
+    return render(
       <ThemeProvider>
-        <MemoryRouter initialEntries={['/']}>
-          <App />
-        </MemoryRouter>
+        <AuthContext.Provider value={auth}>
+          <MemoryRouter initialEntries={[path]}>
+            <App />
+          </MemoryRouter>
+        </AuthContext.Provider>
       </ThemeProvider>,
     )
+  }
+
+  it('loads the presenter page on demand for a central admin', async () => {
+    await renderApp('/presenter', signedIn('central_admin'))
+    expect(await screen.findByRole('heading', { name: 'Presenter control panel' })).toBeInTheDocument()
+  })
+
+  it('keeps the presenter page away from patients and signed-out visitors', async () => {
+    const { unmount } = await renderApp('/presenter', signedIn('patient'))
+    expect(screen.queryByRole('heading', { name: 'Presenter control panel' })).not.toBeInTheDocument()
+    unmount()
+    await renderApp('/presenter', { status: 'anonymous', user: null, notice: null })
+    expect(screen.queryByRole('heading', { name: 'Presenter control panel' })).not.toBeInTheDocument()
+  })
+
+  it('opens a patient\'s own dashboard from the record the server lets them see', async () => {
+    api.listPatients.mockResolvedValue([{ id: 'p1', patientCode: 'HT-2026-0001' }])
+    await renderApp('/patient/monitor', signedIn('patient'))
     expect(await screen.findByRole('heading', { name: 'Rahul Sharma' })).toBeInTheDocument()
     expect(api.getPatient).toHaveBeenCalledWith('HT-2026-0001')
   })

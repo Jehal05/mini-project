@@ -15,6 +15,11 @@ export default function PatientHome() {
           {user.phone && <div><dt>Phone</dt><dd>{user.phone}</dd></div>}
         </dl>
       </section>
+      <section className="glass-card" aria-labelledby="live">
+        <h2 id="live">Live health dashboard</h2>
+        <p className="subtitle">Simulated vitals, emergency detection, SOS and your digital twin.</p>
+        <Link className="btn btn-primary" to="/patient/monitor">Open my dashboard</Link>
+      </section>
       <section className="glass-card" aria-labelledby="health">
         <h2 id="health">Your health profile</h2>
         <p className="subtitle">Medical history, emergency contacts, documents and your QR passport.</p>

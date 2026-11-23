@@ -3,7 +3,7 @@ import { Button, useTheme } from '../design/index.js'
 import { cx } from '../design/cx.js'
 
 const LINKS = [
-  { to: '/patient/HT-2026-0001', match: '/patient', label: 'Patient dashboard' },
+  { to: '/patient/monitor', match: '/patient/monitor', label: 'Patient dashboard' },
   { to: '/presenter', label: 'Presenter' },
   { to: '/design', label: 'Design system' },
 ]

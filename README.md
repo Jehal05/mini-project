@@ -10,7 +10,6 @@ Software-only, multi-hospital cardiac emergency response platform (fictional dat
   - `src/access/`: the access rules that connect the two (JWT roles, patient ownership, socket handshake).
   - `src/monitoring.js`: mounts the monitoring modules into the server with those rules. `src/dev/server.js` is Daksh's stand-alone demo server (presenter key, no login).
 - `frontend/`: React app with the patient twin and monitoring screens (Daksh).
-- `client/`: React app with the login, profile, hospital and admin portals (Jehal). To be merged into `frontend/`.
 - `shared/`: constants and helpers used by both sides.
 - `docs/`: phase notes and the integration checklist.
 

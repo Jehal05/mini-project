@@ -1,0 +1,36 @@
+/* Phase 2 styles. They use the CSS variables from auth.css so Daksh's design system can restyle them. */
+.ht-legacy .stack { display: grid; gap: 1rem; }
+.ht-legacy .tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.5rem 0 1rem; }
+.ht-legacy .tab { padding: 0.45rem 0.9rem; border-radius: 999px; border: 1px solid var(--surface-border); color: var(--text); text-decoration: none; }
+.ht-legacy .tab.active { background: var(--primary); color: #00121a; border-color: var(--primary); font-weight: 600; }
+.ht-legacy .item-list { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.5rem; }
+.ht-legacy .item-list li { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 0.6rem 0.75rem; border: 1px solid var(--surface-border); border-radius: 10px; flex-wrap: wrap; }
+.ht-legacy .item-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.ht-legacy .contact { display: block !important; }
+.ht-legacy .danger { color: #ff8a8a; }
+.ht-legacy .pill { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid var(--surface-border); }
+.ht-legacy .pill-red { background: rgba(239, 68, 68, 0.2); border-color: var(--critical); }
+.ht-legacy .pill-amber { background: rgba(245, 158, 11, 0.2); border-color: var(--warning); }
+.ht-legacy .check { display: flex; gap: 0.5rem; align-items: center; margin: 0.4rem 0; }
+.ht-legacy .severe-banner { background: rgba(239, 68, 68, 0.18); border: 2px solid var(--critical); border-radius: 12px; padding: 0.75rem 1rem; margin: 0 0 1rem; }
+.ht-legacy .severe-banner ul { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+.ht-legacy .photo-box { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.ht-legacy .photo { width: 96px; height: 96px; object-fit: cover; border-radius: 50%; border: 1px solid var(--surface-border); }
+.ht-legacy .photo.big { width: 120px; height: 120px; }
+.ht-legacy .photo.placeholder { display: grid; place-items: center; color: var(--text-2); font-size: 0.8rem; background: rgba(255, 255, 255, 0.05); }
+.ht-legacy .upload-row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+.ht-legacy .preview { margin-top: 1rem; border: 1px solid var(--surface-border); border-radius: 12px; padding: 0.75rem; }
+.ht-legacy .preview-frame { width: 100%; height: 480px; border: 0; background: #fff; border-radius: 8px; }
+.ht-legacy .preview-img { max-width: 100%; border-radius: 8px; }
+.ht-legacy .qr-box { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+.ht-legacy .qr-frame { background: #fff; padding: 0.5rem; border-radius: 12px; line-height: 0; }
+.ht-legacy .qr-url { word-break: break-all; max-width: 28rem; }
+.ht-legacy .passport-bg { min-height: 100vh; background: linear-gradient(160deg, var(--bg-from), var(--bg-to)); padding: 1rem; }
+.ht-legacy .passport { max-width: 560px; margin: 0 auto; display: grid; gap: 1rem; }
+.ht-legacy .passport-top { display: flex; gap: 1rem; align-items: center; }
+.ht-legacy .blood { font-size: 3rem; font-weight: 800; margin: 0; color: #ff6b6b; line-height: 1; }
+.ht-legacy .calls { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.ht-legacy .call-btn, .ht-legacy .btn-danger { background: var(--critical-strong); color: #fff; text-decoration: none; padding: 0.8rem 1.2rem; border-radius: 12px; font-weight: 700; border: 0; font-size: 1rem; cursor: pointer; }
+.ht-legacy .call-btn { flex: 1; text-align: center; }
+.ht-legacy .btn-danger:disabled { opacity: 0.6; cursor: wait; }
+.ht-legacy .qr-reader { width: 100%; max-width: 360px; margin: 0 auto 1rem; }

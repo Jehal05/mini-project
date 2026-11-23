@@ -47,7 +47,7 @@ export async function svgToPng(svgEl, size = 600) {
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = 'white'; // a QR code must sit on white to scan, in any theme
   ctx.fillRect(0, 0, size, size);
   ctx.drawImage(img, 0, 0, size, size);
   return canvas.toDataURL('image/png');

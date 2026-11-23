@@ -113,13 +113,13 @@ describe('reset password page (feature 7)', () => {
     expect(logout).toHaveBeenCalledTimes(1);
   });
 
-  it('is reachable even when already signed in (the guard does not bounce it away)', () => {
+  it('is reachable even when already signed in (the guard does not bounce it away)', async () => {
     render(
       <AuthContext.Provider value={ctx({ status: 'authenticated', user: { id: '1', name: 'X', role: 'patient' } })}>
         <MemoryRouter initialEntries={['/reset-password?token=abc']}><App /></MemoryRouter>
       </AuthContext.Provider>,
     );
-    expect(screen.getByRole('heading', { name: /choose a new password/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /choose a new password/i })).toBeInTheDocument();
   });
 });
 

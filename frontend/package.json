@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "check:bundle": "vite build && node scripts/check-bundle.mjs 300"
+    "check:bundle": "vite build && node scripts/check-bundle.mjs 320"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.0",
@@ -19,7 +19,10 @@
     "react-router-dom": "^7.18.5",
     "recharts": "^3.11.0",
     "socket.io-client": "^4.8.4",
-    "three": "^0.187.0"
+    "three": "^0.187.0",
+    "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.1",
+    "qrcode.react": "^4.2.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",

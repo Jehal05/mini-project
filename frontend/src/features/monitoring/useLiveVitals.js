@@ -1,4 +1,5 @@
 // Live vitals for one patient over Socket.IO (event vitals:update, room patient:<id>).
+import { getAccessToken } from '../../api/http.js'
 import { useEffect, useState } from 'react'
 import { API_URL } from './api.js'
 
@@ -12,7 +13,12 @@ let socketPromise = null
 export function getSocket() {
   if (!socketPromise) {
     socketPromise = import('socket.io-client').then(({ io }) =>
-      io(API_URL, { transports: ['websocket', 'polling'], withCredentials: true }),
+      io(API_URL || undefined, {
+        transports: ['websocket', 'polling'],
+        withCredentials: true,
+        // Read on every (re)connect so a renewed login token is used. The server rejects sockets without one.
+        auth: (cb) => cb({ token: getAccessToken() }),
+      }),
     )
   }
   return socketPromise

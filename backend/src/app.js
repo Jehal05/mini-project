@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -7,7 +9,7 @@ import { errorHandler, notFound } from './middleware/index.js';
 import apiRouter from './routes/index.js';
 
 /** `extraApi`: an Express router mounted at /api after the identity routes (monitoring, detection, emergency). */
-export function createApp({ extraApi } = {}) {
+export function createApp({ extraApi, staticDir = config.staticDir } = {}) {
   const app = express();
   if (config.trustProxy) app.set('trust proxy', 1);
   app.disable('x-powered-by');
@@ -21,6 +23,12 @@ export function createApp({ extraApi } = {}) {
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
   app.use('/api', apiRouter);
   if (extraApi) app.use('/api', extraApi);
+
+  // Single-origin deployment: serve the built frontend and fall back to index.html for client-side routes.
+  if (staticDir && fs.existsSync(path.join(staticDir, 'index.html'))) {
+    app.use(express.static(staticDir, { index: false, maxAge: config.isProd ? '1h' : 0 }));
+    app.get(/^\/(?!api(\/|$)|socket\.io(\/|$)).*/, (_req, res) => res.sendFile(path.join(staticDir, 'index.html')));
+  }
 
   app.use(notFound);
   app.use(errorHandler);

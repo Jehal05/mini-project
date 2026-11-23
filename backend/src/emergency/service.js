@@ -181,7 +181,7 @@ export class EmergencyService {
     let found
     let created
     try {
-      const res = await EmergencyCase.findOneAndUpdate(filter, { $setOnInsert: doc }, { upsert: true, new: true, includeResultMetadata: true })
+      const res = await EmergencyCase.findOneAndUpdate(filter, { $setOnInsert: doc }, { upsert: true, returnDocument: 'after', includeResultMetadata: true })
       found = res.value.toObject()
       created = !res.lastErrorObject?.updatedExisting
     } catch (err) {
@@ -220,7 +220,7 @@ export class EmergencyService {
     const clean = cleanSymptoms(symptoms)
     const set = { 'symptoms.answeredAt': new Date(this.now()), 'symptoms.noResponse': false }
     for (const [k, v] of Object.entries(clean)) set[`symptoms.${k}`] = v
-    const c = await EmergencyCase.findOneAndUpdate({ _id: this.id(caseId), status: { $in: ACTIVE_STATUSES } }, { $set: set }, { new: true }).lean()
+    const c = await EmergencyCase.findOneAndUpdate({ _id: this.id(caseId), status: { $in: ACTIVE_STATUSES } }, { $set: set }, { returnDocument: 'after' }).lean()
     if (!c) throw httpError(404, 'No live case with that id')
     return c
   }
@@ -240,7 +240,7 @@ export class EmergencyService {
         $set: { status: S.SEARCHING, 'escalation.round': 1, 'escalation.radiusKm': ESCALATION.RADII_KM[0], 'escalation.roundStartedAt': now, ...set },
         $push: { timeline: { ...entry('sent', message, { how }), actorRole: how === 'auto' ? 'system' : 'patient' } },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean()
     if (!c) return null // the deadline, a confirm or a cancel moved it first
     if (how !== 'auto') this.emit(c, EV.CONFIRMED, { how })
@@ -283,7 +283,7 @@ export class EmergencyService {
           $set: { 'escalation.round': round + 1, 'escalation.radiusKm': radiusKm, 'escalation.roundStartedAt': now },
           $push: { timeline: entry('escalated', `No hospital accepted yet: widening the search to ${radiusKm} km`, { round: round + 1, radiusKm }) },
         },
-        { new: true },
+        { returnDocument: 'after' },
       ).lean()
       if (!c) return null
       this.emit(c, EV.ESCALATED, { round: round + 1, radiusKm })
@@ -294,7 +294,7 @@ export class EmergencyService {
     const c = await EmergencyCase.findOneAndUpdate(
       filter,
       { $set: { status: S.UNRESOLVED, 'escalation.centralAdminAlertedAt': now }, $push: { timeline: entry('unresolved', 'No hospital accepted in 3 rounds: central admin alerted, patient told to call 112') } },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean()
     if (!c) return null
     this.clear(caseId)
@@ -314,8 +314,8 @@ export class EmergencyService {
       $push: { timeline: { ...entry('cancelled', `Cancelled: ${reason.replace(/_/g, ' ')}`, { reason, afterAcceptance }), actorRole: actor.role ?? 'patient', actorId: actor.id } },
     })
     // Two attempts: if a hospital accepts between them, the second one still catches the case.
-    let c = await EmergencyCase.findOneAndUpdate({ _id: id, status: { $in: PRE_ACCEPT_STATUSES } }, update(false), { new: true }).lean()
-    if (!c) c = await EmergencyCase.findOneAndUpdate({ _id: id, status: { $in: POST_ACCEPT_STATUSES } }, update(true), { new: true }).lean()
+    let c = await EmergencyCase.findOneAndUpdate({ _id: id, status: { $in: PRE_ACCEPT_STATUSES } }, update(false), { returnDocument: 'after' }).lean()
+    if (!c) c = await EmergencyCase.findOneAndUpdate({ _id: id, status: { $in: POST_ACCEPT_STATUSES } }, update(true), { returnDocument: 'after' }).lean()
     if (!c) {
       const existing = await this.find(id)
       throw httpError(existing ? 409 : 404, existing ? `The case is already ${existing.status.replace(/_/g, ' ')}` : 'Case not found')
@@ -346,7 +346,7 @@ export class EmergencyService {
 
   async updateLocation(caseId, loc) {
     const location = this.toLocation(loc)
-    const c = await EmergencyCase.findOneAndUpdate({ _id: this.id(caseId), status: { $in: ACTIVE_STATUSES } }, { $set: { location } }, { new: true }).lean()
+    const c = await EmergencyCase.findOneAndUpdate({ _id: this.id(caseId), status: { $in: ACTIVE_STATUSES } }, { $set: { location } }, { returnDocument: 'after' }).lean()
     if (!c) throw httpError(404, 'No live case with that id')
     this.emit(c, EV.LOCATION, { location: c.location })
     return c
@@ -374,7 +374,7 @@ export class EmergencyService {
     const updated = await EmergencyCase.findOneAndUpdate(
       { _id: c._id, 'contactAlerts.0': { $exists: false } },
       { $push: { contactAlerts: { $each: planned.map((p) => p.record) }, timeline: entry('contacts_alerted', `${planned.length} emergency contact(s) alerted`, { count: planned.length }) } },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean()
     if (!updated) return null
     for (const p of planned) {
@@ -400,7 +400,7 @@ export class EmergencyService {
     const c = await EmergencyCase.findOneAndUpdate(
       { _id: this.id(caseId), acknowledgements: { $not: { $elemMatch: { recipientType, recipientId } } } },
       { $push: { acknowledgements: { recipientType, recipientId, name, seenAt: new Date(this.now()) } } },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean()
     if (c) this.emit(c, EV.ACK, { recipientType, recipientId, name })
     return { recorded: Boolean(c) }

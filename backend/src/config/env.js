@@ -26,6 +26,8 @@ export const config = Object.freeze({
   mongoUri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/healthtwin',
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   trustProxy: process.env.TRUST_PROXY === 'true',
+  // When set, the API also serves the built frontend from this folder (one process, one origin: no CORS, first-party cookies).
+  staticDir: process.env.STATIC_DIR ? path.resolve(process.env.STATIC_DIR) : '',
 
   jwt: {
     accessSecret: secret('JWT_ACCESS_SECRET'),

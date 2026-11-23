@@ -292,7 +292,7 @@ export function buildAcceptOperation(caseId, hospitalId, userId, now = new Date(
       $push: { timeline: { type: 'accepted', at: now, actorRole: 'hospital_staff', actorId: String(userId), data: { hospital: String(hospitalId) } } },
     },
     options: {
-      new: true,
+      returnDocument: 'after',
       arrayFilters: [
         { 'mine.hospital': hospitalId, 'mine.status': HOSPITAL_RESPONSE.NOTIFIED },
         { 'others.hospital': { $ne: hospitalId }, 'others.status': HOSPITAL_RESPONSE.NOTIFIED },

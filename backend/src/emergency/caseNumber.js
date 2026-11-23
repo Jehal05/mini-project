@@ -17,7 +17,7 @@ export async function assignCaseNumber(caseId, { logger = console, now = () => n
     if (!open) return null
     const year = now().getFullYear()
     const caseNumber = formatCaseNumber(year, await nextSequence(`caseNumber:${year}`))
-    const done = await EmergencyCase.findOneAndUpdate({ _id: caseId, caseNumber: { $exists: false } }, { $set: { caseNumber } }, { new: true }).lean()
+    const done = await EmergencyCase.findOneAndUpdate({ _id: caseId, caseNumber: { $exists: false } }, { $set: { caseNumber } }, { returnDocument: 'after' }).lean()
     return done?.caseNumber ?? null
   } catch (err) {
     logger.error?.('[emergency] could not number case', String(caseId), err.message)

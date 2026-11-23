@@ -22,7 +22,7 @@ export const mongoDetectionStore = {
     return DetectionConfig.findOneAndUpdate(
       { key: 'global' },
       { $set: patch, $push: { changes: { $each: [change], $slice: -MAX_CHANGE_LOG } } },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
     ).lean()
   },
 
@@ -32,7 +32,7 @@ export const mongoDetectionStore = {
   },
 
   async updateDetection(id, patch) {
-    return Detection.findByIdAndUpdate(id, { $set: patch }, { new: true }).lean()
+    return Detection.findByIdAndUpdate(id, { $set: patch }, { returnDocument: 'after' }).lean()
   },
 
   /** An abnormal stretch ended without a case: close its open detections. */
@@ -65,7 +65,7 @@ export const mongoDetectionStore = {
   async createCaseIfNone(doc) {
     const filter = { patient: doc.patient, status: { $in: ACTIVE_STATUSES } }
     try {
-      const res = await EmergencyCase.findOneAndUpdate(filter, { $setOnInsert: doc }, { upsert: true, new: true, includeResultMetadata: true })
+      const res = await EmergencyCase.findOneAndUpdate(filter, { $setOnInsert: doc }, { upsert: true, returnDocument: 'after', includeResultMetadata: true })
       const created = !res.lastErrorObject?.updatedExisting
       const found = res.value.toObject()
       if (created) found.caseNumber = (await assignCaseNumber(found._id)) ?? undefined

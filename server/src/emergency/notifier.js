@@ -14,10 +14,12 @@ export function alertText({ patientName, link }) {
   return `SIMULATED HealthTwin alert: ${patientName} may need urgent help (possible cardiac emergency). Live status: ${link} . This is a demonstration, not a real emergency.`
 }
 
-export function createDevNotifier({ logger = console } = {}) {
+export function createDevNotifier({ logger = console, mailer } = {}) {
   const log = (channel) => async (msg) => {
     logger.log?.(`[emergency] (dev, nothing sent) ${channel} to ${msg.to}: ${msg.text}`)
     return { delivered: false, mode: 'dev-log' }
   }
-  return { email: log('email'), push: log('push') }
+  // With an email API set up (feature 47) contact emails really go out; web push and WhatsApp stay as before.
+  const email = mailer?.live ? (msg) => mailer.send({ to: msg.to, subject: msg.subject, text: msg.text }) : log('email')
+  return { email, push: log('push') }
 }

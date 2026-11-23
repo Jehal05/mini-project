@@ -170,3 +170,7 @@ Every report carries "Simulated data for demonstration. Not a medical device." T
 ## Admin screens (Phase 19)
 
 Sign in as admin@healthtwin.demo: **Command map** (hospitals, ambulances, live emergencies, refreshes every 15 s), **Audit log**, **Thresholds** (all patients, or one patient by ID), **Register hospital**.
+
+## Final polish (Phase 20)
+
+Start page with the heart and a button per role; "Forgot your password?" on sign-in and the reset page (`/?reset=TOKEN`); installable app (manifest, icons, service worker in production builds). Run `npm run build && npm run preview` to see the install prompt.

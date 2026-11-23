@@ -68,3 +68,16 @@ export async function authedFetch(url, { method = 'GET', body, legacy = {} } = {
   if (res.status === 401 && token && (await refreshOnce())) res = await run();
   return res;
 }
+
+// Feature 7: forgot password. The answer is the same whether or not the email has an account.
+async function plainPost(path, body) {
+  let res;
+  try { res = await fetch(`/api/auth${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
+  catch { throw Object.assign(new Error('Cannot reach the server. Check your connection and try again.'), { status: 0 }); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status, code: data.code });
+  return data;
+}
+export const requestPasswordReset = (email) => plainPost('/forgot', { email });
+export const resetPassword = (token, password) => plainPost('/reset', { token, password });
+export const resetTokenFromUrl = (search = window.location.search) => new URLSearchParams(search).get('reset');

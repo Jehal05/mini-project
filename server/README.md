@@ -395,3 +395,10 @@ All need a signed-in central admin.
 - `POST /api/admin/hospitals` registers a hospital and its first `hospital_admin` account (feature 81). If the account cannot be made the hospital is removed again.
 - `GET /api/admin/overview` hospitals, ambulances and live cases that have a location, for the command map.
 - Thresholds (feature 36) use the existing `GET/PUT /api/detection/config` and `PUT /api/detection/patients/:id/thresholds`.
+
+## Final polish (Phase 20)
+
+- `POST /api/auth/forgot` `{ email }` and `POST /api/auth/reset` `{ token, password }` (feature 7). Single-use link, 15 minutes, only a hash stored, answers the same for unknown emails, signs every device out on success. With no email API set the link is printed in the server console.
+- Email (feature 47): set `EMAIL_API_URL` and `EMAIL_API_KEY` in `.env` and contact alerts and reset links are really sent. Without them nothing is sent.
+- Health summary (feature 94): `healthSummary.text` in the hospital's patient information (handover) is built from a template: vitals against normal range and the patient's usual, trend, cardiac history, allergies, medicines. That response now also carries the real cardiac history, allergies and medicines (they were placeholders).
+- Bystander SOS (feature 106): a report from the QR passport now starts the same emergency flow as the SOS button, using the scanner's location.

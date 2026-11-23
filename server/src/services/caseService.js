@@ -10,6 +10,8 @@ import { buildCasePayload, advanceToNextHospital, safeEmit } from './notificatio
 import { httpError } from '../utils/httpError.js';
 import { isObjectId } from '../utils/ids.js';
 import { autoAssignSafely } from './assignment.js';
+import { buildHealthSummary } from './healthSummary.js';
+import { computeBaseline } from '../simulation/baseline.js';
 
 export const REJECT_REASONS = ['no_beds', 'no_cardiologist', 'cath_lab_busy', 'other'];
 const ACTIVE = repo.ACTIVE_STATUSES;
@@ -61,6 +63,8 @@ export async function getCaseDetail(caseId, hospitalId) {
   return buildCasePayload(c, hospitalId);
 }
 
+const safeBaseline = (p) => { try { return computeBaseline(p); } catch { return null; } };
+
 // Feature 63: only a notified hospital, only while the case is open, every read is logged.
 // Once one hospital accepts, the other notified hospitals lose access.
 export async function getPatientInfo(caseId, hospitalId, staff = {}) {
@@ -69,7 +73,7 @@ export async function getPatientInfo(caseId, hospitalId, staff = {}) {
   if (!wasNotified(c, hospitalId)) throw httpError(403, 'This hospital was not notified for this case');
   if (c.status !== 'pending' && !isOwner(c, hospitalId)) throw httpError(403, 'Accepted by another hospital');
 
-  const [patient, vitals] = await Promise.all([repo.getPatient(c.patient), repo.latestVitals(c.patient)]);
+  const [patient, vitals, recent] = await Promise.all([repo.getPatient(c.patient), repo.latestVitals(c.patient), Promise.resolve(repo.recentVitals?.(c.patient)).then((r) => r ?? []).catch(() => [])]);
   if (!patient) throw httpError(404, 'Patient record not found');
 
   await repo.writeAudit({
@@ -88,12 +92,12 @@ export async function getPatientInfo(caseId, hospitalId, staff = {}) {
     caseId: sid(c._id),
     patientId: sid(c.patient),
     passport: { fullName: patient.fullName, dateOfBirth: patient.dateOfBirth ?? null, phone: patient.phone ?? null, address: patient.address ?? null },
-    cardiacHistory: gap('cardiacHistory', 'Jehal'),
-    allergies: gap('allergies', 'Jehal'),
-    medicines: gap('medicines', 'Jehal'),
+    cardiacHistory: patient.cardiacHistory ?? (patient.cardiacConditions ?? []).map((x) => ({ type: x.type, year: x.year ?? null })),
+    allergies: patient.allergies ?? [],
+    medicines: patient.medicines ?? (patient.medications ?? []).map((m) => ({ drug: m.drug, dose: m.dose ?? null, frequency: m.frequency ?? null, isBloodThinner: Boolean(m.isBloodThinner) })),
     symptomAnswers: gap('symptomAnswers', 'Daksh (SOS flow)'),
     twinSnapshot: gap('twinSnapshot', 'Daksh (digital twin)'),
-    healthSummary: { severity: c.severity, riskScore: c.riskScore ?? null, latestVitals: payload.latestVitals, detectedAt: payload.detectedAt },
+    healthSummary: { ...buildHealthSummary({ patient, latest: vitals, recent, baseline: safeBaseline(patient) }), severity: c.severity, riskScore: c.riskScore ?? null, latestVitals: payload.latestVitals, detectedAt: payload.detectedAt },
     accessLogged: true,
     notice: 'Simulated data for demonstration. Not a medical device.',
   };

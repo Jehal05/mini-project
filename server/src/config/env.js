@@ -27,6 +27,11 @@ export const env = {
   priorityWaitCapMin: Number(process.env.PRIORITY_WAIT_CAP_MIN) || 30,
   priorityDistanceCapKm: Number(process.env.PRIORITY_DISTANCE_CAP_KM) || 20,
   // Admin dev login (Phase 12). Jehal replaces it with real admin auth.
+  // Feature 47: an HTTP email API (Resend, Brevo, SendGrid style: POST JSON with a Bearer key). Empty means emails are only logged.
+  emailApiUrl: process.env.EMAIL_API_URL || '',
+  emailApiKey: process.env.EMAIL_API_KEY || '',
+  emailFrom: process.env.EMAIL_FROM || 'HealthTwin AI <no-reply@healthtwin.example>',
+  resetTtlMinutes: Number(process.env.RESET_TTL_MINUTES) || 15,
   adminDevToken: process.env.ADMIN_DEV_TOKEN || '',
   // Backup and restore (Phase 12, feature 99)
   backupDir: process.env.BACKUP_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../backups'),

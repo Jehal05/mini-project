@@ -22,3 +22,9 @@ self.addEventListener('notificationclick', (event) => {
     self.clients.matchAll({ type: 'window' }).then((wins) => (wins.length ? wins[0].focus() : self.clients.openWindow('/'))),
   );
 });
+
+// Installable app (feature 108). The app needs the server for everything that matters, so nothing is cached here:
+// this listener only lets browsers treat the site as an installable app.
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', () => {});

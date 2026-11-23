@@ -15,6 +15,7 @@ export { default as AuditLog } from './AuditLog.js';
 export { default as PushSubscription } from './PushSubscription.js';
 export { default as Trip } from './Trip.js';
 export { default as RefreshToken } from './RefreshToken.js';
+export { default as PasswordReset } from './PasswordReset.js';
 export { default as Counter } from './Counter.js';
 export { default as BystanderReport } from './BystanderReport.js';
 export { default as VisitRecord } from './VisitRecord.js';

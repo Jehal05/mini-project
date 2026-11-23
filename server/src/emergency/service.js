@@ -25,6 +25,7 @@ import { DETECTION_OUTCOME as OUT } from '../../../shared/detection.js'
 import { SIMULATED_LABEL } from '../../../shared/vitals.js'
 import { simCaseLocation } from '../monitoring/caseLocation.js'
 import { S, ACTIVE, LIVE, PRE_ACCEPT, POST_ACCEPT } from './status.js'
+import { getMailer } from '../services/mailer.js'
 import { alertText, buildWhatsAppLink, createDevNotifier } from './notifier.js'
 import { emergencyRecord, emergencyContacts } from './patientRecord.js'
 
@@ -87,7 +88,7 @@ export class EmergencyService {
     this.now = now
     this.publicUrl = publicUrl.replace(/\/$/, '')
     this.roundTimeoutMs = roundTimeoutMs
-    this.notifier = notifier ?? createDevNotifier({ logger })
+    this.notifier = notifier ?? createDevNotifier({ logger, mailer: getMailer() })
     this.patientRecordFor = patientRecordFor ?? (async (id) => emergencyRecord(await Patient.findById(id).lean()))
     this.contactsFor = contactsFor ?? (async (id) => emergencyContacts(await Patient.findById(id).lean()))
     this.timers = new Map()
@@ -169,16 +170,16 @@ export class EmergencyService {
   }
 
   // ---- 41: manual SOS joins the live case instead of creating a second one -------------------
-  async sos(patientId, { location } = {}) {
+  async sos(patientId, { location, source = CASE_SOURCE.MANUAL_SOS, actorRole = 'patient', message = 'Patient pressed SOS' } = {}) {
     const loc = location ? this.toLocation(location) : undefined
     const where = loc ?? { point: { type: 'Point', coordinates: simCaseLocation() }, info: { source: 'demo_default', updatedAt: new Date(this.now()) } }
     const doc = {
       patient: patientId,
-      source: CASE_SOURCE.MANUAL_SOS,
+      source,
       severity: 'critical',
       status: S.SEARCHING, // the patient has already decided to ask for help: no countdown
       escalation: { round: 1, radiusKm: ESCALATION.RADII_KM[0], roundStartedAt: new Date(this.now()), autoSent: false },
-      timeline: [{ ...entry('sos', 'Patient pressed SOS'), actorRole: 'patient' }],
+      timeline: [{ ...entry('sos', message), actorRole }],
       location: where.point,
       locationInfo: where.info,
       detectedAt: new Date(this.now()),

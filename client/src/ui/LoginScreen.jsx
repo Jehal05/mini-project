@@ -4,11 +4,13 @@ import { Card } from './Surface.jsx';
 import { Checkbox, Field, Input } from './Form.jsx';
 import EcgTrace from './EcgTrace.jsx';
 import { LOGIN_PORTALS, loginMessage } from '../lib/authHeaders.js';
-import { register, signIn } from '../lib/session.js';
+import { register, requestPasswordReset, signIn } from '../lib/session.js';
 
 // Real sign-in. The tab picks which portal to try; the server still decides the account's role.
-export default function LoginScreen() {
-  const [portal, setPortal] = useState('patient');
+export default function LoginScreen({ initialPortal = 'patient', onBack }) {
+  const [portal, setPortal] = useState(initialPortal);
+  const [forgot, setForgot] = useState(false);
+  const [sentNote, setSentNote] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -24,10 +26,12 @@ export default function LoginScreen() {
     e.preventDefault();
     setBusy(true); setError(''); setFields({});
     try {
+      if (forgot) { const r = await requestPasswordReset(email.trim()); setSentNote(r.message); return; }
       if (creating) await register({ name: name.trim(), email: email.trim(), password, consentDataUse: agree, consentLocation: location });
       else await signIn(portal, email.trim(), password);
     } catch (err) {
       if (creating) { setFields(err.fields ?? {}); setError(Object.keys(err.fields ?? {}).length ? '' : err.message); }
+      else if (forgot) setError(err.message);
       else { setError(loginMessage(err.status, err.message)); setPassword(''); }
     } finally { setBusy(false); }
   }
@@ -46,11 +50,13 @@ export default function LoginScreen() {
                 className={`min-h-touch rounded-ui border px-2 text-sm font-semibold ${portal === p.id ? 'border-accent bg-accent/10 text-accent' : 'border-line bg-surface text-muted hover:bg-raised'}`}>{p.label}</button>
             ))}
           </div>
-          <p className="text-sm text-muted">{creating ? 'Create your patient account' : current.hint}</p>
+          <p className="text-sm text-muted">{forgot ? 'We will email you a link to choose a new password' : creating ? 'Create your patient account' : current.hint}</p>
           <form onSubmit={submit} className="space-y-3" noValidate>
             {creating && <Field label="Full name" error={fields.name}>{(p) => <Input autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} {...p} />}</Field>}
             <Field label="Email" error={fields.email}>{(p) => <Input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} {...p} />}</Field>
-            <Field label="Password" hint={creating ? 'At least 10 characters, with upper and lower case letters and a number' : undefined} error={error || fields.password}>{(p) => <Input type="password" autoComplete={creating ? 'new-password' : 'current-password'} required value={password} onChange={(e) => setPassword(e.target.value)} {...p} />}</Field>
+            {!forgot && <Field label="Password" hint={creating ? 'At least 10 characters, with upper and lower case letters and a number' : undefined} error={error || fields.password}>{(p) => <Input type="password" autoComplete={creating ? 'new-password' : 'current-password'} required value={password} onChange={(e) => setPassword(e.target.value)} {...p} />}</Field>}
+            {forgot && sentNote && <p role="status" className="text-sm">{sentNote}</p>}
+            {forgot && error && <p role="alert" className="text-sm font-semibold text-critical">{error}</p>}
             {creating && (
               <div className="space-y-1">
                 <Checkbox label="I agree to HealthTwin using my health data to respond to my emergencies" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
@@ -58,7 +64,10 @@ export default function LoginScreen() {
                 <Checkbox label="Allow my location during an emergency" checked={location} onChange={(e) => setLocation(e.target.checked)} />
               </div>
             )}
-            <Button type="submit" size="lg" busy={busy} disabled={!email || !password || (creating && !name)} className="w-full">{creating ? 'Create account' : 'Sign in'}</Button>
+            <Button type="submit" size="lg" busy={busy} disabled={!email || (!forgot && !password) || (creating && !name)} className="w-full">{forgot ? 'Email me a reset link' : creating ? 'Create account' : 'Sign in'}</Button>
+            {!creating && (
+              <button type="button" onClick={() => { setForgot((f) => !f); setError(''); setSentNote(''); }} className="min-h-touch w-full text-sm font-semibold text-accent underline">{forgot ? 'Back to sign in' : 'Forgot your password?'}</button>
+            )}
             {portal === 'patient' && (
               <button type="button" onClick={() => { setCreating((c) => !c); setError(''); setFields({}); }} className="min-h-touch w-full text-sm font-semibold text-accent underline">
                 {creating ? 'I already have an account' : 'New here? Create a patient account'}
@@ -66,6 +75,7 @@ export default function LoginScreen() {
             )}
           </form>
         </Card>
+        {onBack && <button type="button" onClick={onBack} className="min-h-touch w-full text-sm text-muted underline">Back to the start page</button>}
         <p className="text-center text-xs text-muted">Simulated data for demonstration. Not a medical device.</p>
       </div>
     </div>

@@ -28,3 +28,9 @@ export const familyIsLive = async (family) => store.tokens.some((t) => t.family 
 export const touchFamily = async (family, now) => { store.tokens.filter((t) => t.family === family && !t.revokedAt).forEach((t) => { t.lastActivityAt = new Date(now); }); };
 export const setPassword = async (id, h) => { store.users.get(sid(id)).passwordHash = h; };
 export const createUser = async (data) => { const id = oid(++n); store.users.set(id, { _id: id, failedLogins: 0, ...data }); return clone(store.users.get(id)); };
+
+export const resets = [];
+export const saveReset = async (doc) => { const row = { _id: oid(++n), ...doc }; resets.push(row); return clone(row); };
+export const invalidateResets = async (user, now) => { resets.filter((r) => sid(r.user) === sid(user) && !r.usedAt).forEach((r) => { r.usedAt = new Date(now); }); };
+export const consumeReset = async (tokenHash, now) => { const r = resets.find((x) => x.tokenHash === tokenHash && !x.usedAt && x.expiresAt.getTime() > now); if (!r) return null; r.usedAt = new Date(now); return r.user; };
+export const clearLock = async (id) => { const u = store.users.get(sid(id)); u.failedLogins = 0; delete u.lockedUntil; };

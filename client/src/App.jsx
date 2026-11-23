@@ -9,8 +9,10 @@ import PatientStatus from './portal/PatientStatus.jsx';
 import CrewApp from './crew/CrewApp.jsx';
 import DoctorApp from './doctor/DoctorApp.jsx';
 import LoginScreen from './ui/LoginScreen.jsx';
+import Landing from './ui/Landing.jsx';
+import ResetPassword from './ui/ResetPassword.jsx';
 import { useSession } from './lib/useSession.js';
-import { signOut } from './lib/session.js';
+import { resetTokenFromUrl, signOut } from './lib/session.js';
 import { screenForRole } from './lib/authHeaders.js';
 
 // Heavy screens (maps, charts) load only when opened.
@@ -36,8 +38,11 @@ const DEMO = import.meta.env.VITE_DEV_AUTH === 'true';
 
 export default function App() {
   const session = useSession();
+  const [resetToken, setResetToken] = useState(() => resetTokenFromUrl());
+  const [portal, setPortal] = useState(null); // null: the start page is showing
+  if (resetToken && !DEMO) return <ResetPassword token={resetToken} onDone={() => { window.history.replaceState(null, '', window.location.pathname); setResetToken(null); setPortal('patient'); }} />;
   if (!DEMO && session.status === 'loading') return <div className="paper-bg grid min-h-screen place-items-center text-muted" aria-busy="true">Loading…</div>;
-  if (!DEMO && session.status !== 'in') return <LoginScreen />;
+  if (!DEMO && session.status !== 'in') return portal ? <LoginScreen initialPortal={portal} onBack={() => setPortal(null)} /> : <Landing onChoose={setPortal} />;
   return <Signed account={DEMO ? null : session.user} />;
 }
 

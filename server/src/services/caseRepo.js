@@ -13,6 +13,8 @@ export const getDoctor = (id) => Doctor.findById(id).lean();
 // The monitoring engine saves readings as hr/sys/dia/spo2/temp/rr; the case screens read heartRate/systolic/... so map here.
 const asCaseVitals = (r) => r && { ...r, heartRate: r.hr, systolic: r.sys, diastolic: r.dia, temperature: r.temp, respiratoryRate: r.rr };
 export const latestVitals = async (patientId) => asCaseVitals(await VitalReading.findOne({ patient: patientId }).sort({ recordedAt: -1 }).lean());
+// Oldest first, for the trend line in the handover summary (feature 94).
+export const recentVitals = async (patientId, limit = 30) => (await VitalReading.find({ patient: patientId }).sort({ recordedAt: -1 }).limit(limit).lean()).reverse();
 export const listDoctors = (hospitalId) => Doctor.find({ hospital: hospitalId }).sort({ name: 1 }).lean();
 
 export const pushTimeline = (caseId, entry) =>

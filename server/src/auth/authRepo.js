@@ -1,5 +1,5 @@
 // Database layer for login. Replaced by an in-memory fake in tests (tests/helpers/fakeAuthRepo.js).
-import { User, RefreshToken } from '../models/index.js';
+import { User, RefreshToken, PasswordReset } from '../models/index.js';
 
 export const findUserByEmail = (email) => User.findOne({ email: String(email).toLowerCase().trim() }).select('+passwordHash').lean();
 export const findUserById = (id) => User.findById(id).lean();
@@ -24,3 +24,13 @@ export const revokeAllForUser = (user, now) => RefreshToken.updateMany({ user, r
 export const familyIsLive = async (family) => Boolean(await RefreshToken.exists({ family, revokedAt: { $exists: false } }));
 export const touchFamily = (family, now) => RefreshToken.updateMany({ family, revokedAt: { $exists: false } }, { $set: { lastActivityAt: new Date(now) } });
 export const setPassword = (userId, passwordHash) => User.updateOne({ _id: userId }, { $set: { passwordHash } });
+
+// Password reset links (feature 7)
+export const saveReset = async (doc) => (await PasswordReset.create(doc)).toObject();
+export const invalidateResets = (user, now) => PasswordReset.updateMany({ user, usedAt: { $exists: false } }, { $set: { usedAt: new Date(now) } });
+// Marks a link as used and returns its user id, or null when it is unknown, used or expired. One conditional update, so two clicks cannot both win.
+export async function consumeReset(tokenHash, now) {
+  const row = await PasswordReset.findOneAndUpdate({ tokenHash, usedAt: { $exists: false }, expiresAt: { $gt: new Date(now) } }, { $set: { usedAt: new Date(now) } }).lean();
+  return row ? row.user : null;
+}
+export const clearLock = (userId) => User.updateOne({ _id: userId }, { $set: { failedLogins: 0 }, $unset: { lockedUntil: 1 } });

@@ -5,6 +5,7 @@ import { httpError } from '../utils/httpError.js';
 import * as auth from '../auth/service.js';
 import { authenticate } from '../auth/guard.js';
 import { passwordProblems } from '../auth/password.js';
+import { requestReset, completeReset } from '../auth/reset.js';
 import { registerPatient } from '../patients/service.js';
 
 const COOKIE = 'ht_refresh';
@@ -40,6 +41,16 @@ router.post('/login/:portal', limiter(30), asyncHandler(async (req, res) => {
   const out = await auth.login(req.params.portal, req.body ?? {}, ctxOf(req));
   res.cookie(COOKIE, out.refresh.raw, cookieOpts());
   res.json({ accessToken: out.accessToken, expiresInSeconds: env.accessTtlSeconds, user: out.user });
+}));
+
+// Feature 7: forgot password. The answer is the same whether or not the email has an account.
+router.post('/forgot', limiter(5), asyncHandler(async (req, res) => {
+  await requestReset(req.body?.email);
+  res.json({ ok: true, message: 'If that email has an account, a reset link is on its way. It works once and expires in 15 minutes.' });
+}));
+router.post('/reset', limiter(10), asyncHandler(async (req, res) => {
+  await completeReset(req.body?.token, req.body?.password);
+  res.json({ ok: true, message: 'Password changed. Sign in with the new one.' });
 }));
 
 router.post('/refresh', requireCsrfHeader, async (req, res, next) => {

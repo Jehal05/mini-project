@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url';
 // Idempotent: safe to run repeatedly. Records are upserted by a natural key, never duplicated.
 // Usage: npm run seed
 import { connectDB, disconnectDB } from '../config/db.js';
@@ -82,7 +83,7 @@ export async function seed() {
 }
 
 // Run only when executed directly (npm run seed), not when imported.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   (async () => {
     try {
       await connectDB();

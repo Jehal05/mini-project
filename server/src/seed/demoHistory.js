@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url';
 // Feature 96 demo data: about 60 SIMULATED closed cases over the last 30 days so the dashboard has charts.
 // Idempotent: it deletes the previously generated history (marked simulatedHistory) and writes it again.
 // It never touches real cases. Usage: npm run seed:demo-history (run npm run seed first).
@@ -34,7 +35,7 @@ export async function seedDemoHistory({ count = 60, days = 30, now = Date.now() 
   return { replaced: old.length, cases: cases.length, trips: trips.length };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   (async () => {
     try {
       await connectDB();

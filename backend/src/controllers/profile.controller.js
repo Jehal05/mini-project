@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { appEvents, EVENTS } from '../events.js';
 import { config } from '../config/env.js';
 import { Counter } from '../models/Counter.js';
 import { Document } from '../models/Document.js';
@@ -21,8 +22,10 @@ const NO_STORE = 'private, no-store';
 // ---- helpers ---------------------------------------------------------------------------------------------
 
 /** Feature 98: every edit is logged with the section and operation only, never the health data itself. */
-const logEdit = (req, section, op) =>
-  writeAudit({ req, action: 'record.edit', resourceType: 'patient', resourceId: req.patient.patientId, meta: { section, op } });
+const logEdit = (req, section, op) => {
+  appEvents.emit(EVENTS.PROFILE_CHANGED, { patient: String(req.patient._id) });
+  return writeAudit({ req, action: 'record.edit', resourceType: 'patient', resourceId: req.patient.patientId, meta: { section, op } });
+};
 
 async function respondWithPatient(req, res, status = 200) {
   const fresh = await Patient.findById(req.patient._id);

@@ -123,6 +123,21 @@ export class SimulationEngine {
     return pending
   }
 
+  /**
+   * The patient edited their profile (age, conditions, family history...): use the new one from the next tick.
+   * The baseline moves with it, but the vitals are not jolted: they drift towards the new target as usual.
+   * Returns false when the patient is not being monitored.
+   */
+  updateProfile(patient) {
+    const state = this.patients.get(String(patient._id))
+    if (!state) return false
+    state.profile = patient
+    state.name = nameOf(patient)
+    state.baseline = computeBaseline(patient)
+    state.target = scenarioTargets(state.scenario, state.baseline)
+    return true
+  }
+
   async startMonitoring(id, patient) {
     const baseline = computeBaseline(patient)
     const [last, lastScenario] = await Promise.all([this.store.loadLastReading(id), this.store.loadLastScenario(id)])

@@ -209,6 +209,41 @@ describe('emergency cases', () => {
   });
 });
 
+describe('cardiac risk score from the profile (features 18 and 93)', () => {
+  const risk = async (s) => (await get(s.token, `/api/detection/patients/${s.patient._id}/status`)).body.risk;
+  const factors = (r) => r.breakdown.map((b) => b.factor);
+  const settle = () => new Promise((r) => setTimeout(r, 80));
+
+  it('adds family history, conditions and cardiac history to the score as the patient enters them', async () => {
+    const s = await monitored(await patientSession());
+    const me = (path, body) => request(app).post(`/api/patients/me/${path}`).set(bearer(s.token)).send(body).expect(201);
+    const before = await risk(s);
+    expect(factors(before)).not.toContain('Family cardiac history');
+
+    await me('familyHistory', { relative: 'Father', condition: 'Heart attack', ageAtDiagnosis: 50 });
+    await settle();
+    const withFamily = await risk(s);
+    expect(factors(withFamily)).toContain('Family cardiac history');
+    expect(withFamily.score).toBeGreaterThan(before.score);
+
+    await me('medicalConditions', { name: 'Hypertension' });
+    await me('cardiacConditions', { type: 'stent', year: 2020 });
+    await settle();
+    const full = await risk(s);
+    expect(factors(full)).toEqual(expect.arrayContaining(['Hypertension', 'Previous cardiac condition', 'Family cardiac history']));
+    expect(full.score).toBeGreaterThan(withFamily.score);
+    expect(full.breakdown.every((b) => typeof b.points === 'number')).toBe(true); // every point is explained
+  });
+
+  it('lets a relative without a heart condition leave the score alone', async () => {
+    const s = await monitored(await patientSession());
+    const before = await risk(s);
+    await request(app).post('/api/patients/me/familyHistory').set(bearer(s.token)).send({ relative: 'Mother', condition: 'Migraine' }).expect(201);
+    await settle();
+    expect((await risk(s)).score).toBe(before.score);
+  });
+});
+
 describe('Socket.IO', () => {
   const open = (token) => connect(`http://127.0.0.1:${port}`, { auth: token ? { token } : {}, transports: ['websocket'], reconnection: false, forceNew: true });
   const ready = (socket) => new Promise((resolve, reject) => { socket.on('connect', () => resolve(socket)); socket.on('connect_error', reject); });

@@ -16,6 +16,7 @@ export const EVENTS = Object.freeze({
   BYSTANDER_REPORT: 'emergency:bystander_report',
   BEDS_CHANGED: 'hospital:beds_changed',
   DOCTOR_DUTY_CHANGED: 'hospital:doctor_duty_changed',
+  PROFILE_CHANGED: 'patient:profile_changed',
 });
 
 /**
@@ -24,4 +25,9 @@ export const EVENTS = Object.freeze({
  * hospital:doctor_duty_changed  (feature 83)  { hospitalId, cardiologistOnDuty (boolean), doctorsOnDuty (number) }
  */
 
+/**
+ * patient:profile_changed  { patient (Patient _id) }
+ * Emitted after the patient edits their own profile (personal details, conditions, allergies, medicines,
+ * family history, contacts). Monitoring reloads the profile so the risk score and baseline follow it.
+ */
 export const appEvents = new EventEmitter();

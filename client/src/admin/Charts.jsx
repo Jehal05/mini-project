@@ -139,7 +139,7 @@ export function HospitalComparison({ summary, loading, error }) {
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} {...common}>
           <CartesianGrid {...L.grid} />
-          <XAxis dataKey="name" {...L.axis} interval={0} tickFormatter={(n) => n.replace('Demo ', '').slice(0, 14)} />
+          <XAxis dataKey="name" {...L.axis} interval={0} angle={-35} textAnchor="end" height={80} tickFormatter={(n) => n.replace('Demo ', '').slice(0, 22)} />
           <YAxis domain={[0, 100]} {...L.axis} unit="%" />
           <Tooltip {...L.tip} />
           <Bar dataKey="acceptanceRate" name="Acceptance rate" fill={c.low} />
@@ -166,7 +166,7 @@ export function Utilisation({ summary, loading, error }) {
       <ResponsiveContainer width="100%" height={H}>
         <BarChart data={rows} {...common}>
           <CartesianGrid {...L.grid} />
-          <XAxis dataKey="name" {...L.axis} interval={0} tickFormatter={(n) => n.slice(-7)} />
+          <XAxis dataKey="name" {...L.axis} interval={0} tickFormatter={(n) => n.split(' (')[0].slice(-4)} />
           <YAxis domain={[0, 100]} {...L.axis} unit="%" />
           <Tooltip {...L.tip} />
           <Bar dataKey="onTripPercent" name="On a trip" fill={c.accent} />
